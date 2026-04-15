@@ -1,0 +1,222 @@
+/* ═══════════════════════════════════════════════════════════
+   TOPBAR — Logo, Ticker, Live Badge, Clock
+   ═══════════════════════════════════════════════════════════ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  height: var(--topbar-h);
+  overflow: hidden;
+  z-index: var(--z-overlay);
+}
+
+/* ── Brand ── */
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  height: 100%;
+  border-right: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.topbar__logo {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.topbar__logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.topbar__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.topbar__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.topbar__subtitle {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-medium);
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+/* ── Ticker ── */
+.topbar__ticker {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.topbar__ticker::before,
+.topbar__ticker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.topbar__ticker::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+.topbar__ticker::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-primary), transparent);
+}
+
+.topbar__ticker-track {
+  display: flex;
+  gap: var(--space-6);
+  animation: ticker-scroll 50s linear infinite;
+  white-space: nowrap;
+  padding: 0 var(--space-5);
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.tick-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.tick-sym {
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.tick-val {
+  color: var(--text-secondary);
+}
+
+.tick-chg {
+  font-weight: var(--weight-medium);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.tick-chg.up {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.tick-chg.dn {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+.tick-sep {
+  color: var(--border-strong);
+  opacity: 0.5;
+  margin: 0 var(--space-1);
+}
+
+/* ── Status Area ── */
+.topbar__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* ── Live Badge ── */
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--semantic-green-glow);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--semantic-green);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.live-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--semantic-green);
+  animation: live-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+  50% { opacity: 0.5; box-shadow: 0 0 4px rgba(34, 197, 94, 0.2); }
+}
+
+/* ── Clock ── */
+.topbar__clock {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1023px) {
+  .topbar__ticker {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .topbar__brand {
+    padding: 0 var(--space-3);
+    border-right: none;
+    gap: var(--space-2);
+  }
+
+  .topbar__subtitle {
+    display: none;
+  }
+
+  .topbar__status {
+    padding: 0 var(--space-3);
+    gap: var(--space-3);
+    margin-left: auto;
+  }
+}

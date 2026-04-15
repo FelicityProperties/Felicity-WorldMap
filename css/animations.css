@@ -1,0 +1,82 @@
+/* ═══════════════════════════════════════════════════════════
+   ANIMATIONS — Keyframes and Transition Utilities
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Entrance ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Loading ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.2; }
+}
+
+/* ── Staggered Card Entrance ── */
+.card-item {
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.card-item:nth-child(1)  { animation-delay: 0ms; }
+.card-item:nth-child(2)  { animation-delay: 30ms; }
+.card-item:nth-child(3)  { animation-delay: 60ms; }
+.card-item:nth-child(4)  { animation-delay: 90ms; }
+.card-item:nth-child(5)  { animation-delay: 120ms; }
+.card-item:nth-child(6)  { animation-delay: 150ms; }
+.card-item:nth-child(7)  { animation-delay: 180ms; }
+.card-item:nth-child(8)  { animation-delay: 210ms; }
+.card-item:nth-child(9)  { animation-delay: 240ms; }
+.card-item:nth-child(10) { animation-delay: 270ms; }
+.card-item:nth-child(11) { animation-delay: 300ms; }
+.card-item:nth-child(12) { animation-delay: 330ms; }
+
+.signal-card {
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.signal-card:nth-child(1)  { animation-delay: 0ms; }
+.signal-card:nth-child(2)  { animation-delay: 50ms; }
+.signal-card:nth-child(3)  { animation-delay: 100ms; }
+.signal-card:nth-child(4)  { animation-delay: 150ms; }
+.signal-card:nth-child(5)  { animation-delay: 200ms; }
+.signal-card:nth-child(6)  { animation-delay: 250ms; }
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .card-item,
+  .signal-card {
+    animation: none;
+  }
+}

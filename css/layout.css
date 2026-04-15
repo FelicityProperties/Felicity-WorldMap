@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT — App Grid Shell + Responsive Breakpoints
+   ═══════════════════════════════════════════════════════════ */
+
+#app {
+  display: grid;
+  grid-template-rows: var(--topbar-h) var(--nav-h) 1fr var(--statusbar-h);
+  grid-template-columns: 1fr var(--sidebar-w);
+  grid-template-areas:
+    "topbar   topbar"
+    "nav      nav"
+    "main     sidebar"
+    "status   status";
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.topbar    { grid-area: topbar; }
+.nav       { grid-area: nav; }
+.main      { grid-area: main; position: relative; overflow: hidden; display: flex; }
+.sidebar   { grid-area: sidebar; }
+.statusbar { grid-area: status; }
+
+/* ── Sidebar Collapsed State ── */
+#app.sidebar-collapsed {
+  grid-template-columns: 1fr 0;
+}
+
+#app.sidebar-collapsed .sidebar {
+  display: none;
+}
+
+/* ── Sidebar Toggle Button ── */
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  transform: translateY(-50%);
+  z-index: var(--z-panel);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-lg);
+  transition: all var(--duration-normal) var(--ease-out);
+  display: none;
+}
+
+.sidebar-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+#app.sidebar-collapsed .sidebar-toggle {
+  display: flex;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet (< 1200px)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1199px) {
+  :root {
+    --sidebar-w: 320px;
+  }
+}
+
+@media (max-width: 1023px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "nav"
+      "main"
+      "status";
+  }
+
+  .sidebar {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--nav-h));
+    right: 0;
+    bottom: var(--statusbar-h);
+    width: min(380px, 85vw);
+    z-index: var(--z-sidebar);
+    transform: translateX(100%);
+    transition: transform var(--duration-slow) var(--ease-out);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: flex;
+    right: var(--space-3);
+    top: var(--space-3);
+    transform: none;
+  }
+
+  #app.sidebar-collapsed .sidebar-toggle {
+    display: flex;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile (< 768px)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  :root {
+    --topbar-h: 48px;
+    --nav-h: 40px;
+    --statusbar-h: 32px;
+  }
+
+  .sidebar {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .sidebar-toggle {
+    top: auto;
+    bottom: var(--space-3);
+    right: var(--space-3);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+  }
+}

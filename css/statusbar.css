@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════════
+   STATUS BAR — Bottom Information Strip
+   ═══════════════════════════════════════════════════════════ */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  height: var(--statusbar-h);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+}
+
+.statusbar__left,
+.statusbar__center,
+.statusbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.statusbar__left {
+  flex-shrink: 0;
+}
+
+.statusbar__center {
+  flex: 1;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.statusbar__right {
+  flex-shrink: 0;
+}
+
+/* ── Status Dot ── */
+.statusbar__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--semantic-green);
+  margin-right: var(--space-1);
+  animation: live-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.statusbar__label {
+  color: var(--text-secondary);
+}
+
+.statusbar__value {
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.statusbar__sep {
+  color: var(--border-strong);
+  user-select: none;
+}
+
+.statusbar__brand {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 9px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1023px) {
+  .statusbar__center {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .statusbar {
+    padding: 0 var(--space-3);
+    font-size: 9px;
+  }
+
+  .statusbar__brand {
+    display: none;
+  }
+}
