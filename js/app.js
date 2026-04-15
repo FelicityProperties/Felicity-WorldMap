@@ -7,9 +7,13 @@ import { initSidebar, refreshCurrentTab, getCurrentTab } from './sidebar.js';
 import { buildTicker, updateMarketData } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
+import { loadFromAPI } from './data.js';
 
 // ── Boot ──
-function boot() {
+async function boot() {
+  // Try loading data from Neon via API (falls back to hardcoded)
+  await loadFromAPI();
+
   // Init map
   initMap();
 

@@ -1,7 +1,12 @@
 // ═══════════════════════════════════════════════════════════
-// DATA — All static data for the Felicity WorldMap dashboard
+// DATA — Dashboard data with API fetch + hardcoded fallback
+//
+// All exports are mutable objects/arrays. On boot, loadFromAPI()
+// attempts to fetch from /api/data. If unavailable (local dev,
+// no Neon), the hardcoded defaults below are used seamlessly.
 // ═══════════════════════════════════════════════════════════
 
+// ── CII Scores (object — mutated in place) ──
 export const ciiScores = {
   "Afghanistan":9.2,"Albania":3.1,"Algeria":5.8,"Andorra":1.0,"Angola":6.1,
   "Argentina":4.8,"Armenia":5.9,"Australia":1.4,"Austria":1.5,"Azerbaijan":6.2,
@@ -42,6 +47,7 @@ export const ciiScores = {
   "Venezuela":7.2,"Vietnam":3.0,"Yemen":9.1,"Zambia":4.2,"Zimbabwe":6.1
 };
 
+// ── Region Map (object — mutated in place) ──
 export const regionMap = {
   "Afghanistan":"Asia","Algeria":"Africa","Angola":"Africa","Argentina":"S. America",
   "Armenia":"Caucasus","Australia":"Oceania","Austria":"Europe","Azerbaijan":"Caucasus",
@@ -71,6 +77,7 @@ export const regionMap = {
   "Yemen":"Middle East","Zimbabwe":"Africa"
 };
 
+// ── Arrays (mutated in place via splice+push) ──
 export const markets = [
   { sym: "BTC",    name: "Bitcoin",         price: 83420,  chg: 1.24,  type: "crypto" },
   { sym: "ETH",    name: "Ethereum",        price: 1612,   chg: -0.87, type: "crypto" },
@@ -147,52 +154,44 @@ export const confZones = [
 ];
 
 export const dubaiSignals = [
-  {
-    trigger: "Red Sea Disruptions",
-    chain: "Shipping reroutes via Cape \u2192 Logistics hub demand surge \u2192 Dubai South warehousing",
-    sector: "Industrial & Logistics",
-    impact: "+4.2%",
-    sentiment: "bullish",
-    time: "2h"
-  },
-  {
-    trigger: "Gold All-Time High",
-    chain: "Safe-haven capital inflow \u2192 DIFC wealth management expansion \u2192 Downtown premium office",
-    sector: "Commercial Office",
-    impact: "+2.8%",
-    sentiment: "bullish",
-    time: "4h"
-  },
-  {
-    trigger: "Russia Capital Controls",
-    chain: "HNW relocation wave \u2192 Dubai Marina & Palm demand \u2192 Ultra-luxury segment",
-    sector: "Ultra-Luxury Residential",
-    impact: "+6.1%",
-    sentiment: "bullish",
-    time: "6h"
-  },
-  {
-    trigger: "OPEC+ Output Cut",
-    chain: "Oil revenue boost \u2192 GCC sovereign spending \u2192 Abu Dhabi-Dubai corridor development",
-    sector: "Mixed-Use Development",
-    impact: "+3.5%",
-    sentiment: "bullish",
-    time: "8h"
-  },
-  {
-    trigger: "CNY Depreciation",
-    chain: "Chinese capital outflow \u2192 Dubai property as hedge \u2192 JVC & Business Bay mid-segment",
-    sector: "Mid-Market Residential",
-    impact: "+1.9%",
-    sentiment: "bullish",
-    time: "12h"
-  },
-  {
-    trigger: "EU Energy Crisis",
-    chain: "European business relocation \u2192 Free zone demand \u2192 DMCC & JAFZA office space",
-    sector: "Free Zone Commercial",
-    impact: "-0.4%",
-    sentiment: "bearish",
-    time: "1d"
-  },
+  { trigger: "Red Sea Disruptions", chain: "Shipping reroutes via Cape \u2192 Logistics hub demand surge \u2192 Dubai South warehousing", sector: "Industrial & Logistics", impact: "+4.2%", sentiment: "bullish", time: "2h" },
+  { trigger: "Gold All-Time High", chain: "Safe-haven capital inflow \u2192 DIFC wealth management expansion \u2192 Downtown premium office", sector: "Commercial Office", impact: "+2.8%", sentiment: "bullish", time: "4h" },
+  { trigger: "Russia Capital Controls", chain: "HNW relocation wave \u2192 Dubai Marina & Palm demand \u2192 Ultra-luxury segment", sector: "Ultra-Luxury Residential", impact: "+6.1%", sentiment: "bullish", time: "6h" },
+  { trigger: "OPEC+ Output Cut", chain: "Oil revenue boost \u2192 GCC sovereign spending \u2192 Abu Dhabi-Dubai corridor development", sector: "Mixed-Use Development", impact: "+3.5%", sentiment: "bullish", time: "8h" },
+  { trigger: "CNY Depreciation", chain: "Chinese capital outflow \u2192 Dubai property as hedge \u2192 JVC & Business Bay mid-segment", sector: "Mid-Market Residential", impact: "+1.9%", sentiment: "bullish", time: "12h" },
+  { trigger: "EU Energy Crisis", chain: "European business relocation \u2192 Free zone demand \u2192 DMCC & JAFZA office space", sector: "Free Zone Commercial", impact: "-0.4%", sentiment: "bearish", time: "1d" },
 ];
+
+// ── API Fetch — replaces hardcoded data when Neon is available ──
+function replaceArray(target, source) {
+  target.length = 0;
+  target.push(...source);
+}
+
+function replaceObject(target, source) {
+  Object.keys(target).forEach(k => delete target[k]);
+  Object.assign(target, source);
+}
+
+export async function loadFromAPI() {
+  try {
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const data = await res.json();
+
+    if (data.ciiScores)    replaceObject(ciiScores, data.ciiScores);
+    if (data.regionMap)    replaceObject(regionMap, data.regionMap);
+    if (data.markets)      replaceArray(markets, data.markets);
+    if (data.news)         replaceArray(news, data.news);
+    if (data.flights)      replaceArray(flights, data.flights);
+    if (data.ships)        replaceArray(ships, data.ships);
+    if (data.confZones)    replaceArray(confZones, data.confZones);
+    if (data.dubaiSignals) replaceArray(dubaiSignals, data.dubaiSignals);
+
+    console.log('[Felicity] Data loaded from Neon database');
+    return true;
+  } catch (e) {
+    console.log('[Felicity] API unavailable, using local data:', e.message);
+    return false;
+  }
+}

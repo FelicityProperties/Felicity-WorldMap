@@ -1,0 +1,13 @@
+{
+  "name": "felicity-worldmap",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time global intelligence dashboard by Felicity Properties",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "db:setup": "node db/setup.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

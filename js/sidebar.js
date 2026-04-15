@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { news, markets, flights, ships, dubaiSignals } from './data.js';
-import { formatPrice, escapeHtml } from './utils.js';
+import { formatPrice } from './utils.js';
 
 let currentTab = 'news';
 let onNewsClick = null;
@@ -41,6 +41,18 @@ export function initSidebar() {
       }, 100);
     });
   }
+
+  // News card click delegation (avoids inline onclick quote issues)
+  content.addEventListener('click', e => {
+    const card = e.target.closest('[data-news-idx]');
+    if (card && window.__openModal) {
+      const idx = parseInt(card.dataset.newsIdx);
+      const n = news[idx];
+      if (n) {
+        window.__openModal(n.title, `${n.lbl} \u00b7 ${n.region} \u00b7 ${n.time} ago`);
+      }
+    }
+  });
 }
 
 function renderTab(tab, container) {
@@ -72,8 +84,8 @@ export function refreshCurrentTab() {
 
 // ── News ──
 function renderNews() {
-  return news.map(n => `
-    <div class="card-item" onclick="window.__openModal && window.__openModal('${escapeHtml(n.title)}', '${escapeHtml(n.lbl)} · ${escapeHtml(n.region)} · ${n.time} ago')">
+  return news.map((n, i) => `
+    <div class="card-item" data-news-idx="${i}">
       <div class="news-card__category news-card__category--${n.cat}">${n.lbl} \u00b7 ${n.region}</div>
       <div class="news-card__title">${n.title}</div>
       <div class="news-card__meta">${n.time} ago</div>

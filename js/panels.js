@@ -2,7 +2,7 @@
 // PANELS — Country Panel + Modal System
 // ═══════════════════════════════════════════════════════════
 
-import { ciiBarColor, ciiLabel } from './utils.js';
+import { ciiBarColor } from './utils.js';
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 

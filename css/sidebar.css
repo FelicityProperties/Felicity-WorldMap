@@ -5,6 +5,8 @@
 .sidebar {
   display: flex;
   flex-direction: column;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
   background: var(--bg-primary);
   border-left: 1px solid var(--border-subtle);
   overflow: hidden;

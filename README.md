@@ -22,12 +22,22 @@ A real-time global intelligence dashboard built to track macro events, market sh
 - **Inter + JetBrains Mono** — Typography (Google Fonts)
 - **ES Modules** — Modular JavaScript architecture
 - **CSS Custom Properties** — Full design token system
+- **Neon PostgreSQL** — Serverless database for dashboard data
+- **Vercel Serverless Functions** — API routes connecting frontend to Neon
 
 ## Project Structure
 
 ```
 Felicity-WorldMap/
 ├── index.html              Main entry point
+├── vercel.json             Vercel deployment config
+├── package.json            Dependencies (@neondatabase/serverless)
+├── api/
+│   └── data.js             Vercel serverless function → Neon queries
+├── db/
+│   ├── schema.sql          Database table definitions
+│   ├── seed.sql            Initial data population
+│   └── setup.js            Script to run schema + seed on Neon
 ├── css/
 │   ├── tokens.css          Design tokens (colors, spacing, typography)
 │   ├── base.css            Reset, global styles, utilities
@@ -41,7 +51,7 @@ Felicity-WorldMap/
 │   └── animations.css      Keyframes, transitions
 ├── js/
 │   ├── app.js              Main init + orchestration
-│   ├── data.js             All static data (CII scores, markets, etc.)
+│   ├── data.js             Data layer (API fetch + hardcoded fallback)
 │   ├── map.js              Leaflet map, GeoJSON, layers, markers
 │   ├── sidebar.js          Tab switching, card rendering
 │   ├── ticker.js           Market ticker logic
@@ -56,28 +66,50 @@ Felicity-WorldMap/
 No build step needed. Just serve the files:
 
 ```bash
-# Option 1: Python
-python3 -m http.server 8000
-
-# Option 2: Node.js
-npx serve .
-
-# Option 3: VS Code
-# Install "Live Server" extension, right-click index.html → Open with Live Server
+npm install     # install dependencies (only needed once)
+npm run dev     # serves at http://localhost:3000
 ```
 
-Then open `http://localhost:8000` in your browser.
+The dashboard works fully with hardcoded data locally. When deployed to Vercel with a Neon database, it fetches live data from the API instead.
 
 > **Note:** ES modules require a local server — opening `index.html` directly via `file://` won't work due to CORS restrictions.
 
-## Deployment
+## Deploy to Vercel + Neon
 
-| Platform | Steps |
-|----------|-------|
-| **GitHub Pages** | Settings → Pages → Source: main branch, root folder |
-| **Netlify** | Drag & drop the project folder, or connect the repo |
-| **Vercel** | `npx vercel` from the project directory |
-| **Any static host** | Upload all files maintaining directory structure |
+### 1. Create a Neon Database
+
+1. Sign up at [neon.tech](https://neon.tech)
+2. Create a new project and database
+3. Copy your connection string (looks like `postgresql://user:pass@ep-xyz.us-east-2.aws.neon.tech/dbname?sslmode=require`)
+
+### 2. Seed the Database
+
+```bash
+DATABASE_URL="your-neon-connection-string" node db/setup.js
+```
+
+### 3. Deploy to Vercel
+
+```bash
+npm i -g vercel         # install Vercel CLI
+vercel                  # deploy (follow prompts)
+vercel env add DATABASE_URL  # add your Neon connection string as env var
+vercel --prod           # deploy to production
+```
+
+Or connect your GitHub repo in the Vercel dashboard — it will auto-deploy on push.
+
+### Architecture
+
+```
+Browser  →  Static HTML/CSS/JS (Vercel CDN)
+             ↓ fetch('/api/data')
+         →  Vercel Serverless Function (api/data.js)
+             ↓ SQL queries
+         →  Neon PostgreSQL
+```
+
+If the API is unavailable (local dev, no Neon), the frontend falls back to hardcoded data seamlessly.
 
 ## Design System
 

@@ -5,28 +5,21 @@
 #app {
   display: grid;
   grid-template-rows: var(--topbar-h) var(--nav-h) 1fr var(--statusbar-h);
-  grid-template-columns: 1fr var(--sidebar-w);
-  grid-template-areas:
-    "topbar   topbar"
-    "nav      nav"
-    "main     sidebar"
-    "status   status";
+  grid-template-columns: 1fr;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
 }
 
-.topbar    { grid-area: topbar; }
-.nav       { grid-area: nav; }
-.main      { grid-area: main; position: relative; overflow: hidden; display: flex; }
-.sidebar   { grid-area: sidebar; }
-.statusbar { grid-area: status; }
-
-/* ── Sidebar Collapsed State ── */
-#app.sidebar-collapsed {
-  grid-template-columns: 1fr 0;
+/* Main uses flexbox to position map + sidebar side by side */
+.main {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  min-height: 0;
 }
 
+/* ── Sidebar Collapsed State ── */
 #app.sidebar-collapsed .sidebar {
   display: none;
 }
@@ -40,7 +33,7 @@
   z-index: var(--z-panel);
   width: 36px;
   height: 36px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: var(--surface-glass);
@@ -51,7 +44,6 @@
   color: var(--text-secondary);
   font-size: var(--text-lg);
   transition: all var(--duration-normal) var(--ease-out);
-  display: none;
 }
 
 .sidebar-toggle:hover {
@@ -75,21 +67,12 @@
 }
 
 @media (max-width: 1023px) {
-  #app {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "topbar"
-      "nav"
-      "main"
-      "status";
-  }
-
   .sidebar {
     position: fixed;
     top: calc(var(--topbar-h) + var(--nav-h));
     right: 0;
     bottom: var(--statusbar-h);
-    width: min(380px, 85vw);
+    width: min(380px, 85vw) !important;
     z-index: var(--z-sidebar);
     transform: translateX(100%);
     transition: transform var(--duration-slow) var(--ease-out);
@@ -106,10 +89,6 @@
     top: var(--space-3);
     transform: none;
   }
-
-  #app.sidebar-collapsed .sidebar-toggle {
-    display: flex;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -124,11 +103,11 @@
   }
 
   .sidebar {
-    top: 0;
+    top: 0 !important;
     left: 0;
     right: 0;
     bottom: 0;
-    width: 100%;
+    width: 100% !important;
     border-radius: 0;
   }
 
