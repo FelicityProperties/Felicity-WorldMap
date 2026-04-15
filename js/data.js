@@ -175,7 +175,12 @@ function replaceObject(target, source) {
 
 export async function loadFromAPI() {
   try {
-    const res = await fetch('/api/data');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch('/api/data', { signal: controller.signal });
+    clearTimeout(timeout);
+
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const data = await res.json();
 
@@ -188,7 +193,7 @@ export async function loadFromAPI() {
     if (data.confZones)    replaceArray(confZones, data.confZones);
     if (data.dubaiSignals) replaceArray(dubaiSignals, data.dubaiSignals);
 
-    console.log('[Felicity] Data loaded from Neon database');
+    console.log(`[Felicity] Data loaded (source: ${data.source || 'api'})`);
     return true;
   } catch (e) {
     console.log('[Felicity] API unavailable, using local data:', e.message);

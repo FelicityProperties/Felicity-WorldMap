@@ -2,6 +2,7 @@
   "name": "felicity-worldmap",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Real-time global intelligence dashboard by Felicity Properties",
   "scripts": {
     "dev": "npx serve . -p 3000",
