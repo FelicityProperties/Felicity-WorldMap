@@ -162,6 +162,106 @@ export const dubaiSignals = [
   { trigger: "EU Energy Crisis", chain: "European business relocation \u2192 Free zone demand \u2192 DMCC & JAFZA office space", sector: "Free Zone Commercial", impact: "-0.4%", sentiment: "bearish", time: "1d" },
 ];
 
+// ── Region Intelligence ──
+export const regionIntel = {
+  "N. America": {
+    sentiment: "cautious",
+    macroSignals: { inflation: 3.2, rateDirection: "hold", gdpGrowth: 2.1 },
+    geopoliticalPressure: 4.5,
+    headlineIssue: "Trade policy uncertainty and fiscal expansion",
+    marketOutlook: { short: "Volatile", medium: "Stable", long: "Growth" },
+    realEstateImpact: "Rate sensitivity dampening housing. Commercial real estate faces refinancing pressure. Sun Belt migration continues to drive selective demand.",
+    keyRisks: ["Trade war escalation", "Commercial RE refinancing wave", "Election cycle volatility"]
+  },
+  "S. America": {
+    sentiment: "neutral",
+    macroSignals: { inflation: 5.8, rateDirection: "cut", gdpGrowth: 1.4 },
+    geopoliticalPressure: 5.2,
+    headlineIssue: "Commodity dependency and political realignment",
+    marketOutlook: { short: "Mixed", medium: "Recovery", long: "Growth" },
+    realEstateImpact: "Brazil and Chile showing recovery signals. Argentina restructuring creates selective opportunity. Commodity revenues supporting infrastructure.",
+    keyRisks: ["Commodity price swings", "Political instability in Argentina", "Currency depreciation"]
+  },
+  "Europe": {
+    sentiment: "cautious",
+    macroSignals: { inflation: 2.1, rateDirection: "cut", gdpGrowth: 0.8 },
+    geopoliticalPressure: 7.2,
+    headlineIssue: "Eastern border tensions and energy transition costs",
+    marketOutlook: { short: "Volatile", medium: "Recovery", long: "Stable" },
+    realEstateImpact: "Southern Europe showing rental yield strength. Northern markets repricing. London and Paris premium segments resilient. Eastern European logistics booming.",
+    keyRisks: ["Ukraine conflict escalation", "Energy dependency", "Banking sector stress"]
+  },
+  "Africa": {
+    sentiment: "mixed",
+    macroSignals: { inflation: 7.4, rateDirection: "hold", gdpGrowth: 3.8 },
+    geopoliticalPressure: 7.8,
+    headlineIssue: "Multiple conflict zones offset by resource boom",
+    marketOutlook: { short: "Challenging", medium: "Selective growth", long: "High potential" },
+    realEstateImpact: "Nigeria and Kenya leading urban development. North Africa infrastructure spend rising. Conflict zones creating displacement-driven demand in safe havens.",
+    keyRisks: ["Sahel instability", "Debt sustainability", "Climate vulnerability", "Governance gaps"]
+  },
+  "Middle East": {
+    sentiment: "bullish",
+    macroSignals: { inflation: 2.8, rateDirection: "hold", gdpGrowth: 3.2 },
+    geopoliticalPressure: 8.1,
+    headlineIssue: "GCC diversification acceleration amid regional conflict",
+    marketOutlook: { short: "Strong", medium: "Bullish", long: "Transformative" },
+    realEstateImpact: "UAE and Saudi mega-projects driving unprecedented demand. Capital flight from conflict zones benefits Dubai and Riyadh. Tourism and business relocation accelerating.",
+    keyRisks: ["Iran tensions", "Oil price dependency", "Red Sea disruption", "Regional conflict spillover"]
+  },
+  "Asia": {
+    sentiment: "neutral",
+    macroSignals: { inflation: 2.4, rateDirection: "mixed", gdpGrowth: 4.2 },
+    geopoliticalPressure: 6.5,
+    headlineIssue: "China slowdown offsets SE Asian growth momentum",
+    marketOutlook: { short: "Mixed", medium: "Growth", long: "Strong" },
+    realEstateImpact: "China property crisis continues restructuring. India and Vietnam emerging as manufacturing hubs driving commercial demand. Japan seeing foreign investment resurgence.",
+    keyRisks: ["Taiwan Strait tensions", "China property contagion", "Supply chain realignment costs"]
+  },
+  "Oceania": {
+    sentiment: "stable",
+    macroSignals: { inflation: 2.9, rateDirection: "hold", gdpGrowth: 1.6 },
+    geopoliticalPressure: 3.2,
+    headlineIssue: "Immigration-driven demand meets rate constraints",
+    marketOutlook: { short: "Stable", medium: "Growth", long: "Stable" },
+    realEstateImpact: "Record immigration supporting housing demand. Sydney and Melbourne premium resilient. New Zealand showing early recovery. Industrial and logistics sectors strong.",
+    keyRisks: ["Housing affordability crisis", "China trade dependency", "Climate events"]
+  }
+};
+
+// ── Macro Signals ──
+export const macroSignals = [
+  { id: "gri", label: "Global Risk Index", value: 6.8, unit: "/10", trend: "up", trendPct: 0.3, description: "Composite measure of worldwide political, economic, and security instability" },
+  { id: "capital", label: "Capital Flow Pressure", value: 72, unit: "", trend: "down", trendPct: -1.2, description: "Net directional pressure on cross-border capital movement" },
+  { id: "commodity", label: "Commodity Pressure", value: 64, unit: "", trend: "up", trendPct: 2.1, description: "Aggregate supply-demand tension across key commodities" },
+  { id: "geopolitical", label: "Geopolitical Tension", value: 7.4, unit: "/10", trend: "up", trendPct: 0.5, description: "Severity index of active interstate and proxy conflicts" },
+  { id: "usd", label: "USD Strength", value: 99.4, unit: "DXY", trend: "down", trendPct: -0.3, description: "Dollar index measuring strength against major currencies" },
+  { id: "volatility", label: "Market Volatility", value: 18.2, unit: "VIX", trend: "up", trendPct: 1.8, description: "Expected 30-day S&P 500 volatility gauge" },
+];
+
+// ── Dubai Areas Intelligence ──
+export const dubaiAreas = [
+  { name: "Downtown Dubai", sentiment: "bullish", priceDirection: "up", rentalYield: 5.8, investorOutlook: "strong", demandStrength: 9.2, opportunityScore: 8.5, description: "Iconic Burj Khalifa district. Premium mixed-use with global brand recognition.", tags: ["luxury", "prime", "tourism"] },
+  { name: "Dubai Marina", sentiment: "bullish", priceDirection: "up", rentalYield: 6.2, investorOutlook: "strong", demandStrength: 8.8, opportunityScore: 8.1, description: "Waterfront living at scale. Strong rental demand from professionals and tourists.", tags: ["waterfront", "rental", "lifestyle"] },
+  { name: "Dubai Creek Harbour", sentiment: "bullish", priceDirection: "up", rentalYield: 5.4, investorOutlook: "strong", demandStrength: 7.5, opportunityScore: 8.8, description: "Next-gen waterfront mega-development. Dubai Creek Tower landmark driving long-term value.", tags: ["emerging", "mega-project", "waterfront"] },
+  { name: "Dubai Hills Estate", sentiment: "bullish", priceDirection: "up", rentalYield: 5.1, investorOutlook: "strong", demandStrength: 8.6, opportunityScore: 7.9, description: "Family-focused community with parks and golf. Strong villa segment demand.", tags: ["family", "community", "villas"] },
+  { name: "Business Bay", sentiment: "neutral", priceDirection: "stable", rentalYield: 6.5, investorOutlook: "moderate", demandStrength: 7.8, opportunityScore: 7.4, description: "CBD extension with high commercial density. Strong office and apartment rental yields.", tags: ["commercial", "central", "rental"] },
+  { name: "Palm Jumeirah", sentiment: "bullish", priceDirection: "up", rentalYield: 4.8, investorOutlook: "strong", demandStrength: 9.5, opportunityScore: 8.9, description: "Ultra-luxury island living. HNW magnet with record-breaking villa transactions.", tags: ["ultra-luxury", "iconic", "HNW"] },
+  { name: "JVC", sentiment: "neutral", priceDirection: "stable", rentalYield: 7.8, investorOutlook: "moderate", demandStrength: 7.2, opportunityScore: 7.6, description: "Affordable mid-market hub. Highest rental yields in Dubai attracting yield seekers.", tags: ["affordable", "yield", "mid-market"] },
+  { name: "Dubai South", sentiment: "bullish", priceDirection: "up", rentalYield: 6.8, investorOutlook: "strong", demandStrength: 6.9, opportunityScore: 8.7, description: "Expo legacy district and logistics hub. Al Maktoum airport expansion catalyst.", tags: ["emerging", "logistics", "airport"] },
+  { name: "Expo City", sentiment: "bullish", priceDirection: "up", rentalYield: 5.5, investorOutlook: "strong", demandStrength: 6.5, opportunityScore: 8.4, description: "Expo 2020 legacy district transforming into innovation and sustainability hub.", tags: ["innovation", "sustainability", "emerging"] },
+  { name: "Mohammed Bin Rashid City", sentiment: "bullish", priceDirection: "up", rentalYield: 5.2, investorOutlook: "strong", demandStrength: 8.1, opportunityScore: 8.2, description: "Mega mixed-use district with crystal lagoons, parks, and luxury residences.", tags: ["mega-project", "luxury", "lifestyle"] },
+];
+
+// ── Broadcast Channels ──
+export const broadcastChannels = [
+  { name: "CNN", youtubeChannelId: "UCupvZG-5ko_eiXAupbDfxWw", color: "#cc0000", fallbackUrl: "https://edition.cnn.com/live-tv" },
+  { name: "BBC World News", youtubeChannelId: "UC16niRr50-MSBwiO3YDb3RA", color: "#bb1919", fallbackUrl: "https://www.bbc.com/news/live" },
+  { name: "Bloomberg TV", youtubeChannelId: "UCIALMKvObZNtJ6AmdCLP7Lg", color: "#472a91", fallbackUrl: "https://www.bloomberg.com/live" },
+  { name: "Al Jazeera English", youtubeChannelId: "UCNye-wNBqNL5ZzHSJj3l8Bg", color: "#d2a02e", fallbackUrl: "https://www.aljazeera.com/live" },
+  { name: "Sky News", youtubeChannelId: "UCe2V2sBKOBBfl8sBuew_xyA", color: "#c8102e", fallbackUrl: "https://news.sky.com/watch-live" },
+];
+
 // ── API Fetch — replaces hardcoded data when Neon is available ──
 function replaceArray(target, source) {
   target.length = 0;

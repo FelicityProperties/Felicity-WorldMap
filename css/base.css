@@ -15,14 +15,19 @@ html {
   text-rendering: optimizeLegibility;
 }
 
-html, body {
+html {
   height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
   background: var(--bg-deepest);
   color: var(--text-primary);
   font-family: var(--font-display);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* ── Scrollbar ── */

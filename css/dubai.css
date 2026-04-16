@@ -1,0 +1,290 @@
+/* ═══════════════════════════════════════════════════════════
+   DUBAI — Intelligence Section with Area Cards
+   ═══════════════════════════════════════════════════════════ */
+
+.dubai-section {
+  background: var(--bg-deepest);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Controls ── */
+.dubai-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.dubai-search {
+  flex: 1;
+  min-width: 220px;
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.dubai-search::placeholder {
+  color: var(--text-muted);
+}
+
+.dubai-search:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.dubai-filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dubai-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+.dubai-filter-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.dubai-filter-btn.active {
+  color: var(--accent-gold);
+  background: var(--accent-gold-glow);
+  border-color: rgba(212, 168, 83, 0.3);
+}
+
+/* ── Grid ── */
+.dubai-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+/* ── Area Card ── */
+.dubai-card {
+  background: var(--surface-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-out);
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.dubai-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.dubai-card__accent {
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-primary));
+}
+
+.dubai-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.dubai-card__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.dubai-card__sentiment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dubai-card__sentiment--bullish {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.dubai-card__sentiment--neutral {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+}
+
+.dubai-card__sentiment--bearish {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+.dubai-card__desc {
+  padding: 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-3);
+}
+
+/* ── Metrics Grid ── */
+.dubai-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dubai-card__metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  background: var(--bg-primary);
+}
+
+.dubai-card__metric-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.dubai-card__metric-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.dubai-card__metric-value--up { color: var(--semantic-green); }
+.dubai-card__metric-value--down { color: var(--semantic-red); }
+.dubai-card__metric-value--stable { color: var(--semantic-amber); }
+.dubai-card__metric-value--accent { color: var(--accent-gold); }
+
+/* ── Score Bar ── */
+.dubai-card__score-section {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dubai-card__score-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.dubai-card__score-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.dubai-card__score-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-primary));
+  transition: width 0.8s var(--ease-out);
+}
+
+.dubai-card__score-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent-gold);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Tags ── */
+.dubai-card__tags {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-4) var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dubai-card__tag {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-xs);
+}
+
+/* ── No Results ── */
+.dubai-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .dubai-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dubai-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .dubai-card__metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

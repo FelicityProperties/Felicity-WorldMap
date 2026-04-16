@@ -73,10 +73,37 @@
 .signal-card:nth-child(5)  { animation-delay: 200ms; }
 .signal-card:nth-child(6)  { animation-delay: 250ms; }
 
+/* ── Loading Skeletons ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton--text { height: 14px; width: 80%; margin-bottom: var(--space-2); }
+.skeleton--title { height: 20px; width: 60%; margin-bottom: var(--space-3); }
+.skeleton--card { height: 120px; width: 100%; border-radius: var(--radius-md); }
+
+/* ── Section Reveal ── */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+.section-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   .card-item,
-  .signal-card {
+  .signal-card,
+  .section-reveal {
     animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

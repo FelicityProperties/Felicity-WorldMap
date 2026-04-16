@@ -196,6 +196,15 @@
   outline: none;
 }
 
+/* ── Enhanced GeoJSON Hover ── */
+.leaflet-interactive {
+  transition: fill-opacity 0.15s ease, stroke-width 0.15s ease;
+}
+
+.leaflet-interactive:hover {
+  filter: brightness(1.15);
+}
+
 /* ── Responsive ── */
 @media (max-width: 767px) {
   .layer-controls {

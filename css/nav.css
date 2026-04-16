@@ -5,11 +5,15 @@
 .nav {
   display: flex;
   align-items: center;
-  background: var(--bg-primary);
+  background: rgba(10, 14, 22, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
   padding: 0 var(--space-2);
   height: var(--nav-h);
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-map-controls);
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;

@@ -1,0 +1,184 @@
+/* ═══════════════════════════════════════════════════════════
+   SIGNALS — Intelligence Signals Section
+   ═══════════════════════════════════════════════════════════ */
+
+.signals-section {
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-5);
+}
+
+/* ── Featured Signal (larger top card) ── */
+.signal-featured {
+  grid-column: 1 / -1;
+  background: var(--surface-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  transition: all var(--duration-normal) var(--ease-out);
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.signal-featured:hover {
+  border-color: var(--border-strong);
+  border-left-color: var(--accent-gold);
+  box-shadow: var(--shadow-glow);
+}
+
+.signal-featured__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.signal-featured__trigger {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+}
+
+.signal-featured__time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.signal-featured__chain {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-4);
+}
+
+.signal-featured__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.signal-featured__sector {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-xs);
+}
+
+.signal-featured__impact {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-xs);
+}
+
+.signal-featured__impact--bullish {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.signal-featured__impact--bearish {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+/* ── Signal List Cards ── */
+.signal-list-card {
+  background: var(--surface-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  transition: all var(--duration-normal) var(--ease-out);
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.signal-list-card:hover {
+  border-color: var(--border-strong);
+  border-left-color: var(--accent-gold);
+  background: var(--bg-secondary);
+}
+
+.signal-list-card__trigger {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+  margin-bottom: var(--space-2);
+}
+
+.signal-list-card__chain {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-3);
+}
+
+.signal-list-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.signal-list-card__sector {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.signal-list-card__sentiment {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.signal-list-card__sentiment--bullish {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.signal-list-card__sentiment--bearish {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .signals-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .signal-featured {
+    padding: var(--space-4);
+  }
+
+  .signal-featured__chain {
+    font-size: var(--text-md);
+  }
+}

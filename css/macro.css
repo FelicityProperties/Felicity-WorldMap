@@ -1,0 +1,129 @@
+/* ═══════════════════════════════════════════════════════════
+   MACRO — Global Macro Overview Section
+   ═══════════════════════════════════════════════════════════ */
+
+.macro-section {
+  background: var(--bg-deepest);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.macro-card {
+  background: var(--surface-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  transition: all var(--duration-normal) var(--ease-out);
+  animation: fade-in-up var(--duration-normal) var(--ease-out) both;
+}
+
+.macro-card:nth-child(1) { animation-delay: 0ms; }
+.macro-card:nth-child(2) { animation-delay: 60ms; }
+.macro-card:nth-child(3) { animation-delay: 120ms; }
+.macro-card:nth-child(4) { animation-delay: 180ms; }
+.macro-card:nth-child(5) { animation-delay: 240ms; }
+.macro-card:nth-child(6) { animation-delay: 300ms; }
+
+.macro-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.macro-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.macro-card__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.macro-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+}
+
+.macro-card__trend--up {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+.macro-card__trend--down {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.macro-card__value-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.macro-card__value {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.macro-card__unit {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.macro-card__description {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.macro-card__bar {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  margin-top: var(--space-4);
+  overflow: hidden;
+}
+
+.macro-card__bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1s var(--ease-out);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .macro-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .macro-card__value {
+    font-size: var(--text-2xl);
+  }
+}

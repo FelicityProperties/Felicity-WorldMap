@@ -1,16 +1,17 @@
 // ═══════════════════════════════════════════════════════════
-// PANELS — Country Panel + Modal System
+// PANELS — Country Panel + Modal System + Region Drawer Link
 // ═══════════════════════════════════════════════════════════
 
 import { ciiBarColor } from './utils.js';
-
-const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+import { openRegionDrawer, getRegionForCountry } from './regions.js';
 
 let currentCountry = '';
+let currentRegion = '';
 
 // ── Country Panel ──
 export function showCountryPanel(name, score, region) {
   currentCountry = name;
+  currentRegion = region;
 
   const panel = document.getElementById('country-panel');
   const nameEl = document.getElementById('cp-name');
@@ -32,44 +33,17 @@ export function showCountryPanel(name, score, region) {
   barFill.style.background = ciiBarColor(score);
   barFill.style.color = ciiBarColor(score);
 
-  intelEl.textContent = '';
-  loadEl.classList.add('visible');
+  // Show brief summary instead of API call
+  loadEl.classList.remove('visible');
+  const riskLevel = score >= 7 ? 'High risk zone' : score >= 5 ? 'Elevated risk zone' : score >= 3 ? 'Moderate stability' : 'Stable region';
+  intelEl.textContent = `${riskLevel}. CII score ${score ? score.toFixed(1) : 'N/A'}/10 indicates ${score >= 7 ? 'significant instability and security concerns' : score >= 5 ? 'notable geopolitical pressures and economic vulnerability' : score >= 3 ? 'manageable risks with moderate macro exposure' : 'strong institutional stability and low conflict risk'}. Click below for detailed region intelligence.`;
 
   panel.classList.add('is-open');
-
-  fetchIntel(name);
 }
 
 export function closeCountryPanel() {
   const panel = document.getElementById('country-panel');
   if (panel) panel.classList.remove('is-open');
-}
-
-async function fetchIntel(country) {
-  const loadEl = document.getElementById('cp-loading');
-  const intelEl = document.getElementById('cp-intel');
-
-  try {
-    const r = await fetch(ANTHROPIC_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: `3-sentence geopolitical intelligence brief on ${country}: current security situation, key risk, one indicator to watch. Crisp and analytical, no preamble.`
-        }]
-      })
-    });
-    const d = await r.json();
-    const txt = d.content?.find(c => c.type === 'text')?.text || 'Brief unavailable.';
-    loadEl.classList.remove('visible');
-    intelEl.textContent = txt;
-  } catch (e) {
-    loadEl.classList.remove('visible');
-    intelEl.textContent = 'Connect an Anthropic API key to enable live intelligence briefs.';
-  }
 }
 
 // ── Modal System ──
@@ -89,7 +63,6 @@ export function openModal(title, body) {
   }
 
   overlay.classList.add('is-open');
-  document.body.style.overflow = 'hidden';
 }
 
 export function closeModal() {
@@ -97,7 +70,6 @@ export function closeModal() {
   if (!overlay) return;
 
   overlay.classList.remove('is-open');
-  document.body.style.overflow = '';
 }
 
 export function initPanels() {
@@ -107,15 +79,15 @@ export function initPanels() {
     closeBtn.addEventListener('click', closeCountryPanel);
   }
 
-  // Full brief button opens modal
-  const briefBtn = document.getElementById('cp-brief-btn');
-  if (briefBtn) {
-    briefBtn.addEventListener('click', () => {
+  // Region intelligence button (replaced the old "Full Brief" button)
+  const regionBtn = document.getElementById('cp-region-btn');
+  if (regionBtn) {
+    regionBtn.addEventListener('click', () => {
       if (currentCountry) {
-        openModal(
-          `Intelligence Brief: ${currentCountry}`,
-          'To get a full intelligence brief, connect this dashboard to Claude.ai or add your Anthropic API key.'
-        );
+        const mappedRegion = getRegionForCountry(currentCountry);
+        if (mappedRegion) {
+          openRegionDrawer(mappedRegion);
+        }
       }
     });
   }
