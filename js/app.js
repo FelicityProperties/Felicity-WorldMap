@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// APP — Main Orchestration, State Management, Init
+// APP — Main Orchestration, Tab Routing, Init
 // ═══════════════════════════════════════════════════════════
 
 import { initMap, renderDynLayers, animateTrackers, toggleLayer, setCountryClickHandler, getMap } from './map.js';
@@ -8,60 +8,43 @@ import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
 import { loadFromAPI, dubaiSignals } from './data.js';
-import { initHero } from './hero.js';
+import { initHero, refreshAlertBanner } from './hero.js';
 import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
-import { refreshAlertBanner } from './hero.js';
+
+// ── State ──
+let activeTab = 'overview';
+let mapInitialized = false;
 
 // ── Boot ──
 async function boot() {
   // Try loading data from Neon via API (falls back to hardcoded)
   await loadFromAPI();
 
-  // Init new sections
-  initHero();
-  initMacro();
-  initBroadcasts();
-  initDubaiIntel();
-  initSignals();
-
-  // Init map
-  initMap();
-
-  // Init ticker
-  buildTicker();
-
-  // Init clock
+  // Init clock FIRST — it's in the topbar which is always visible
   const clockEl = document.getElementById('clock');
   if (clockEl) {
     updateClock(clockEl);
     setInterval(() => updateClock(clockEl), 1000);
   }
 
-  // Init sidebar
-  initSidebar();
+  // Init ticker
+  buildTicker();
+
+  // Init sections that render into their tab panels
+  initHero();
+  initMacro();
+  initBroadcasts();
+  initDubaiIntel();
+  initSignals();
 
   // Init panels + modals + region drawer
   initPanels();
   initRegionDrawer();
-
-  // Connect country click from map to panel
-  setCountryClickHandler((name, score, region) => {
-    showCountryPanel(name, score, region);
-  });
-
-  // Render dynamic map layers after brief delay for tiles to load
-  setTimeout(() => renderDynLayers(), 600);
-
-  // Invalidate map size when scrolled into view
-  initMapResize();
-
-  // Animate trackers
-  setInterval(animateTrackers, 1200);
 
   // Expose buildTicker globally so sidebar refresh button can update it
   window.__rebuildTicker = buildTicker;
@@ -75,8 +58,11 @@ async function boot() {
   // Macro data fluctuation (slower)
   setInterval(updateMacroData, 8000);
 
-  // Nav button handlers (section scrolling)
-  initNav();
+  // Nav tab routing
+  initTabRouting();
+
+  // Overview card click navigation
+  initOverviewCards();
 
   // Layer control handlers
   initLayerControls();
@@ -84,46 +70,91 @@ async function boot() {
   // Sidebar toggle
   initSidebarToggle();
 
-  // Section reveal animations
-  initSectionReveal();
-
   // Start live news refresh (RSS feeds) — updates sidebar + hero alert
   startLiveNewsRefresh(() => {
     if (getCurrentTab() === 'news') refreshCurrentTab();
     refreshAlertBanner();
   });
+
+  // Animate trackers continuously
+  setInterval(animateTrackers, 1200);
 }
 
-// ── Navigation (Section Scrolling) ──
-function initNav() {
-  const navBtns = document.querySelectorAll('.nav-btn');
+// ── Tab Routing ──
+function initTabRouting() {
+  const navBtns = document.querySelectorAll('.nav-btn[data-tab]');
 
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const sectionId = btn.dataset.section;
-      const section = document.getElementById(sectionId);
-      if (section) {
-        const navHeight = document.querySelector('.nav')?.offsetHeight || 44;
-        const top = section.getBoundingClientRect().top + window.scrollY - navHeight;
-        window.scrollTo({ top, behavior: 'smooth' });
-      }
+      const tabId = btn.dataset.tab;
+      if (tabId === activeTab) return;
+      switchTab(tabId);
     });
   });
+}
 
-  // Intersection Observer to update active nav button on scroll
-  const sections = document.querySelectorAll('section[id^="section-"]');
-  if (!sections.length) return;
+function switchTab(tabId) {
+  const prevTab = activeTab;
+  activeTab = tabId;
 
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.id;
-        navBtns.forEach(b => b.classList.toggle('active', b.dataset.section === id));
-      }
+  // Update nav buttons
+  const navBtns = document.querySelectorAll('.nav-btn[data-tab]');
+  navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+
+  // Update tab panels
+  const panels = document.querySelectorAll('.tab-panel');
+  panels.forEach(p => p.classList.remove('is-active'));
+
+  const targetPanel = document.getElementById('tab-' + tabId);
+  if (targetPanel) targetPanel.classList.add('is-active');
+
+  // Lazy-init the map on first visit to World Map tab
+  if (tabId === 'worldmap' && !mapInitialized) {
+    initMapTab();
+  }
+
+  // Invalidate map size when switching to map tab
+  if (tabId === 'worldmap' && mapInitialized) {
+    const map = getMap();
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 50);
+    }
+  }
+}
+
+// ── Lazy Map Init ──
+function initMapTab() {
+  mapInitialized = true;
+
+  // Init map
+  initMap();
+
+  // Init sidebar
+  initSidebar();
+
+  // Connect country click from map to panel
+  setCountryClickHandler((name, score, region) => {
+    showCountryPanel(name, score, region);
+  });
+
+  // Render dynamic map layers after brief delay for tiles to load
+  setTimeout(() => renderDynLayers(), 600);
+
+  // Invalidate map size after everything is laid out
+  const map = getMap();
+  if (map) {
+    setTimeout(() => map.invalidateSize(), 100);
+  }
+}
+
+// ── Overview Cards — Navigate to tabs ──
+function initOverviewCards() {
+  document.querySelectorAll('.overview-card[data-goto]').forEach(card => {
+    card.addEventListener('click', () => {
+      const target = card.dataset.goto;
+      if (target) switchTab(target);
     });
-  }, { threshold: 0.15, rootMargin: '-10% 0px -10% 0px' });
-
-  sections.forEach(s => observer.observe(s));
+  });
 }
 
 // ── Layer Controls ──
@@ -146,23 +177,6 @@ function initSidebarToggle() {
       sidebar.classList.toggle('is-open');
     });
   }
-}
-
-// ── Map Resize on Scroll Into View ──
-function initMapResize() {
-  const mapSection = document.getElementById('section-map');
-  const map = getMap();
-  if (!mapSection || !map) return;
-
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        setTimeout(() => map.invalidateSize(), 100);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  observer.observe(mapSection);
 }
 
 // ── Signals Section Rendering ──
@@ -200,26 +214,6 @@ function initSignals() {
   `).join('');
 
   grid.innerHTML = featuredHtml + listHtml;
-}
-
-// ── Section Reveal Animations ──
-function initSectionReveal() {
-  const sections = document.querySelectorAll('.section, .section--full');
-
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-      }
-    });
-  }, { threshold: 0.05 });
-
-  sections.forEach(s => {
-    if (!s.classList.contains('hero') && !s.classList.contains('map-section')) {
-      s.classList.add('section-reveal');
-      observer.observe(s);
-    }
-  });
 }
 
 // ── Init on DOM Ready ──

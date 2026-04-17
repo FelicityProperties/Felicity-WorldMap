@@ -4,11 +4,11 @@
 
 .hero {
   position: relative;
-  min-height: 85vh;
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--section-py) var(--space-6);
+  padding: var(--space-10) var(--space-6) var(--space-8);
   background: var(--bg-deepest);
   overflow: hidden;
 }
@@ -207,11 +207,96 @@
   transform: translateY(-1px);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   OVERVIEW CARDS — Quick-access navigation cards
+   ═══════════════════════════════════════════════════════════ */
+
+.overview-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+}
+
+.overview-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.overview-card:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.overview-card__icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glow);
+  border-radius: var(--radius-sm);
+  color: var(--accent-primary);
+}
+
+.overview-card__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.overview-card__body {
+  flex: 1;
+}
+
+.overview-card__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.overview-card__desc {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.overview-card__link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 1023px) {
+  .overview-cards__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .overview-cards__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 767px) {
   .hero {
-    min-height: 80vh;
-    padding: var(--section-py-sm) var(--space-4);
+    min-height: 360px;
+    padding: var(--space-8) var(--space-4) var(--space-6);
   }
 
   .hero__headline {

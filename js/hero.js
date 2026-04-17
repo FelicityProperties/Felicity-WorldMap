@@ -2,7 +2,7 @@
 // HERO — Animated Counters, Breaking Alert Rotation
 // ═══════════════════════════════════════════════════════════
 
-import { ciiScores, confZones, markets, news } from './data.js';
+import { ciiScores, confZones, markets, news, dubaiAreas } from './data.js';
 
 let alertIndex = 0;
 let alertInterval = null;
@@ -12,7 +12,7 @@ export function initHero() {
   initAlertBanner();
 }
 
-// ── Animated Counters ──
+// ── Animated Counters — fire immediately (no IntersectionObserver) ──
 function initCounters() {
   const counters = document.querySelectorAll('.hero__counter-value');
   if (!counters.length) return;
@@ -21,7 +21,8 @@ function initCounters() {
   const targets = {
     countries: Object.keys(ciiScores).length,
     conflicts: confZones.length,
-    markets: markets.length
+    markets: markets.length,
+    dubaiAreas: dubaiAreas.length
   };
 
   counters.forEach(el => {
@@ -31,18 +32,8 @@ function initCounters() {
     }
   });
 
-  // Use IntersectionObserver to trigger animation on viewport entry
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        counters.forEach(el => animateCounter(el));
-        observer.disconnect();
-      }
-    });
-  }, { threshold: 0.3 });
-
-  const heroSection = document.getElementById('section-hero');
-  if (heroSection) observer.observe(heroSection);
+  // Animate immediately — the overview tab is visible on load
+  counters.forEach(el => animateCounter(el));
 }
 
 function animateCounter(el) {
@@ -69,13 +60,16 @@ function animateCounter(el) {
 // ── Breaking Alert Banner ──
 function initAlertBanner() {
   const textEl = document.getElementById('alert-text');
-  if (!textEl || !news.length) return;
+  if (!textEl) return;
 
-  // Show first alert immediately
-  showAlert(textEl);
+  // Show first alert from whatever data is available
+  if (news.length) {
+    showAlert(textEl);
+  }
 
   // Rotate every 5 seconds
   alertInterval = setInterval(() => {
+    if (!news.length) return;
     textEl.style.opacity = '0';
     setTimeout(() => {
       alertIndex = (alertIndex + 1) % news.length;
@@ -96,5 +90,7 @@ function showAlert(el) {
 export function refreshAlertBanner() {
   alertIndex = 0;
   const textEl = document.getElementById('alert-text');
-  if (textEl) showAlert(textEl);
+  if (textEl && news.length) {
+    showAlert(textEl);
+  }
 }
