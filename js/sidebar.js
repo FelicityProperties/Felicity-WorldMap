@@ -76,12 +76,30 @@ export function initSidebar() {
         isRefreshingMarkets = false;
         mktsRefresh.classList.remove('is-loading');
         mktsRefresh.textContent = '\u21BB Refresh';
-        if (ok) {
-          content.innerHTML = renderMarkets();
-          // Also rebuild the ticker
-          if (window.__rebuildTicker) window.__rebuildTicker();
-        }
+        content.innerHTML = renderMarkets();
+        if (window.__rebuildTicker) window.__rebuildTicker();
       });
+      return;
+    }
+
+    // Flights refresh button
+    const flightsRefresh = e.target.closest('#flights-refresh-btn');
+    if (flightsRefresh) {
+      content.innerHTML = renderFlights();
+      return;
+    }
+
+    // Ships refresh button
+    const shipsRefresh = e.target.closest('#ships-refresh-btn');
+    if (shipsRefresh) {
+      content.innerHTML = renderShips();
+      return;
+    }
+
+    // RE Signals refresh button
+    const signalsRefresh = e.target.closest('#signals-refresh-btn');
+    if (signalsRefresh) {
+      content.innerHTML = renderSignals();
       return;
     }
 
@@ -122,8 +140,9 @@ function renderTab(tab, container) {
 export function refreshCurrentTab() {
   const container = document.getElementById('sidebar-content');
   if (!container) return;
-  if (currentTab === 'markets') container.innerHTML = renderMarkets();
-  if (currentTab === 'news') container.innerHTML = renderNews();
+  const renderers = { news: renderNews, markets: renderMarkets, flights: renderFlights, ships: renderShips, signals: renderSignals };
+  const render = renderers[currentTab];
+  if (render) container.innerHTML = render();
 }
 
 // ── News ──
@@ -203,7 +222,20 @@ function renderMarkets() {
 
 // ── Flights ──
 function renderFlights() {
-  return flights.map(f => `
+  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const mil = flights.filter(f => f.type === 'mil').length;
+  const com = flights.length - mil;
+
+  const header = `
+    <div class="news-header">
+      <div class="news-header__status">
+        <span class="news-header__live"><span class="news-header__live-dot"></span>TRACKING</span> ${com} commercial \u00b7 ${mil} military \u00b7 ${ts}
+      </div>
+      <button class="news-refresh-btn" id="flights-refresh-btn">\u21BB Refresh</button>
+    </div>
+  `;
+
+  const cards = flights.map(f => `
     <div class="card-item">
       <div class="track-card">
         <div>
@@ -221,11 +253,27 @@ function renderFlights() {
       </div>
     </div>
   `).join('');
+
+  return header + cards;
 }
 
 // ── Ships ──
 function renderShips() {
-  return ships.map(s => {
+  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const tankers = ships.filter(s => s.type === 'tanker').length;
+  const dark = ships.filter(s => s.type === 'dark').length;
+  const cargo = ships.length - tankers - dark;
+
+  const header = `
+    <div class="news-header">
+      <div class="news-header__status">
+        <span class="news-header__live"><span class="news-header__live-dot"></span>TRACKING</span> ${cargo} cargo \u00b7 ${tankers} tanker${tankers !== 1 ? 's' : ''} \u00b7 ${dark} dark \u00b7 ${ts}
+      </div>
+      <button class="news-refresh-btn" id="ships-refresh-btn">\u21BB Refresh</button>
+    </div>
+  `;
+
+  const cards = ships.map(s => {
     const badgeCls = s.type === 'tanker' ? 'tanker' : s.type === 'dark' ? 'dark' : 'cargo';
     return `
       <div class="card-item">
@@ -246,11 +294,26 @@ function renderShips() {
       </div>
     `;
   }).join('');
+
+  return header + cards;
 }
 
 // ── Dubai RE Signals ──
 function renderSignals() {
-  return dubaiSignals.map(s => `
+  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const bullish = dubaiSignals.filter(s => s.sentiment === 'bullish').length;
+  const bearish = dubaiSignals.length - bullish;
+
+  const header = `
+    <div class="news-header">
+      <div class="news-header__status">
+        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${bullish} bullish \u00b7 ${bearish} bearish \u00b7 ${ts}
+      </div>
+      <button class="news-refresh-btn" id="signals-refresh-btn">\u21BB Refresh</button>
+    </div>
+  `;
+
+  const cards = dubaiSignals.map(s => `
     <div class="signal-card">
       <div class="signal-card__trigger">${s.trigger}</div>
       <div class="signal-card__chain">${s.chain}</div>
@@ -260,4 +323,6 @@ function renderSignals() {
       </div>
     </div>
   `).join('');
+
+  return header + cards;
 }

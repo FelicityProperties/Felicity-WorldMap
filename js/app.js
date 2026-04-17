@@ -76,8 +76,14 @@ async function boot() {
     refreshAlertBanner();
   });
 
-  // Animate trackers continuously
-  setInterval(animateTrackers, 1200);
+  // Animate trackers continuously + auto-refresh sidebar if viewing flights/ships
+  setInterval(() => {
+    animateTrackers();
+    const tab = getCurrentTab();
+    if (tab === 'flights' || tab === 'ships') {
+      refreshCurrentTab();
+    }
+  }, 1200);
 }
 
 // ── Tab Routing ──
