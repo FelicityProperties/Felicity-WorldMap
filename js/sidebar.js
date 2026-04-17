@@ -4,9 +4,12 @@
 
 import { news, markets, flights, ships, dubaiSignals } from './data.js';
 import { formatPrice } from './utils.js';
+import { fetchLiveNews } from './news-live.js';
+import { refreshAlertBanner } from './hero.js';
 
 let currentTab = 'news';
 let onNewsClick = null;
+let isRefreshing = false;
 
 export function setNewsClickHandler(fn) { onNewsClick = fn; }
 
@@ -44,6 +47,24 @@ export function initSidebar() {
 
   // News card click: open real article URL if available, else modal
   content.addEventListener('click', e => {
+    // Refresh button handler
+    const refreshBtn = e.target.closest('#news-refresh-btn');
+    if (refreshBtn && !isRefreshing) {
+      isRefreshing = true;
+      refreshBtn.classList.add('is-loading');
+      refreshBtn.textContent = 'Fetching...';
+      fetchLiveNews().then(ok => {
+        isRefreshing = false;
+        refreshBtn.classList.remove('is-loading');
+        refreshBtn.textContent = '\u21BB Refresh';
+        if (ok) {
+          content.innerHTML = renderNews();
+          refreshAlertBanner();
+        }
+      });
+      return;
+    }
+
     const card = e.target.closest('[data-news-idx]');
     if (!card) return;
     const idx = parseInt(card.dataset.newsIdx);
@@ -79,9 +100,9 @@ function renderTab(tab, container) {
 
 export function refreshCurrentTab() {
   const container = document.getElementById('sidebar-content');
-  if (container && currentTab === 'markets') {
-    container.innerHTML = renderMarkets();
-  }
+  if (!container) return;
+  if (currentTab === 'markets') container.innerHTML = renderMarkets();
+  if (currentTab === 'news') container.innerHTML = renderNews();
 }
 
 // ── News ──
@@ -92,7 +113,22 @@ function escapeHtml(str) {
 }
 
 function renderNews() {
-  return news.map((n, i) => {
+  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const hasLive = news.length > 0 && news[0].source;
+
+  const header = `
+    <div class="news-header">
+      <div class="news-header__status">
+        ${hasLive
+          ? `<span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> Updated ${ts}`
+          : `<span class="news-header__static">Cached feed</span>`
+        }
+      </div>
+      <button class="news-refresh-btn" id="news-refresh-btn">\u21BB Refresh</button>
+    </div>
+  `;
+
+  const cards = news.map((n, i) => {
     const src = n.source ? ` \u00b7 ${escapeHtml(n.source)}` : '';
     const hasUrl = n.url ? ' has-link' : '';
     return `
@@ -103,6 +139,8 @@ function renderNews() {
       </div>
     `;
   }).join('');
+
+  return header + cards;
 }
 
 // ── Markets ──

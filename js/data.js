@@ -254,50 +254,47 @@ export const dubaiAreas = [
 ];
 
 // ── Broadcast Channels ──
-// Uses known-good live stream video IDs that allow embedding.
-// Falls back to channel live_stream URL, then to official watch page.
+// All channels use known-good YouTube live stream video IDs that reliably allow embedding.
 export const broadcastChannels = [
-  {
-    name: "Sky News",
-    liveVideoId: "YDvsBbKfLPA",
-    youtubeChannelId: "UCoMdktPbSTixAyNGwb-UYkQ",
-    color: "#c8102e",
-    fallbackUrl: "https://news.sky.com/watch-live",
-    description: "24/7 UK & world news"
-  },
   {
     name: "Al Jazeera English",
     liveVideoId: "gCNeDWCI0vo",
     youtubeChannelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
     color: "#d2a02e",
     fallbackUrl: "https://www.aljazeera.com/live",
-    description: "Global news from an alternative perspective"
+    description: "Global news & current affairs"
+  },
+  {
+    name: "Sky News",
+    liveVideoId: "9Auq9mYxFEE",
+    youtubeChannelId: "UCoMdktPbSTixAyNGwb-UYkQ",
+    color: "#c8102e",
+    fallbackUrl: "https://news.sky.com/watch-live",
+    description: "24/7 UK & world news"
   },
   {
     name: "Bloomberg TV",
-    liveVideoId: "iEpJwprxDdk",
+    liveVideoId: "dp8PhLsUcFE",
     youtubeChannelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
     color: "#472a91",
     fallbackUrl: "https://www.bloomberg.com/live",
     description: "Markets, business & finance"
   },
   {
-    name: "CNN",
-    liveVideoId: null,
-    youtubeChannelId: "UCupvZG-5ko_eiXAupbDfxWw",
-    color: "#cc0000",
-    fallbackUrl: "https://edition.cnn.com/live-tv",
-    description: "Breaking news & world coverage",
-    embedBlocked: true
+    name: "France 24 English",
+    liveVideoId: "h3MuIUNCCzI",
+    youtubeChannelId: "UCQfwfsi5VrQ8yKZ-UWmAEFg",
+    color: "#0055a4",
+    fallbackUrl: "https://www.france24.com/en/live",
+    description: "International news from Paris"
   },
   {
-    name: "BBC World News",
-    liveVideoId: null,
-    youtubeChannelId: "UC16niRr50-MSBwiO3YDb3RA",
-    color: "#bb1919",
-    fallbackUrl: "https://www.bbc.com/news/live",
-    description: "Trusted international reporting",
-    embedBlocked: true
+    name: "DW News",
+    liveVideoId: "GE_SfNlYy3s",
+    youtubeChannelId: "UCknLrEdhRCp1aegoMqRaCZg",
+    color: "#0078be",
+    fallbackUrl: "https://www.dw.com/en/live-tv/s-100825",
+    description: "German international broadcaster"
   },
 ];
 

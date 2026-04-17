@@ -91,6 +91,69 @@
 .news-card__category--politics { color: var(--semantic-blue); }
 .news-card__category--energy   { color: var(--semantic-amber); }
 
+/* ── News Header + Refresh Button ── */
+.news-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.news-header__status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.news-header__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--semantic-green);
+  font-weight: var(--weight-bold);
+}
+
+.news-header__live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--semantic-green);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.news-refresh-btn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+  background: var(--accent-glow);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-xs);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.news-refresh-btn:hover {
+  background: var(--accent-glow-strong);
+  border-color: var(--accent-primary);
+}
+
+.news-refresh-btn.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .news-card__title {
   font-family: var(--font-display);
   font-size: var(--text-base);
