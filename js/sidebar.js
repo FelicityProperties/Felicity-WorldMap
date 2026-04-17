@@ -5,11 +5,12 @@
 import { news, markets, flights, ships, dubaiSignals } from './data.js';
 import { formatPrice } from './utils.js';
 import { fetchLiveNews } from './news-live.js';
+import { fetchLiveMarkets } from './markets-live.js';
 import { refreshAlertBanner } from './hero.js';
 
 let currentTab = 'news';
-let onNewsClick = null;
 let isRefreshing = false;
+let isRefreshingMarkets = false;
 
 export function setNewsClickHandler(fn) { onNewsClick = fn; }
 
@@ -45,18 +46,18 @@ export function initSidebar() {
     });
   }
 
-  // News card click: open real article URL if available, else modal
+  // Delegated click handlers for refresh buttons and news cards
   content.addEventListener('click', e => {
-    // Refresh button handler
-    const refreshBtn = e.target.closest('#news-refresh-btn');
-    if (refreshBtn && !isRefreshing) {
+    // News refresh button
+    const newsRefresh = e.target.closest('#news-refresh-btn');
+    if (newsRefresh && !isRefreshing) {
       isRefreshing = true;
-      refreshBtn.classList.add('is-loading');
-      refreshBtn.textContent = 'Fetching...';
+      newsRefresh.classList.add('is-loading');
+      newsRefresh.textContent = 'Fetching...';
       fetchLiveNews().then(ok => {
         isRefreshing = false;
-        refreshBtn.classList.remove('is-loading');
-        refreshBtn.textContent = '\u21BB Refresh';
+        newsRefresh.classList.remove('is-loading');
+        newsRefresh.textContent = '\u21BB Refresh';
         if (ok) {
           content.innerHTML = renderNews();
           refreshAlertBanner();
@@ -65,6 +66,26 @@ export function initSidebar() {
       return;
     }
 
+    // Markets refresh button
+    const mktsRefresh = e.target.closest('#markets-refresh-btn');
+    if (mktsRefresh && !isRefreshingMarkets) {
+      isRefreshingMarkets = true;
+      mktsRefresh.classList.add('is-loading');
+      mktsRefresh.textContent = 'Fetching...';
+      fetchLiveMarkets().then(ok => {
+        isRefreshingMarkets = false;
+        mktsRefresh.classList.remove('is-loading');
+        mktsRefresh.textContent = '\u21BB Refresh';
+        if (ok) {
+          content.innerHTML = renderMarkets();
+          // Also rebuild the ticker
+          if (window.__rebuildTicker) window.__rebuildTicker();
+        }
+      });
+      return;
+    }
+
+    // News card click
     const card = e.target.closest('[data-news-idx]');
     if (!card) return;
     const idx = parseInt(card.dataset.newsIdx);
@@ -145,10 +166,22 @@ function renderNews() {
 
 // ── Markets ──
 function renderMarkets() {
-  return markets.map(m => {
+  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const header = `
+    <div class="news-header">
+      <div class="news-header__status">
+        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> Updated ${ts}
+      </div>
+      <button class="news-refresh-btn" id="markets-refresh-btn">\u21BB Refresh</button>
+    </div>
+  `;
+
+  const cards = markets.map(m => {
     const cls = m.chg >= 0 ? 'up' : 'dn';
     const sign = m.chg >= 0 ? '+' : '';
     const val = formatPrice(m.price, m.sym);
+    const arrow = m.chg >= 0 ? '\u25B2' : '\u25BC';
     return `
       <div class="card-item">
         <div class="market-row">
@@ -158,12 +191,14 @@ function renderMarkets() {
           </div>
           <div style="text-align:right">
             <div class="market-row__price">$${val}</div>
-            <div class="market-row__change ${cls}">${sign}${m.chg.toFixed(2)}%</div>
+            <div class="market-row__change ${cls}">${arrow} ${sign}${m.chg.toFixed(2)}%</div>
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  return header + cards;
 }
 
 // ── Flights ──

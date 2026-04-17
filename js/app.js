@@ -4,7 +4,7 @@
 
 import { initMap, renderDynLayers, animateTrackers, toggleLayer, setCountryClickHandler, getMap } from './map.js';
 import { initSidebar, refreshCurrentTab, getCurrentTab } from './sidebar.js';
-import { buildTicker, updateMarketData } from './ticker.js';
+import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
 import { loadFromAPI, dubaiSignals } from './data.js';
@@ -14,6 +14,7 @@ import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { startLiveNewsRefresh } from './news-live.js';
+import { startLiveMarketRefresh } from './markets-live.js';
 import { refreshAlertBanner } from './hero.js';
 
 // ── Boot ──
@@ -62,14 +63,14 @@ async function boot() {
   // Animate trackers
   setInterval(animateTrackers, 1200);
 
-  // Market data fluctuation
-  setInterval(() => {
-    updateMarketData();
+  // Expose buildTicker globally so sidebar refresh button can update it
+  window.__rebuildTicker = buildTicker;
+
+  // Live market data (CoinGecko + Yahoo Finance) — refreshes every 60s
+  startLiveMarketRefresh(() => {
     buildTicker();
-    if (getCurrentTab() === 'markets') {
-      refreshCurrentTab();
-    }
-  }, 3500);
+    if (getCurrentTab() === 'markets') refreshCurrentTab();
+  });
 
   // Macro data fluctuation (slower)
   setInterval(updateMacroData, 8000);
