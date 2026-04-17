@@ -1,36 +1,40 @@
 // ═══════════════════════════════════════════════════════════
-// NEWS-LIVE — Real-time news from RSS feeds via CORS proxy
+// NEWS-LIVE — Real-time news from RSS feeds via CORS proxies
 // ═══════════════════════════════════════════════════════════
 //
-// Uses api.allorigins.win as CORS proxy to fetch RSS XML directly.
-// Parses XML in-browser, categorizes headlines, replaces data.news.
+// Uses multiple CORS proxy fallbacks to maximize reliability.
+// Parses RSS XML in-browser, categorizes headlines, replaces data.news.
 // Refreshes every 3 min. Falls back to hardcoded news on failure.
 // ═══════════════════════════════════════════════════════════
 
 import { news } from './data.js';
 
-const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+// Multiple CORS proxies — try each until one works
+const CORS_PROXIES = [
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
 const RSS_FEEDS = [
   { url: "https://feeds.bbci.co.uk/news/world/rss.xml", source: "BBC World" },
   { url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", source: "NY Times" },
   { url: "https://www.aljazeera.com/xml/rss/all.xml", source: "Al Jazeera" },
   { url: "https://feeds.skynews.com/feeds/rss/world.xml", source: "Sky News" },
+  { url: "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best", source: "Reuters" },
 ];
 
-// ── Category Detection ──
 function categorize(text) {
   const t = text.toLowerCase();
-  if (/\b(war|conflict|strike|attack|killed|military|battle|missile|troop|ceasefire|gaza|ukraine|sudan|yemen|syria|bomb|soldier|weapon|army|navy|drone)\b/.test(t))
+  if (/\b(war|conflict|strike|attack|killed|military|battle|missile|troop|ceasefire|gaza|ukraine|sudan|yemen|syria|bomb|soldier|weapon|army|navy|drone|casualties|airstrike|shelling)\b/.test(t))
     return { cat: "conflict", lbl: "Conflict" };
-  if (/\b(market|stock|oil|gold|bitcoin|crypto|inflation|rate|fed|ecb|yield|treasury|dollar|yuan|euro|trade|economy|gdp|recession|bank)\b/.test(t))
+  if (/\b(market|stock|oil|gold|bitcoin|crypto|inflation|rate|fed|ecb|yield|treasury|dollar|yuan|euro|trade|economy|gdp|recession|bank|invest|rally|crash|nasdaq|dow)\b/.test(t))
     return { cat: "markets", lbl: "Markets" };
-  if (/\b(energy|opec|gas|lng|power|pipeline|nuclear|renewable|coal|solar|wind|electricity|fuel)\b/.test(t))
+  if (/\b(energy|opec|gas|lng|power|pipeline|nuclear|renewable|coal|solar|wind|electricity|fuel|barrel)\b/.test(t))
     return { cat: "energy", lbl: "Energy" };
   return { cat: "politics", lbl: "Politics" };
 }
 
-// ── Region Detection ──
 function detectRegion(text) {
   const t = text.toLowerCase();
   const map = [
@@ -50,7 +54,7 @@ function detectRegion(text) {
     [/\b(syria|damascus|aleppo)\b/, "Syria"],
     [/\b(yemen|houthi)\b/, "Yemen"],
     [/\b(lebanon|hezbollah|beirut)\b/, "Lebanon"],
-    [/\b(australia|melbourne|sydney|canberra)\b/, "Oceania"],
+    [/\b(australia|melbourne|sydney)\b/, "Oceania"],
     [/\b(brazil|argentina|mexico|colombia|venezuela)\b/, "Latin America"],
   ];
   for (const [re, region] of map) if (re.test(t)) return region;
@@ -76,11 +80,13 @@ function stripHtml(html) {
     .replace(/&nbsp;/g, ' ').trim();
 }
 
-// ── Parse single RSS feed XML ──
 function parseRSSItems(xmlText, source) {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlText, 'text/xml');
+
+    if (doc.querySelector('parsererror')) throw new Error('XML parse error');
+
     const items = doc.querySelectorAll('item');
     const results = [];
 
@@ -111,24 +117,36 @@ function parseRSSItems(xmlText, source) {
   }
 }
 
-// ── Fetch single feed ──
-async function fetchFeed(feed) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(CORS_PROXY + encodeURIComponent(feed.url), { signal: controller.signal });
-    clearTimeout(timeout);
+// ── Fetch with proxy fallback chain ──
+async function fetchWithProxy(url, timeoutMs = 8000) {
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxyFn(url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const xml = await res.text();
-    return parseRSSItems(xml, feed.source);
-  } catch (e) {
-    console.warn(`[news-live] ${feed.source} failed:`, e.message);
-    return [];
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (!text || text.length < 100) continue;
+      return text;
+    } catch (e) {
+      continue;
+    }
   }
+  return null;
 }
 
-// ── Main fetch — all feeds in parallel ──
+async function fetchFeed(feed) {
+  const xml = await fetchWithProxy(feed.url);
+  if (!xml) {
+    console.warn(`[news-live] All proxies failed for ${feed.source}`);
+    return [];
+  }
+  return parseRSSItems(xml, feed.source);
+}
+
 export async function fetchLiveNews() {
   try {
     const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
@@ -141,7 +159,6 @@ export async function fetchLiveNews() {
       return false;
     }
 
-    // Sort newest first, dedupe by title similarity
     all.sort((a, b) => (b._ts || 0) - (a._ts || 0));
     const seen = new Set();
     const deduped = all.filter(item => {
@@ -164,7 +181,6 @@ export async function fetchLiveNews() {
   }
 }
 
-// ── Periodic Refresh ──
 let refreshTimer = null;
 
 export function startLiveNewsRefresh(onUpdate) {

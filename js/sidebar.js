@@ -12,8 +12,6 @@ let currentTab = 'news';
 let isRefreshing = false;
 let isRefreshingMarkets = false;
 
-export function setNewsClickHandler(fn) { onNewsClick = fn; }
-
 export function getCurrentTab() { return currentTab; }
 
 export function initSidebar() {
@@ -58,10 +56,12 @@ export function initSidebar() {
         isRefreshing = false;
         newsRefresh.classList.remove('is-loading');
         newsRefresh.textContent = '\u21BB Refresh';
-        if (ok) {
-          content.innerHTML = renderNews();
-          refreshAlertBanner();
-        }
+        content.innerHTML = renderNews();
+        if (ok) refreshAlertBanner();
+      }).catch(() => {
+        isRefreshing = false;
+        newsRefresh.classList.remove('is-loading');
+        newsRefresh.textContent = '\u21BB Retry';
       });
       return;
     }
