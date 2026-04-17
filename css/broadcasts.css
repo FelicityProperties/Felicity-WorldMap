@@ -150,6 +150,34 @@
   transform: scale(1.05);
 }
 
+/* ── Loading State ── */
+.broadcast-card__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.broadcast-card__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: broadcast-spin 0.8s linear infinite;
+}
+
+@keyframes broadcast-spin {
+  to { transform: rotate(360deg); }
+}
+
 .broadcast-card__play-icon {
   width: 0;
   height: 0;

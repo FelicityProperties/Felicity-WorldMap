@@ -254,47 +254,48 @@ export const dubaiAreas = [
 ];
 
 // ── Broadcast Channels ──
-// All channels use known-good YouTube live stream video IDs that reliably allow embedding.
+// Video IDs are discovered dynamically at runtime via YouTube oEmbed API.
+// YouTube handles and channel IDs are stable; video IDs change when streams restart.
 export const broadcastChannels = [
   {
     name: "Al Jazeera English",
-    liveVideoId: "gCNeDWCI0vo",
-    youtubeChannelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
+    handle: "AlJazeeraEnglish",
+    channelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
     color: "#d2a02e",
     fallbackUrl: "https://www.aljazeera.com/live",
     description: "Global news & current affairs"
   },
   {
     name: "Sky News",
-    liveVideoId: "9Auq9mYxFEE",
-    youtubeChannelId: "UCoMdktPbSTixAyNGwb-UYkQ",
+    handle: "SkyNews",
+    channelId: "UCROQqK3_yzLfIKCHpG3mYXw",
     color: "#c8102e",
     fallbackUrl: "https://news.sky.com/watch-live",
     description: "24/7 UK & world news"
   },
   {
-    name: "Bloomberg TV",
-    liveVideoId: "dp8PhLsUcFE",
-    youtubeChannelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
-    color: "#472a91",
-    fallbackUrl: "https://www.bloomberg.com/live",
-    description: "Markets, business & finance"
-  },
-  {
     name: "France 24 English",
-    liveVideoId: "h3MuIUNCCzI",
-    youtubeChannelId: "UCQfwfsi5VrQ8yKZ-UWmAEFg",
+    handle: "FRANCE24English",
+    channelId: "UCQfwfsi5VrQ8yKZ-UWmAEFg",
     color: "#0055a4",
     fallbackUrl: "https://www.france24.com/en/live",
     description: "International news from Paris"
   },
   {
     name: "DW News",
-    liveVideoId: "GE_SfNlYy3s",
-    youtubeChannelId: "UCknLrEdhRCp1aegoMqRaCZg",
+    handle: "dwnews",
+    channelId: "UCknLrEdhRCp1aegoMqRaCZg",
     color: "#0078be",
     fallbackUrl: "https://www.dw.com/en/live-tv/s-100825",
     description: "German international broadcaster"
+  },
+  {
+    name: "Bloomberg Quicktake",
+    handle: "BloombergQuicktake",
+    channelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
+    color: "#472a91",
+    fallbackUrl: "https://www.bloomberg.com/live",
+    description: "Markets, business & finance"
   },
 ];
 
