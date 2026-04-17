@@ -87,6 +87,7 @@ export const markets = [
   { sym: "SPX",    name: "S&P 500",         price: 5282,   chg: 0.65,  type: "index" },
   { sym: "FTSE",   name: "FTSE 100",        price: 8247,   chg: 0.22,  type: "index" },
   { sym: "NIKKEI", name: "Nikkei 225",      price: 34880,  chg: -0.44, type: "index" },
+  { sym: "AED",    name: "AED/USD",         price: 3.6725, chg: 0.00,  type: "forex" },
 ];
 
 export const news = [
@@ -160,6 +161,10 @@ export const dubaiSignals = [
   { trigger: "OPEC+ Output Cut", chain: "Oil revenue boost \u2192 GCC sovereign spending \u2192 Abu Dhabi-Dubai corridor development", sector: "Mixed-Use Development", impact: "+3.5%", sentiment: "bullish", time: "8h" },
   { trigger: "CNY Depreciation", chain: "Chinese capital outflow \u2192 Dubai property as hedge \u2192 JVC & Business Bay mid-segment", sector: "Mid-Market Residential", impact: "+1.9%", sentiment: "bullish", time: "12h" },
   { trigger: "EU Energy Crisis", chain: "European business relocation \u2192 Free zone demand \u2192 DMCC & JAFZA office space", sector: "Free Zone Commercial", impact: "-0.4%", sentiment: "bearish", time: "1d" },
+  { trigger: "Iran Nuclear Talks Stall", chain: "GCC defense spending up \u2192 UAE safe-haven status reinforced \u2192 Prime area demand", sector: "Prime Residential", impact: "+3.1%", sentiment: "bullish", time: "3h" },
+  { trigger: "India GDP Growth 7.2%", chain: "South Asian HNW migration \u2192 mid-market Dubai demand \u2192 JVC & Town Square surge", sector: "Mid-Market Residential", impact: "+2.4%", sentiment: "bullish", time: "5h" },
+  { trigger: "Oil Below $60", chain: "GCC sovereign fund contraction \u2192 project delays possible \u2192 off-plan caution", sector: "Off-Plan Development", impact: "-1.8%", sentiment: "bearish", time: "8h" },
+  { trigger: "UK Stamp Duty Hike", chain: "British investors seek alternatives \u2192 Dubai freehold attraction \u2192 Marina & Downtown", sector: "International Investment", impact: "+2.9%", sentiment: "bullish", time: "10h" },
 ];
 
 // ── Region Intelligence ──
@@ -251,6 +256,15 @@ export const dubaiAreas = [
   { name: "Dubai South", sentiment: "bullish", priceDirection: "up", rentalYield: 6.8, investorOutlook: "strong", demandStrength: 6.9, opportunityScore: 8.7, description: "Expo legacy district and logistics hub. Al Maktoum airport expansion catalyst.", tags: ["emerging", "logistics", "airport"] },
   { name: "Expo City", sentiment: "bullish", priceDirection: "up", rentalYield: 5.5, investorOutlook: "strong", demandStrength: 6.5, opportunityScore: 8.4, description: "Expo 2020 legacy district transforming into innovation and sustainability hub.", tags: ["innovation", "sustainability", "emerging"] },
   { name: "Mohammed Bin Rashid City", sentiment: "bullish", priceDirection: "up", rentalYield: 5.2, investorOutlook: "strong", demandStrength: 8.1, opportunityScore: 8.2, description: "Mega mixed-use district with crystal lagoons, parks, and luxury residences.", tags: ["mega-project", "luxury", "lifestyle"] },
+  { name: "DAMAC Hills", sentiment: "neutral", priceDirection: "stable", rentalYield: 6.4, investorOutlook: "moderate", demandStrength: 7.0, opportunityScore: 7.2, description: "Gated golf community with branded residences. Steady mid-market demand.", tags: ["community", "golf", "mid-market"] },
+  { name: "JLT", sentiment: "neutral", priceDirection: "stable", rentalYield: 7.2, investorOutlook: "moderate", demandStrength: 7.5, opportunityScore: 7.3, description: "Free zone tower cluster. High rental yields from professional tenants.", tags: ["free-zone", "rental", "commercial"] },
+  { name: "Meydan", sentiment: "bullish", priceDirection: "up", rentalYield: 5.6, investorOutlook: "strong", demandStrength: 7.8, opportunityScore: 8.0, description: "Emerging luxury district around racecourse. Major master plan underway.", tags: ["emerging", "luxury", "mega-project"] },
+  { name: "Arjan", sentiment: "neutral", priceDirection: "stable", rentalYield: 7.5, investorOutlook: "moderate", demandStrength: 6.8, opportunityScore: 7.1, description: "Affordable mid-market area with growing infrastructure.", tags: ["affordable", "mid-market", "yield"] },
+  { name: "Town Square", sentiment: "neutral", priceDirection: "stable", rentalYield: 7.0, investorOutlook: "moderate", demandStrength: 6.5, opportunityScore: 6.9, description: "Family-oriented affordable community by Nshama.", tags: ["affordable", "family", "community"] },
+  { name: "Jumeirah", sentiment: "bullish", priceDirection: "up", rentalYield: 4.5, investorOutlook: "strong", demandStrength: 8.8, opportunityScore: 8.3, description: "Prime beachfront strip. Legacy villas and new luxury projects.", tags: ["luxury", "beachfront", "prime"] },
+  { name: "DIFC", sentiment: "bullish", priceDirection: "up", rentalYield: 5.0, investorOutlook: "strong", demandStrength: 9.0, opportunityScore: 8.6, description: "Financial center with premium office and residential. Global HQ demand.", tags: ["financial", "prime", "commercial"] },
+  { name: "Emaar Beachfront", sentiment: "bullish", priceDirection: "up", rentalYield: 5.3, investorOutlook: "strong", demandStrength: 8.2, opportunityScore: 8.4, description: "Private beach peninsula between Marina and Palm. Luxury waterfront living.", tags: ["waterfront", "luxury", "new"] },
+  { name: "Dubai Islands", sentiment: "bullish", priceDirection: "up", rentalYield: 5.0, investorOutlook: "strong", demandStrength: 7.0, opportunityScore: 8.5, description: "Mega island development (formerly Deira Islands). Next frontier for waterfront.", tags: ["mega-project", "waterfront", "emerging"] },
 ];
 
 // ── Broadcast Channels ──

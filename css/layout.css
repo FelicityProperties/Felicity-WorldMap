@@ -1,19 +1,51 @@
 /* ═══════════════════════════════════════════════════════════
-   LAYOUT — Scrollable Section-Based Layout + Responsive
+   LAYOUT — Full-Screen SPA Grid with Tab Panels
    ═══════════════════════════════════════════════════════════ */
 
 #app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  display: grid;
+  grid-template-rows: var(--topbar-h) var(--nav-h) 1fr var(--statusbar-h);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-/* ── Section Containers ── */
+/* ── Tab Content Container ── */
+.tab-content {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Individual tab panels */
+.tab-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.tab-panel.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable tab panels (overview, dubai, signals, broadcasts) */
+.tab-panel--scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tab-panel--scroll.is-active {
+  display: block;
+}
+
+/* ── Section Containers (used inside scrollable tab panels) ── */
 .section {
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--section-py) var(--space-6);
+  padding: var(--space-8) var(--space-6);
 }
 
 .section--full {
@@ -23,7 +55,7 @@
 }
 
 .section__header {
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-8);
   text-align: center;
 }
 
@@ -52,25 +84,25 @@
   border-radius: var(--radius-full);
 }
 
-/* ── Map Section — full viewport height ── */
-.map-section {
-  height: 100vh;
-  height: 100dvh;
-  position: relative;
+/* ── Map Tab — fills entire content area ── */
+.tab-panel--map.is-active {
+  display: flex;
+  flex-direction: row;
 }
 
-/* Main uses flexbox to position map + sidebar side by side */
-.main {
+.tab-panel--map .main {
   position: relative;
   overflow: hidden;
   display: flex;
-  height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
-/* ── Sidebar Collapsed State ── */
-#app.sidebar-collapsed .sidebar {
-  display: none;
+/* ── Map Wrap ── */
+.map-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 /* ── Sidebar Toggle Button ── */
@@ -101,10 +133,6 @@
   border-color: var(--border-strong);
 }
 
-#app.sidebar-collapsed .sidebar-toggle {
-  display: flex;
-}
-
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — Tablet (< 1200px)
    ═══════════════════════════════════════════════════════════ */
@@ -112,15 +140,10 @@
 @media (max-width: 1199px) {
   :root {
     --sidebar-w: 320px;
-    --section-py: 64px;
   }
 }
 
 @media (max-width: 1023px) {
-  :root {
-    --section-py: 56px;
-  }
-
   .section {
     padding-left: var(--space-5);
     padding-right: var(--space-5);
@@ -159,13 +182,10 @@
     --topbar-h: 48px;
     --nav-h: 40px;
     --statusbar-h: 32px;
-    --section-py: 40px;
-    --section-py-sm: 32px;
   }
 
   .section {
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
+    padding: var(--space-6) var(--space-4);
   }
 
   .section__header {
