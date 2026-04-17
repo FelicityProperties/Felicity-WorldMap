@@ -254,12 +254,58 @@ export const dubaiAreas = [
 ];
 
 // ── Broadcast Channels ──
+// Uses known-good live stream video IDs that allow embedding.
+// Falls back to channel live_stream URL, then to official watch page.
 export const broadcastChannels = [
-  { name: "CNN", youtubeChannelId: "UCupvZG-5ko_eiXAupbDfxWw", color: "#cc0000", fallbackUrl: "https://edition.cnn.com/live-tv" },
-  { name: "BBC World News", youtubeChannelId: "UC16niRr50-MSBwiO3YDb3RA", color: "#bb1919", fallbackUrl: "https://www.bbc.com/news/live" },
-  { name: "Bloomberg TV", youtubeChannelId: "UCIALMKvObZNtJ6AmdCLP7Lg", color: "#472a91", fallbackUrl: "https://www.bloomberg.com/live" },
-  { name: "Al Jazeera English", youtubeChannelId: "UCNye-wNBqNL5ZzHSJj3l8Bg", color: "#d2a02e", fallbackUrl: "https://www.aljazeera.com/live" },
-  { name: "Sky News", youtubeChannelId: "UCe2V2sBKOBBfl8sBuew_xyA", color: "#c8102e", fallbackUrl: "https://news.sky.com/watch-live" },
+  {
+    name: "Sky News",
+    liveVideoId: "YDvsBbKfLPA",
+    youtubeChannelId: "UCoMdktPbSTixAyNGwb-UYkQ",
+    color: "#c8102e",
+    fallbackUrl: "https://news.sky.com/watch-live",
+    description: "24/7 UK & world news"
+  },
+  {
+    name: "Al Jazeera English",
+    liveVideoId: "gCNeDWCI0vo",
+    youtubeChannelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
+    color: "#d2a02e",
+    fallbackUrl: "https://www.aljazeera.com/live",
+    description: "Global news from an alternative perspective"
+  },
+  {
+    name: "Bloomberg TV",
+    liveVideoId: "iEpJwprxDdk",
+    youtubeChannelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
+    color: "#472a91",
+    fallbackUrl: "https://www.bloomberg.com/live",
+    description: "Markets, business & finance"
+  },
+  {
+    name: "CNN",
+    liveVideoId: null,
+    youtubeChannelId: "UCupvZG-5ko_eiXAupbDfxWw",
+    color: "#cc0000",
+    fallbackUrl: "https://edition.cnn.com/live-tv",
+    description: "Breaking news & world coverage",
+    embedBlocked: true
+  },
+  {
+    name: "BBC World News",
+    liveVideoId: null,
+    youtubeChannelId: "UC16niRr50-MSBwiO3YDb3RA",
+    color: "#bb1919",
+    fallbackUrl: "https://www.bbc.com/news/live",
+    description: "Trusted international reporting",
+    embedBlocked: true
+  },
+];
+
+// ── Live News Sources (RSS feeds) ──
+export const newsSources = [
+  { name: "Reuters World", url: "https://feeds.reuters.com/Reuters/worldNews", cat: "politics" },
+  { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", cat: "politics" },
+  { name: "BBC World", url: "http://feeds.bbci.co.uk/news/world/rss.xml", cat: "politics" },
 ];
 
 // ── API Fetch — replaces hardcoded data when Neon is available ──

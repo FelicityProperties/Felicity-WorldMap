@@ -42,15 +42,17 @@ export function initSidebar() {
     });
   }
 
-  // News card click delegation (avoids inline onclick quote issues)
+  // News card click: open real article URL if available, else modal
   content.addEventListener('click', e => {
     const card = e.target.closest('[data-news-idx]');
-    if (card && window.__openModal) {
-      const idx = parseInt(card.dataset.newsIdx);
-      const n = news[idx];
-      if (n) {
-        window.__openModal(n.title, `${n.lbl} \u00b7 ${n.region} \u00b7 ${n.time} ago`);
-      }
+    if (!card) return;
+    const idx = parseInt(card.dataset.newsIdx);
+    const n = news[idx];
+    if (!n) return;
+    if (n.url) {
+      window.open(n.url, '_blank', 'noopener,noreferrer');
+    } else if (window.__openModal) {
+      window.__openModal(n.title, `${n.lbl} \u00b7 ${n.region} \u00b7 ${n.time} ago`);
     }
   });
 }
@@ -83,14 +85,24 @@ export function refreshCurrentTab() {
 }
 
 // ── News ──
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = String(str || '');
+  return div.innerHTML;
+}
+
 function renderNews() {
-  return news.map((n, i) => `
-    <div class="card-item" data-news-idx="${i}">
-      <div class="news-card__category news-card__category--${n.cat}">${n.lbl} \u00b7 ${n.region}</div>
-      <div class="news-card__title">${n.title}</div>
-      <div class="news-card__meta">${n.time} ago</div>
-    </div>
-  `).join('');
+  return news.map((n, i) => {
+    const src = n.source ? ` \u00b7 ${escapeHtml(n.source)}` : '';
+    const hasUrl = n.url ? ' has-link' : '';
+    return `
+      <div class="card-item${hasUrl}" data-news-idx="${i}">
+        <div class="news-card__category news-card__category--${n.cat}">${escapeHtml(n.lbl)} \u00b7 ${escapeHtml(n.region)}</div>
+        <div class="news-card__title">${escapeHtml(n.title)}</div>
+        <div class="news-card__meta">${escapeHtml(n.time)} ago${src}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ── Markets ──

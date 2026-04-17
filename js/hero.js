@@ -91,3 +91,10 @@ function showAlert(el) {
     el.textContent = item.title;
   }
 }
+
+// Called when live news data refreshes — reset to top of feed
+export function refreshAlertBanner() {
+  alertIndex = 0;
+  const textEl = document.getElementById('alert-text');
+  if (textEl) showAlert(textEl);
+}

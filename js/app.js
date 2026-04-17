@@ -13,6 +13,8 @@ import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
+import { startLiveNewsRefresh } from './news-live.js';
+import { refreshAlertBanner } from './hero.js';
 
 // ── Boot ──
 async function boot() {
@@ -83,6 +85,12 @@ async function boot() {
 
   // Section reveal animations
   initSectionReveal();
+
+  // Start live news refresh (RSS feeds) — updates sidebar + hero alert
+  startLiveNewsRefresh(() => {
+    if (getCurrentTab() === 'news') refreshCurrentTab();
+    refreshAlertBanner();
+  });
 }
 
 // ── Navigation (Section Scrolling) ──
