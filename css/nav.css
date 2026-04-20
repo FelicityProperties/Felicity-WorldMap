@@ -82,18 +82,27 @@
 
   .nav-btn {
     flex: 1;
+    flex-direction: column;
     justify-content: center;
-    padding: 0 var(--space-2);
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    align-items: center;
+    padding: 0;
+    gap: 2px;
+    min-height: 40px;
   }
 
   .nav-btn__label {
-    display: none;
+    display: block;
+    font-size: 8px;
+    letter-spacing: 0.04em;
   }
 
   .nav-btn__icon {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .nav-btn.active::after {
+    left: var(--space-2);
+    right: var(--space-2);
   }
 }

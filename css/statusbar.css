@@ -81,8 +81,17 @@
 
 @media (max-width: 767px) {
   .statusbar {
-    padding: 0 var(--space-3);
-    font-size: 9px;
+    padding: 0 var(--space-2);
+    font-size: 8px;
+  }
+
+  .statusbar__center {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .statusbar__sep {
+    display: none;
   }
 
   .statusbar__brand {

@@ -326,9 +326,21 @@
 
 /* ── Responsive ── */
 @media (max-width: 767px) {
+  .broadcasts-section {
+    padding: var(--space-4) var(--space-3);
+  }
+
   .broadcasts-grid {
     grid-template-columns: 1fr;
     gap: var(--space-3);
+  }
+
+  .broadcast-card__name {
+    font-size: var(--text-sm);
+  }
+
+  .broadcast-card__sub {
+    display: none;
   }
 }
 

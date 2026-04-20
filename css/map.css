@@ -210,19 +210,18 @@
   .layer-controls {
     top: var(--space-2);
     left: var(--space-2);
-    max-width: 260px;
+    max-width: 100%;
+    right: var(--space-2);
   }
 
   .layer-btn {
-    height: 28px;
-    padding: var(--space-1) var(--space-2);
+    height: 32px;
+    padding: var(--space-1) var(--space-3);
     font-size: 9px;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .map-legend {
-    top: auto;
-    bottom: var(--space-2);
-    right: var(--space-2);
-    padding: var(--space-2) var(--space-3);
+    display: none;
   }
 }

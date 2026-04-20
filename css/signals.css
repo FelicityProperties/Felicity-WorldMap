@@ -169,6 +169,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 767px) {
+  .signals-section {
+    padding: var(--space-4) var(--space-3);
+  }
+
   .signals-grid {
     grid-template-columns: 1fr;
     gap: var(--space-3);
@@ -179,6 +183,21 @@
   }
 
   .signal-featured__chain {
-    font-size: var(--text-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+
+  .signal-featured__footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .signal-list-card {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .signal-list-card__chain {
+    font-size: var(--text-xs);
   }
 }
