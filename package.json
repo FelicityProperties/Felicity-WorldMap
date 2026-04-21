@@ -10,7 +10,6 @@
     "db:setup": "node db/setup.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@neondatabase/serverless": "^0.10.4",
     "express": "^4.21.0"
   }
