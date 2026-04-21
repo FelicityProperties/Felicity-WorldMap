@@ -83,8 +83,60 @@ app.post('/api/intel', async (req, res) => {
 
 // ── GET /api/data — Dashboard data endpoint ──
 app.get('/api/data', (req, res) => {
-  // This would normally query Neon DB; for now return empty to trigger fallback
   res.status(404).json({ error: 'No database configured, using client-side data' });
+});
+
+// ── Finnhub stock proxy helper ──
+function finnhubProxy(endpoint) {
+  return async (req, res) => {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    if (!apiKey) return res.status(200).json({ error: 'FINNHUB_API_KEY not configured', setup: true });
+    const { symbol } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Missing symbol' });
+    try {
+      const url = `https://finnhub.io/api/v1/${endpoint}?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
+      const r = await fetch(url.includes('metric') ? url + '&metric=all' : url);
+      if (!r.ok) throw new Error(`Finnhub ${r.status}`);
+      res.json(await r.json());
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  };
+}
+
+app.get('/api/stocks/quote', finnhubProxy('quote'));
+app.get('/api/stocks/metric', finnhubProxy('stock/metric'));
+app.get('/api/stocks/earnings', finnhubProxy('stock/earnings'));
+app.get('/api/stocks/recommendation', finnhubProxy('stock/recommendation'));
+app.get('/api/stocks/price-target', finnhubProxy('stock/price-target'));
+
+// ── POST /api/stocks/ai-brief — AI stock analysis via Claude ──
+app.post('/api/stocks/ai-brief', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+
+  const { ticker, name, price, change, eps, fwdEps, pe, fwdPe, nextEarnings, expEps, rating, target, surprises } = req.body;
+  try {
+    const prompt = `Given this data for ${ticker} (${name}):
+- Current price: $${price}, day change ${change}%
+- EPS TTM: ${eps || 'N/A'}, Forward EPS: ${fwdEps || 'N/A'}
+- P/E: ${pe || 'N/A'}, Forward P/E: ${fwdPe || 'N/A'}
+- Next earnings: ${nextEarnings || 'N/A'}, expected EPS ${expEps || 'N/A'}
+- Analyst consensus: ${rating || 'N/A'}, avg price target $${target || 'N/A'}
+- Last 4 quarter EPS surprises: ${surprises || 'N/A'}
+
+Write a 3-sentence analytical intelligence brief: (1) current setup, (2) key risk into earnings, (3) one catalyst to watch. No hedging, no disclaimers. Analytical only.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await response.json();
+    res.json({ brief: data.content?.[0]?.text || 'Analysis unavailable.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Static file serving ──

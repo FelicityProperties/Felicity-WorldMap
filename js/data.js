@@ -185,6 +185,9 @@ export const dubaiSignals = [
   { trigger: "India GDP Growth 7.2%", chain: "South Asian HNW migration \u2192 mid-market Dubai demand \u2192 JVC & Town Square surge", sector: "Mid-Market Residential", impact: "+2.4%", sentiment: "bullish", time: "5h" },
   { trigger: "Oil Below $60", chain: "GCC sovereign fund contraction \u2192 project delays possible \u2192 off-plan caution", sector: "Off-Plan Development", impact: "-1.8%", sentiment: "bearish", time: "8h" },
   { trigger: "UK Stamp Duty Hike", chain: "British investors seek alternatives \u2192 Dubai freehold attraction \u2192 Marina & Downtown", sector: "International Investment", impact: "+2.9%", sentiment: "bullish", time: "10h" },
+  { trigger: "NVDA Earnings Beat +15%", chain: "AI demand confirmed \u2192 tech sector momentum \u2192 Dubai tech hub demand \u2192 DIFC & Silicon Oasis", sector: "Tech Commercial", impact: "+2.1%", sentiment: "bullish", time: "1h" },
+  { trigger: "XOM/CVX Reporting This Week", chain: "Crude price sensitivity \u2192 GCC revenue flow-through \u2192 sovereign spending impact on all areas", sector: "All Prime Areas", impact: "0.0%", sentiment: "neutral", time: "2h" },
+  { trigger: "Regional Bank Stress (KRE -3%)", chain: "Tighter credit \u2192 off-plan financing concerns \u2192 JVC & secondary mid-market caution", sector: "Off-Plan Mid-Market", impact: "-1.2%", sentiment: "bearish", time: "4h" },
 ];
 
 // ── Region Intelligence ──

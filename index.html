@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="css/broadcasts.css">
   <link rel="stylesheet" href="css/dubai.css">
   <link rel="stylesheet" href="css/signals.css">
+  <link rel="stylesheet" href="css/sp500.css">
 </head>
 <body>
 
@@ -81,6 +82,12 @@
         <circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13"/>
       </svg>
       <span class="nav-btn__label">World Map</span>
+    </button>
+    <button class="nav-btn" data-tab="sp500">
+      <svg class="nav-btn__icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M2 12l3-4 3 2 4-6M14 4v2.5M14 4h-2.5"/>
+      </svg>
+      <span class="nav-btn__label">S&P 500</span>
     </button>
     <button class="nav-btn" data-tab="dubai">
       <svg class="nav-btn__icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -279,6 +286,28 @@
           </div>
         </aside>
       </main>
+    </div>
+
+    <!-- ── TAB: Dubai Intel ── -->
+    <!-- ── TAB: S&P 500 ── -->
+    <div class="tab-panel tab-panel--scroll" id="tab-sp500">
+      <section class="sp500-section section">
+        <div class="section__header">
+          <h2>S&P 500 Intelligence</h2>
+          <p>Live stock data, earnings, and AI analysis</p>
+          <div class="section__header-line"></div>
+        </div>
+        <div class="sp500-header" id="sp500-header"></div>
+        <div class="sp500-layout">
+          <div class="sp500-list" id="sp500-list"></div>
+          <div class="sp500-detail" id="sp500-detail">
+            <div class="sp500-detail__empty">
+              <div class="sp500-detail__empty-icon">📊</div>
+              <div>Select a stock to view detailed analysis</div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- ── TAB: Dubai Intel ── -->
