@@ -95,15 +95,15 @@ export const regionMap = {
 
 // ── Arrays (mutated in place via splice+push) ──
 export const markets = [
-  { sym: "BTC",    name: "Bitcoin",         price: 83420,  chg: 1.24,  type: "crypto" },
-  { sym: "ETH",    name: "Ethereum",        price: 1612,   chg: -0.87, type: "crypto" },
-  { sym: "XAU",    name: "Gold",            price: 3234,   chg: 0.43,  type: "commodity" },
-  { sym: "WTI",    name: "Crude Oil",       price: 61.2,   chg: -1.12, type: "commodity" },
-  { sym: "DXY",    name: "US Dollar Index", price: 99.4,   chg: -0.31, type: "index" },
-  { sym: "SPX",    name: "S&P 500",         price: 5282,   chg: 0.65,  type: "index" },
-  { sym: "FTSE",   name: "FTSE 100",        price: 8247,   chg: 0.22,  type: "index" },
-  { sym: "NIKKEI", name: "Nikkei 225",      price: 34880,  chg: -0.44, type: "index" },
-  { sym: "AED",    name: "AED/USD",         price: 3.6725, chg: 0.00,  type: "forex" },
+  { sym: "BTC", name: "Bitcoin", price: 83420, chg: 1.24, type: "crypto", reCorrelation: "Crypto wealth concentration drives Marina & JVC demand", reAreas: ["Dubai Marina", "JVC", "Business Bay"], reDirection: "BULLISH-MID" },
+  { sym: "ETH", name: "Ethereum", price: 1612, chg: -0.87, type: "crypto", reCorrelation: "DeFi/Web3 professionals relocating to Dubai free zones", reAreas: ["Dubai Marina", "JVC", "DIFC"], reDirection: "BULLISH-MID" },
+  { sym: "XAU", name: "Gold", price: 3234, chg: 0.43, type: "commodity", reCorrelation: "Safe-haven alignment with Dubai premium gold souk economy", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-LUXURY" },
+  { sym: "WTI", name: "Crude Oil", price: 61.2, chg: -1.12, type: "commodity", reCorrelation: "Direct GCC sovereign wealth and fiscal spending correlation", reAreas: ["All prime areas", "Dubai South", "Expo City"], reDirection: "WATCH" },
+  { sym: "DXY", name: "US Dollar Index", price: 99.4, chg: -0.31, type: "index", reCorrelation: "Dollar-pegged AED: weak USD = capital preservation appeal", reAreas: ["All segments"], reDirection: "BULLISH-PRIME" },
+  { sym: "SPX", name: "S&P 500", price: 5282, chg: 0.65, type: "index", reCorrelation: "US tech wealth migration to Dubai golden visa holders", reAreas: ["Palm Jumeirah", "Emaar Beachfront", "Dubai Hills"], reDirection: "BULLISH-LUXURY" },
+  { sym: "FTSE", name: "FTSE 100", price: 8247, chg: 0.22, type: "index", reCorrelation: "UK non-dom tax flight to Dubai freehold properties", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-PRIME" },
+  { sym: "NIKKEI", name: "Nikkei 225", price: 34880, chg: -0.44, type: "index", reCorrelation: "Japanese institutional allocation to Dubai commercial RE", reAreas: ["DIFC", "Business Bay"], reDirection: "NEUTRAL" },
+  { sym: "AED", name: "AED/USD", price: 3.6725, chg: 0.00, type: "forex", reCorrelation: "Peg stability reinforces Dubai as dollar-denominated safe haven", reAreas: ["All segments"], reDirection: "NEUTRAL" },
 ];
 
 export const news = [
