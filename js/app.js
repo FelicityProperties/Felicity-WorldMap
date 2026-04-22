@@ -188,35 +188,143 @@ function initSidebarToggle() {
 }
 
 // ── Signals Section Rendering ──
+function signalSentimentClass(sentiment) {
+  if (sentiment === 'bullish') return 'bullish';
+  if (sentiment === 'bearish') return 'bearish';
+  return 'neutral';
+}
+
+function signalActionClass(action) {
+  if (!action) return 'neutral';
+  const a = action.toUpperCase();
+  if (a.includes('BULLISH') || a.includes('ACCUMULATE')) return 'bullish';
+  if (a.includes('BEARISH')) return 'bearish';
+  if (a.includes('WATCH') || a.includes('HOLD')) return 'watch';
+  return 'neutral';
+}
+
+let signalFilters = { sentiment: 'all', segment: 'all', horizon: 'all' };
+
 function initSignals() {
   const grid = document.getElementById('signals-grid');
   if (!grid || !dubaiSignals.length) return;
 
+  // Insert filter controls before the grid
+  const section = document.getElementById('section-signals');
+  if (section && !document.getElementById('signal-filters')) {
+    const filterHtml = `
+      <div class="signal-filters" id="signal-filters">
+        <div class="signal-filter-group">
+          <button class="signal-filter-btn active" data-filter="sentiment" data-value="all">All</button>
+          <button class="signal-filter-btn" data-filter="sentiment" data-value="bullish">Bullish</button>
+          <button class="signal-filter-btn" data-filter="sentiment" data-value="neutral">Watch</button>
+          <button class="signal-filter-btn" data-filter="sentiment" data-value="bearish">Bearish</button>
+        </div>
+        <div class="signal-filter-group">
+          <button class="signal-filter-btn active" data-filter="segment" data-value="all">All</button>
+          <button class="signal-filter-btn" data-filter="segment" data-value="Luxury">Luxury</button>
+          <button class="signal-filter-btn" data-filter="segment" data-value="Premium">Premium</button>
+          <button class="signal-filter-btn" data-filter="segment" data-value="Mid-market">Mid</button>
+          <button class="signal-filter-btn" data-filter="segment" data-value="Affordable">Affordable</button>
+        </div>
+        <div class="signal-filter-group">
+          <button class="signal-filter-btn active" data-filter="horizon" data-value="all">All</button>
+          <button class="signal-filter-btn" data-filter="horizon" data-value="immediate">Immediate</button>
+          <button class="signal-filter-btn" data-filter="horizon" data-value="short">Short</button>
+          <button class="signal-filter-btn" data-filter="horizon" data-value="medium">Medium</button>
+          <button class="signal-filter-btn" data-filter="horizon" data-value="long">Long</button>
+        </div>
+      </div>
+    `;
+    grid.insertAdjacentHTML('beforebegin', filterHtml);
+
+    // Filter click handler
+    document.getElementById('signal-filters').addEventListener('click', e => {
+      const btn = e.target.closest('.signal-filter-btn');
+      if (!btn) return;
+      const filterType = btn.dataset.filter;
+      const filterValue = btn.dataset.value;
+
+      // Update active state within group
+      btn.closest('.signal-filter-group').querySelectorAll('.signal-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      signalFilters[filterType] = filterValue;
+      renderSignalCards(grid);
+    });
+  }
+
+  // Signal card expand click handler
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.signal-list-card');
+    if (!card) return;
+    card.classList.toggle('is-expanded');
+  });
+
+  renderSignalCards(grid);
+}
+
+function renderSignalCards(grid) {
+  const filtered = dubaiSignals.filter(s => {
+    if (signalFilters.sentiment !== 'all' && s.sentiment !== signalFilters.sentiment) return false;
+    if (signalFilters.segment !== 'all' && (s.segment || '') !== signalFilters.segment) return false;
+    if (signalFilters.horizon !== 'all' && (s.timeHorizon || '') !== signalFilters.horizon) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="signal-empty">No signals match current filters</div>';
+    return;
+  }
+
   // Featured signal (first item)
-  const featured = dubaiSignals[0];
-  const rest = dubaiSignals.slice(1);
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
+
+  const areasHtml = (areas) => (areas || []).map(a => `<span class="signal-area-tag">${a}</span>`).join('');
+  const sentArrow = (s) => s.sentiment === 'bullish' ? '\u25B2' : s.sentiment === 'bearish' ? '\u25BC' : '\u25CF';
 
   const featuredHtml = `
-    <div class="signal-featured">
+    <div class="signal-featured signal-featured--${featured.sentiment}">
       <div class="signal-featured__header">
         <span class="signal-featured__trigger">${featured.trigger}</span>
         <span class="signal-featured__time">${featured.time} ago</span>
       </div>
       <div class="signal-featured__chain">${featured.chain}</div>
+      <div class="signal-featured__areas">${areasHtml(featured.areas)}</div>
       <div class="signal-featured__footer">
         <span class="signal-featured__sector">${featured.sector}</span>
-        <span class="signal-featured__impact signal-featured__impact--${featured.sentiment}">${featured.impact} ${featured.sentiment === 'bullish' ? '\u25B2' : '\u25BC'}</span>
+        <span class="signal-action-badge signal-action-badge--${signalActionClass(featured.action)}">${featured.action || ''}</span>
+        <span class="signal-featured__impact signal-featured__impact--${featured.sentiment}">${featured.impact} ${sentArrow(featured)}</span>
+      </div>
+      <div class="signal-featured__detail">
+        <div class="signal-detail-row"><span class="signal-detail-label">Magnitude</span><span class="signal-detail-value">${featured.magnitude || ''}</span></div>
+        <div class="signal-detail-row"><span class="signal-detail-label">Time Horizon</span><span class="signal-detail-value">${featured.timeHorizon || ''}</span></div>
+        <div class="signal-detail-row"><span class="signal-detail-label">Region</span><span class="signal-detail-value">${featured.triggerRegion || ''}</span></div>
+        ${featured.historicalAnalog ? `<div class="signal-historical">${featured.historicalAnalog}</div>` : ''}
       </div>
     </div>
   `;
 
   const listHtml = rest.map((s, i) => `
-    <div class="signal-list-card" style="animation-delay:${(i + 1) * 60}ms">
-      <div class="signal-list-card__trigger">${s.trigger}</div>
+    <div class="signal-list-card signal-list-card--${s.sentiment}" style="animation-delay:${(i + 1) * 60}ms">
+      <div class="signal-list-card__header">
+        <div class="signal-list-card__trigger">${s.trigger}</div>
+        <span class="signal-list-card__time">${s.time} ago</span>
+      </div>
       <div class="signal-list-card__chain">${s.chain}</div>
+      <div class="signal-list-card__areas">${areasHtml(s.areas)}</div>
       <div class="signal-list-card__footer">
         <span class="signal-list-card__sector">${s.sector}</span>
-        <span class="signal-list-card__sentiment signal-list-card__sentiment--${s.sentiment}">${s.impact} ${s.sentiment === 'bullish' ? '\u25B2' : '\u25BC'}</span>
+        <span class="signal-action-badge signal-action-badge--${signalActionClass(s.action)}">${s.action || ''}</span>
+        <span class="signal-list-card__sentiment signal-list-card__sentiment--${s.sentiment}">${s.impact} ${sentArrow(s)}</span>
+      </div>
+      <div class="signal-list-card__magnitude">
+        <span class="signal-detail-label">Magnitude</span> ${s.magnitude || ''}
+        <span class="signal-detail-label" style="margin-left:12px">Horizon</span> ${s.timeHorizon || ''}
+      </div>
+      <div class="signal-list-card__expandable">
+        ${s.historicalAnalog ? `<div class="signal-historical">${s.historicalAnalog}</div>` : ''}
       </div>
     </div>
   `).join('');

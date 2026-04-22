@@ -311,6 +311,10 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 
+.signal-card--bullish { border-left-color: var(--semantic-green); }
+.signal-card--bearish { border-left-color: var(--semantic-red); }
+.signal-card--neutral { border-left-color: var(--semantic-amber); }
+
 .signal-card:hover {
   background: var(--bg-secondary);
 }
@@ -369,6 +373,27 @@
   background: var(--semantic-red-glow);
 }
 
+.signal-card__sentiment.neutral {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+}
+
+.signal-card__areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: var(--space-2);
+}
+
+.signal-card__magnitude {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
+}
+
 .sidebar__footer {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border-subtle);
@@ -383,4 +408,68 @@
 
 .sidebar__footer .brand {
   color: var(--accent-gold);
+}
+
+/* ── RE Impact Badges & Text ── */
+.news-card__re-impact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+}
+
+.news-card__re-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-gold);
+  line-height: 1.4;
+}
+
+.re-signal-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.re-signal-badge--bullish {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.re-signal-badge--watch {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+}
+
+.re-signal-badge--bearish {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+.re-signal-badge--neutral {
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+}
+
+.market-row__re {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  grid-column: 1 / -1;
+}
+
+.market-row__re-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  line-height: 1.3;
 }

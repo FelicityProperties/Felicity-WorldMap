@@ -152,6 +152,15 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function reSignalClass(signal) {
+  if (!signal) return 'neutral';
+  const s = signal.toUpperCase();
+  if (s.startsWith('BULLISH')) return 'bullish';
+  if (s === 'WATCH' || s === 'WATCH-BULLISH') return 'watch';
+  if (s.startsWith('BEARISH')) return 'bearish';
+  return 'neutral';
+}
+
 function renderNews() {
   const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const hasLive = news.length > 0 && news[0].source;
@@ -171,10 +180,16 @@ function renderNews() {
   const cards = news.map((n, i) => {
     const src = n.source ? ` \u00b7 ${escapeHtml(n.source)}` : '';
     const hasUrl = n.url ? ' has-link' : '';
+    const signalClass = reSignalClass(n.reSignal);
+    const reHtml = n.reImpact ? `
+        <div class="news-card__re-impact">
+          <span class="re-signal-badge re-signal-badge--${signalClass}">${n.reSignal || 'NEUTRAL'}</span>
+          <span class="news-card__re-text">${escapeHtml(n.reImpact)}</span>
+        </div>` : '';
     return `
       <div class="card-item${hasUrl}" data-news-idx="${i}">
         <div class="news-card__category news-card__category--${n.cat}">${escapeHtml(n.lbl)} \u00b7 ${escapeHtml(n.region)}</div>
-        <div class="news-card__title">${escapeHtml(n.title)}</div>
+        <div class="news-card__title">${escapeHtml(n.title)}</div>${reHtml}
         <div class="news-card__meta">${escapeHtml(n.time)} ago${src}</div>
       </div>
     `;
@@ -201,6 +216,12 @@ function renderMarkets() {
     const sign = m.chg >= 0 ? '+' : '';
     const val = formatPrice(m.price, m.sym);
     const arrow = m.chg >= 0 ? '\u25B2' : '\u25BC';
+    const dirClass = reSignalClass(m.reDirection);
+    const reHtml = m.reCorrelation ? `
+        <div class="market-row__re">
+          <span class="re-signal-badge re-signal-badge--${dirClass}">${m.reDirection || 'NEUTRAL'}</span>
+          <span class="market-row__re-text">${m.reCorrelation}</span>
+        </div>` : '';
     return `
       <div class="card-item">
         <div class="market-row">
@@ -212,7 +233,7 @@ function renderMarkets() {
             <div class="market-row__price">$${val}</div>
             <div class="market-row__change ${cls}">${arrow} ${sign}${m.chg.toFixed(2)}%</div>
           </div>
-        </div>
+        </div>${reHtml}
       </div>
     `;
   }).join('');
@@ -302,27 +323,46 @@ function renderShips() {
 function renderSignals() {
   const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const bullish = dubaiSignals.filter(s => s.sentiment === 'bullish').length;
-  const bearish = dubaiSignals.length - bullish;
+  const bearish = dubaiSignals.filter(s => s.sentiment === 'bearish').length;
+  const neutral = dubaiSignals.length - bullish - bearish;
 
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${bullish} bullish \u00b7 ${bearish} bearish \u00b7 ${ts}
+        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${bullish} bullish \u00b7 ${neutral} neutral \u00b7 ${bearish} bearish \u00b7 ${ts}
       </div>
       <button class="news-refresh-btn" id="signals-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
-  const cards = dubaiSignals.map(s => `
-    <div class="signal-card">
+  const sentArrow = (s) => s.sentiment === 'bullish' ? '\u25b2' : s.sentiment === 'bearish' ? '\u25bc' : '\u25cf';
+  const actionCls = (a) => {
+    if (!a) return 'neutral';
+    const u = a.toUpperCase();
+    if (u.includes('BULLISH') || u.includes('ACCUMULATE')) return 'bullish';
+    if (u.includes('BEARISH')) return 'bearish';
+    if (u.includes('WATCH') || u.includes('HOLD')) return 'watch';
+    return 'neutral';
+  };
+
+  const cards = dubaiSignals.map(s => {
+    const areasHtml = (s.areas || []).map(a => `<span class="signal-area-tag">${a}</span>`).join('');
+    const actionHtml = s.action ? `<span class="signal-action-badge signal-action-badge--${actionCls(s.action)}">${s.action}</span>` : '';
+    const magHtml = s.magnitude ? `<div class="signal-card__magnitude"><span class="signal-detail-label">Magnitude</span> ${s.magnitude}</div>` : '';
+    return `
+    <div class="signal-card signal-card--${s.sentiment || 'neutral'}">
       <div class="signal-card__trigger">${s.trigger}</div>
       <div class="signal-card__chain">${s.chain}</div>
+      ${areasHtml ? `<div class="signal-card__areas">${areasHtml}</div>` : ''}
       <div class="signal-card__footer">
         <span class="signal-card__sector">${s.sector}</span>
-        <span class="signal-card__sentiment ${s.sentiment}">${s.impact} ${s.sentiment === 'bullish' ? '\u25b2' : '\u25bc'}</span>
+        ${actionHtml}
+        <span class="signal-card__sentiment ${s.sentiment}">${s.impact} ${sentArrow(s)}</span>
       </div>
+      ${magHtml}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   return header + cards;
 }

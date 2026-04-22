@@ -146,8 +146,11 @@ export function renderDynLayers() {
         fillOpacity: 0.25,
         weight: 1.5
       }).addTo(map);
+      const reInfo = c.reCapitalFlow ? `<br><span style="color:#d4af37">Capital Flow:</span> ${c.reCapitalFlow}` : '';
+      const reAreasInfo = c.reAreas ? `<br><span style="color:#d4af37">Dubai Areas:</span> ${c.reAreas.join(', ')}` : '';
+      const reHistInfo = c.reHistoricalImpact ? `<br><span style="color:#d4af37;font-size:10px">${c.reHistoricalImpact}</span>` : '';
       m.bindTooltip(
-        `<b>${c.name}</b><br>Severity ${c.sev}/10`,
+        `<b>${c.name}</b><br>Severity ${c.sev}/10${reInfo}${reAreasInfo}${reHistInfo}`,
         { direction: 'top' }
       );
       m.on('click', () => {
