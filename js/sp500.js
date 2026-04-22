@@ -223,13 +223,20 @@ async function selectStock(ticker) {
     ${earningsHtml}
     ${ratingsHtml}
     <div class="sp500-detail__ai">
-      <button class="sp500-ai-btn" id="sp500-ai-btn">Generate AI Brief</button>
+      <div class="sp500-detail__ai-buttons">
+        <button class="sp500-ai-btn" id="sp500-ai-btn">Generate AI Brief</button>
+        <button class="sp500-pdf-btn" id="sp500-pdf-btn" style="display:none">Export PDF</button>
+      </div>
       <div class="sp500-ai-text" id="sp500-ai-text"></div>
     </div>
   `;
 
   document.getElementById('sp500-ai-btn')?.addEventListener('click', () => {
     generateAIBrief(ticker, company, q, m, e, rec, pt);
+  });
+
+  document.getElementById('sp500-pdf-btn')?.addEventListener('click', () => {
+    exportPDF(ticker, company, q, m, e, rec, pt);
   });
 }
 
@@ -357,6 +364,129 @@ async function generateAIBrief(ticker, company, q, m, earningsArr, rec, pt) {
 
   btn.textContent = 'Regenerate Brief';
   btn.disabled = false;
+
+  // Show PDF export button
+  const pdfBtn = document.getElementById('sp500-pdf-btn');
+  if (pdfBtn && text.textContent && !text.textContent.includes('error') && !text.textContent.includes('requires')) {
+    pdfBtn.style.display = '';
+  }
+}
+
+// ── PDF Export ──
+function exportPDF(ticker, company, q, m, earningsArr, rec, pt) {
+  const briefText = document.getElementById('sp500-ai-text')?.textContent || '';
+  const now = new Date();
+  const date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const fmt = (v, d = 2) => v != null && !isNaN(v) ? Number(v).toFixed(d) : 'N/A';
+  const fmtB = v => {
+    if (!v || isNaN(v)) return 'N/A';
+    if (v >= 1e12) return '$' + (v / 1e12).toFixed(1) + 'T';
+    if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+    return '$' + v.toLocaleString();
+  };
+
+  const price = q?.c?.toFixed(2) || 'N/A';
+  const dayPct = q?.dp?.toFixed(2) || '0';
+  const chgColor = q?.dp >= 0 ? '#22c55e' : '#ef4444';
+  const chgSign = q?.dp >= 0 ? '+' : '';
+
+  const earningsRows = (earningsArr || []).slice(0, 6).map(e => {
+    const beat = e.surprisePercent > 0;
+    return `<tr>
+      <td>${e.period || 'N/A'}</td>
+      <td>$${e.actual?.toFixed(2) || 'N/A'}</td>
+      <td>$${e.estimate?.toFixed(2) || 'N/A'}</td>
+      <td style="color:${beat ? '#22c55e' : '#ef4444'}">${e.surprisePercent?.toFixed(1) || 'N/A'}%</td>
+      <td style="color:${beat ? '#22c55e' : '#ef4444'}">${beat ? 'BEAT' : 'MISS'}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${ticker} Intelligence Brief — Felicity WorldMap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; color: #1a1a2e; padding: 40px; max-width: 800px; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #00d4ff; padding-bottom: 20px; margin-bottom: 30px; }
+  .header-left h1 { font-size: 28px; color: #0a0e16; margin-bottom: 4px; }
+  .header-left .company { font-size: 16px; color: #555; }
+  .header-left .sector { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .header-right .price { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; }
+  .header-right .change { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: ${chgColor}; }
+  .brand { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #00d4ff; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px; }
+  .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #999; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: #00d4ff; margin: 28px 0 12px; font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid #e5e5e5; padding-bottom: 6px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px; }
+  .metric { background: #f8f9fa; border-radius: 6px; padding: 12px; text-align: center; }
+  .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; text-align: left; padding: 8px 12px; border-bottom: 2px solid #e5e5e5; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .brief { background: #f0f9ff; border-left: 4px solid #00d4ff; padding: 16px 20px; border-radius: 4px; font-size: 14px; line-height: 1.7; color: #333; margin-top: 8px; }
+  .targets { display: flex; gap: 16px; margin-top: 8px; }
+  .target { flex: 1; background: #f8f9fa; border-radius: 6px; padding: 12px; text-align: center; }
+  .target-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #888; text-transform: uppercase; }
+  .target-value { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .target-avg { border: 2px solid #00d4ff; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #aaa; display: flex; justify-content: space-between; }
+  @media print { body { padding: 20px; } }
+</style></head><body>
+<div class="brand">Felicity WorldMap — Stock Intelligence Brief</div>
+<div class="meta">${date} at ${time} UTC</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>${ticker}</h1>
+    <div class="company">${company.name}</div>
+    <div class="sector">${company.sector} · ${company.subIndustry} · ${company.hq}</div>
+  </div>
+  <div class="header-right">
+    <div class="price">$${price}</div>
+    <div class="change">${chgSign}${dayPct}%</div>
+  </div>
+</div>
+
+<h2>Key Metrics</h2>
+<div class="metrics">
+  <div class="metric"><div class="metric-label">EPS (TTM)</div><div class="metric-value">${fmt(m?.epsBasicExclExtraItemsTTM)}</div></div>
+  <div class="metric"><div class="metric-label">P/E Ratio</div><div class="metric-value">${fmt(m?.peTTM)}</div></div>
+  <div class="metric"><div class="metric-label">Market Cap</div><div class="metric-value">${fmtB((m?.marketCapitalization || 0) * 1e6)}</div></div>
+  <div class="metric"><div class="metric-label">Beta</div><div class="metric-value">${fmt(m?.beta)}</div></div>
+  <div class="metric"><div class="metric-label">Div Yield</div><div class="metric-value">${fmt(m?.dividendYieldIndicatedAnnual)}%</div></div>
+  <div class="metric"><div class="metric-label">52w High</div><div class="metric-value">$${fmt(m?.['52WeekHigh'])}</div></div>
+  <div class="metric"><div class="metric-label">52w Low</div><div class="metric-value">$${fmt(m?.['52WeekLow'])}</div></div>
+  <div class="metric"><div class="metric-label">Volume</div><div class="metric-value">${fmtB(q?.v)}</div></div>
+</div>
+
+${earningsRows ? `<h2>Earnings History</h2>
+<table><thead><tr><th>Quarter</th><th>Actual</th><th>Estimate</th><th>Surprise</th><th>Result</th></tr></thead>
+<tbody>${earningsRows}</tbody></table>` : ''}
+
+${pt?.targetMean ? `<h2>Analyst Price Targets</h2>
+<div class="targets">
+  <div class="target"><div class="target-label">Low</div><div class="target-value">$${pt.targetLow?.toFixed(0) || 'N/A'}</div></div>
+  <div class="target target-avg"><div class="target-label">Average</div><div class="target-value" style="color:#00d4ff">$${pt.targetMean?.toFixed(0) || 'N/A'}</div></div>
+  <div class="target"><div class="target-label">High</div><div class="target-value">$${pt.targetHigh?.toFixed(0) || 'N/A'}</div></div>
+</div>` : ''}
+
+${briefText ? `<h2>AI Intelligence Brief</h2>
+<div class="brief">${briefText}</div>` : ''}
+
+<div class="footer">
+  <span>Generated by Felicity WorldMap Intelligence Platform</span>
+  <span>felicity-world-map.vercel.app</span>
+</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
 }
 
 async function fetchJSON(url) {
