@@ -16,6 +16,7 @@ import { initRegionDrawer } from './regions.js';
 import { initSP500 } from './sp500.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
+import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
 
 // ── State ──
 let activeTab = 'overview';
@@ -43,6 +44,9 @@ async function boot() {
   initDubaiIntel();
   initSP500();
   initSignals();
+  initDesk();
+  initDeskCalls();
+  initPlaybook();
 
   // Init panels + modals + region drawer
   initPanels();
@@ -330,6 +334,102 @@ function renderSignalCards(grid) {
   `).join('');
 
   grid.innerHTML = featuredHtml + listHtml;
+}
+
+// ── Ask the Desk ──
+function initDesk() {
+  const input = document.getElementById('desk-input');
+  const btn = document.getElementById('desk-btn');
+  const responseEl = document.getElementById('desk-response');
+  const convictionEl = document.getElementById('desk-conviction');
+  const textEl = document.getElementById('desk-text');
+  const suggestionsEl = document.getElementById('desk-suggestions');
+
+  if (!input || !btn) return;
+
+  async function askDesk(question) {
+    if (!question.trim()) return;
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+    responseEl.style.display = 'block';
+    convictionEl.innerHTML = '';
+    textEl.textContent = 'Analyzing macro conditions and Dubai RE implications...';
+
+    try {
+      const res = await fetch('/api/desk/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      const conviction = data.conviction || extractConviction(data.response || '');
+      if (conviction) convictionEl.innerHTML = renderConvictionBadge(conviction);
+      textEl.textContent = data.response || 'No response generated.';
+    } catch (e) {
+      textEl.textContent = 'Error connecting to the Desk. Check API configuration.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Ask →';
+  }
+
+  btn.addEventListener('click', () => askDesk(input.value));
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') askDesk(input.value); });
+
+  if (suggestionsEl) {
+    suggestionsEl.addEventListener('click', e => {
+      const s = e.target.closest('.desk-ask__suggestion');
+      if (!s) return;
+      input.value = s.dataset.q;
+      askDesk(s.dataset.q);
+    });
+  }
+}
+
+// ── Active Calls ──
+function initDeskCalls() {
+  const grid = document.getElementById('desk-calls-grid');
+  if (!grid) return;
+
+  grid.innerHTML = DESK_CALLS.map(c => {
+    const callClass = c.call.toLowerCase();
+    const dots = Array.from({length: 5}, (_, i) =>
+      `<span class="conviction-dot ${i < c.conviction ? 'conviction-dot--active' : ''}"></span>`
+    ).join('');
+
+    return `
+      <div class="desk-call-card">
+        <div class="desk-call-card__header">
+          <div class="desk-call-card__area">${c.area}</div>
+          <span class="desk-call-card__call desk-call-card__call--${callClass}">${c.call}</span>
+        </div>
+        <div class="desk-call-card__conviction">
+          <div class="conviction-dots">${dots}</div>
+          <span class="desk-call-card__conviction-label">${c.conviction}/5</span>
+        </div>
+        <div class="desk-call-card__thesis">${c.thesis}</div>
+        <div class="desk-call-card__risk"><span class="desk-call-card__risk-label">Risk:</span> ${c.risk}</div>
+        <div class="desk-call-card__badges">
+          <span class="desk-call-card__badge">${c.horizon}</span>
+          <span class="desk-call-card__badge">${c.segment}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Historical Playbook ──
+function initPlaybook() {
+  const el = document.getElementById('desk-playbook');
+  if (!el) return;
+
+  el.innerHTML = HISTORICAL_ANALOGS.map(a => `
+    <div class="desk-playbook__item">
+      <div class="desk-playbook__event">${a.event}</div>
+      <div class="desk-playbook__impact">${a.impact}</div>
+      <div class="desk-playbook__lesson">${a.lesson}</div>
+    </div>
+  `).join('');
 }
 
 // ── Init on DOM Ready ──

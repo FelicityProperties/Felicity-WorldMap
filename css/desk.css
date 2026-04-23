@@ -1,0 +1,422 @@
+/* ═══════════════════════════════════════════════════════════
+   DESK — Hedge Fund Analytical Engine Styles
+   Ask the Desk, Active Calls, Historical Playbook
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Ask the Desk Section ── */
+.desk-section {
+  background: var(--bg-deepest);
+}
+
+.desk-ask {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 800px;
+  margin: 0 auto var(--space-5);
+}
+
+.desk-ask__input {
+  flex: 1;
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.desk-ask__input::placeholder {
+  color: var(--text-muted);
+}
+
+.desk-ask__input:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.desk-ask__btn {
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--bg-deepest);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.desk-ask__btn:hover {
+  background: #33dfff;
+  box-shadow: var(--shadow-glow-accent);
+  transform: translateY(-1px);
+}
+
+.desk-ask__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Suggestion Pills ── */
+.desk-ask__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto var(--space-6);
+}
+
+.desk-ask__suggestion {
+  padding: var(--space-1) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.desk-ask__suggestion:hover {
+  color: var(--accent-primary);
+  border-color: var(--border-accent);
+  background: var(--accent-glow);
+}
+
+/* ── Response Card ── */
+.desk-response {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  animation: fade-in-up 0.4s var(--ease-out) both;
+}
+
+.desk-response--loading {
+  border-left-color: var(--accent-gold);
+}
+
+.desk-response__conviction {
+  margin-bottom: var(--space-4);
+}
+
+.desk-response__text {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+}
+
+/* ── Conviction Badge ── */
+.conviction-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent-glow);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.conviction-dots {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.conviction-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: background var(--duration-normal) var(--ease-out);
+}
+
+.conviction-dot--active {
+  background: var(--accent-primary);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+}
+
+.conviction-level {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.conviction-desc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVE CALLS — Desk Call Cards Grid
+   ═══════════════════════════════════════════════════════════ */
+
+.desk-calls-section {
+  background: var(--bg-deepest);
+}
+
+.desk-calls-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+
+.desk-call-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.desk-call-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.desk-call-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.desk-call-card__area {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.desk-call-card__call {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.desk-call-card__call--long,
+.desk-call-card__call--accumulate {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.desk-call-card__call--short,
+.desk-call-card__call--avoid {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.desk-call-card__call--trim {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.desk-call-card__call--hold {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
+}
+
+.desk-call-card__conviction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.desk-call-card__conviction .conviction-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.desk-call-card__conviction-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.desk-call-card__thesis {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.desk-call-card__risk {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--semantic-red);
+  line-height: var(--leading-normal);
+  padding: var(--space-2) var(--space-3);
+  background: var(--semantic-red-glow);
+  border-radius: var(--radius-xs);
+}
+
+.desk-call-card__risk-label {
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: var(--space-1);
+}
+
+.desk-call-card__badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.desk-call-card__badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HISTORICAL PLAYBOOK — Timeline Cards
+   ═══════════════════════════════════════════════════════════ */
+
+.desk-playbook-section {
+  background: var(--bg-deepest);
+}
+
+.desk-playbook {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.desk-playbook__item {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.desk-playbook__item:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.desk-playbook__item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent-gold);
+  opacity: 0.6;
+}
+
+.desk-playbook__event {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.desk-playbook__impact {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+}
+
+.desk-playbook__lesson {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — Stack on mobile
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .desk-calls-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .desk-ask {
+    flex-direction: column;
+  }
+
+  .desk-ask__btn {
+    width: 100%;
+  }
+
+  .desk-ask__suggestions {
+    justify-content: flex-start;
+  }
+
+  .desk-calls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .desk-playbook {
+    grid-template-columns: 1fr;
+  }
+
+  .desk-response {
+    padding: var(--space-4);
+  }
+
+  .conviction-badge {
+    flex-wrap: wrap;
+  }
+}

@@ -38,8 +38,8 @@ Write a 3-sentence analytical intelligence brief: (1) current setup, (2) key ris
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 250,
+        model: 'claude-opus-4-7',
+        max_tokens: 800,
         messages: [{ role: 'user', content: prompt }]
       })
     });

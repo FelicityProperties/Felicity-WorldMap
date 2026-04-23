@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="css/dubai.css">
   <link rel="stylesheet" href="css/signals.css">
   <link rel="stylesheet" href="css/sp500.css">
+  <link rel="stylesheet" href="css/desk.css">
 </head>
 <body>
 
@@ -218,6 +219,50 @@
           <div class="section__header-line"></div>
         </div>
         <div class="macro-grid" id="macro-grid"></div>
+      </section>
+
+      <!-- Ask the Desk -->
+      <section class="desk-section section">
+        <div class="section__header">
+          <h2>Ask the Desk</h2>
+          <p>Institutional-grade Dubai RE intelligence on demand</p>
+          <div class="section__header-line"></div>
+        </div>
+        <div class="desk-ask">
+          <input type="text" class="desk-ask__input" id="desk-input" placeholder="What's the single best Dubai area to own going into 2026?">
+          <button class="desk-ask__btn" id="desk-btn">Ask &rarr;</button>
+        </div>
+        <div class="desk-ask__suggestions" id="desk-suggestions">
+          <button class="desk-ask__suggestion" data-q="What's the single best Dubai area to own going into 2026?">Best area 2026?</button>
+          <button class="desk-ask__suggestion" data-q="If WTI goes to $50, which Dubai areas get hurt most?">Oil to $50 impact?</button>
+          <button class="desk-ask__suggestion" data-q="Creek Harbour vs Emaar Beachfront — 3 year horizon, which wins?">Creek vs Beachfront?</button>
+          <button class="desk-ask__suggestion" data-q="What's the biggest macro risk to Dubai RE nobody is pricing right now?">Hidden risk?</button>
+          <button class="desk-ask__suggestion" data-q="Which developer do I avoid in 2026?">Avoid which developer?</button>
+        </div>
+        <div class="desk-response" id="desk-response" style="display:none">
+          <div class="desk-response__conviction" id="desk-conviction"></div>
+          <div class="desk-response__text" id="desk-text"></div>
+        </div>
+      </section>
+
+      <!-- Active Calls -->
+      <section class="desk-calls-section section">
+        <div class="section__header">
+          <h2>The Desk &mdash; Active Calls</h2>
+          <p>Conviction-weighted positioned views</p>
+          <div class="section__header-line"></div>
+        </div>
+        <div class="desk-calls-grid" id="desk-calls-grid"></div>
+      </section>
+
+      <!-- Historical Playbook -->
+      <section class="desk-playbook-section section">
+        <div class="section__header">
+          <h2>Historical Playbook</h2>
+          <p>Dubai RE reactions to past macro events</p>
+          <div class="section__header-line"></div>
+        </div>
+        <div class="desk-playbook" id="desk-playbook"></div>
       </section>
     </div>
 
