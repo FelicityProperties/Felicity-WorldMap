@@ -380,6 +380,115 @@
   color: var(--text-primary);
 }
 
+/* ── Upcoming Earnings Card ── */
+.sp500-upcoming {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  border-left: 3px solid var(--accent-primary);
+}
+
+.sp500-upcoming--week {
+  border-left-color: var(--semantic-amber);
+}
+
+.sp500-upcoming--today {
+  border-left-color: var(--semantic-red);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.sp500-upcoming__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sp500-upcoming__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.sp500-upcoming__urgency {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  color: var(--accent-primary);
+  background: var(--accent-glow);
+}
+
+.sp500-upcoming--week .sp500-upcoming__urgency {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+}
+
+.sp500-upcoming--today .sp500-upcoming__urgency {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.sp500-upcoming__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.sp500-upcoming__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp500-upcoming__label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sp500-upcoming__value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sp500-upcoming__value--accent {
+  color: var(--accent-primary);
+  font-size: var(--text-md);
+}
+
+.sp500-upcoming__hour-badge {
+  display: inline-block;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 767px) {
+  .sp500-upcoming__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ── Detail: Section Titles ── */
 .sp500-section-title {
   font-family: var(--font-mono);

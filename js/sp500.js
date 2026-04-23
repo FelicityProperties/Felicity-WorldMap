@@ -171,12 +171,13 @@ async function selectStock(ticker) {
     </div>
   `;
 
-  const [quote, metric, earnings, recs, target] = await Promise.allSettled([
+  const [quote, metric, earnings, recs, target, calendar] = await Promise.allSettled([
     fetchQuote(ticker),
     fetchJSON(`/api/stocks/metric?symbol=${ticker}`),
     fetchJSON(`/api/stocks/earnings?symbol=${ticker}`),
     fetchJSON(`/api/stocks/recommendation?symbol=${ticker}`),
     fetchJSON(`/api/stocks/price-target?symbol=${ticker}`),
+    fetchJSON(`/api/stocks/calendar?symbol=${ticker}`),
   ]);
 
   const q = quote.value;
@@ -203,7 +204,11 @@ async function selectStock(ticker) {
   const cls = q.dp >= 0 ? 'up' : 'dn';
   const sign = q.dp >= 0 ? '+' : '';
 
+  const cal = calendar.value?.earningsCalendar || [];
+  const nextEarning = cal.length ? cal[0] : null;
+
   const metricsHtml = renderMetrics(q, m);
+  const upcomingHtml = renderUpcomingEarnings(nextEarning, ticker);
   const earningsHtml = renderEarnings(e);
   const ratingsHtml = renderRatings(rec, pt);
 
@@ -220,6 +225,7 @@ async function selectStock(ticker) {
       </div>
     </div>
     ${metricsHtml}
+    ${upcomingHtml}
     ${earningsHtml}
     ${ratingsHtml}
     <div class="sp500-detail__ai">
@@ -232,11 +238,11 @@ async function selectStock(ticker) {
   `;
 
   document.getElementById('sp500-ai-btn')?.addEventListener('click', () => {
-    generateAIBrief(ticker, company, q, m, e, rec, pt);
+    generateAIBrief(ticker, company, q, m, e, rec, pt, nextEarning);
   });
 
   document.getElementById('sp500-pdf-btn')?.addEventListener('click', () => {
-    exportPDF(ticker, company, q, m, e, rec, pt);
+    exportPDF(ticker, company, q, m, e, rec, pt, nextEarning);
   });
 }
 
@@ -262,6 +268,69 @@ function renderMetrics(q, m) {
       <div class="sp500-metric"><span class="sp500-metric__label">Volume</span><span class="sp500-metric__value">${fmtB(q.v)}</span></div>
     </div>
   `;
+}
+
+function renderUpcomingEarnings(next, ticker) {
+  if (!next) return '';
+
+  const reportDate = next.date || 'TBD';
+  const hour = next.hour === 'bmo' ? 'Before Market Open' : next.hour === 'amc' ? 'After Market Close' : next.hour || 'TBD';
+  const hourBadge = next.hour === 'bmo' ? 'BMO' : next.hour === 'amc' ? 'AMC' : 'TBD';
+  const epsEst = next.epsEstimate != null ? `$${next.epsEstimate.toFixed(2)}` : 'N/A';
+  const revEst = next.revenueEstimate != null ? formatRevenue(next.revenueEstimate) : 'N/A';
+  const quarter = next.quarter != null && next.year != null ? `Q${next.quarter} ${next.year}` : '';
+
+  // Days until report
+  const now = new Date();
+  const report = new Date(reportDate + 'T00:00:00');
+  const daysUntil = Math.ceil((report - now) / (1000 * 60 * 60 * 24));
+  let urgencyClass = '';
+  let urgencyText = '';
+  if (daysUntil <= 0) { urgencyClass = 'sp500-upcoming--today'; urgencyText = 'REPORTING TODAY'; }
+  else if (daysUntil <= 7) { urgencyClass = 'sp500-upcoming--week'; urgencyText = `IN ${daysUntil} DAY${daysUntil > 1 ? 'S' : ''}`; }
+  else { urgencyText = `IN ${daysUntil} DAYS`; }
+
+  return `
+    <div class="sp500-upcoming ${urgencyClass}">
+      <div class="sp500-upcoming__header">
+        <div class="sp500-upcoming__title">Next Earnings Report</div>
+        <span class="sp500-upcoming__urgency">${urgencyText}</span>
+      </div>
+      <div class="sp500-upcoming__grid">
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label">Report Date</span>
+          <span class="sp500-upcoming__value">${reportDate}</span>
+        </div>
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label">Quarter</span>
+          <span class="sp500-upcoming__value">${quarter || 'N/A'}</span>
+        </div>
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label">Timing</span>
+          <span class="sp500-upcoming__value"><span class="sp500-upcoming__hour-badge">${hourBadge}</span> ${hour}</span>
+        </div>
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label">EPS Estimate</span>
+          <span class="sp500-upcoming__value sp500-upcoming__value--accent">${epsEst}</span>
+        </div>
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label">Revenue Estimate</span>
+          <span class="sp500-upcoming__value">${revEst}</span>
+        </div>
+        <div class="sp500-upcoming__item">
+          <span class="sp500-upcoming__label"># Analysts</span>
+          <span class="sp500-upcoming__value">${next.epsActual != null ? 'Reported' : (next.epsEstimate != null ? 'Consensus' : 'N/A')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatRevenue(v) {
+  if (!v || isNaN(v)) return 'N/A';
+  if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+  return '$' + v.toLocaleString();
 }
 
 function renderEarnings(earningsArr) {
@@ -326,7 +395,7 @@ function renderRatings(rec, pt) {
   `;
 }
 
-async function generateAIBrief(ticker, company, q, m, earningsArr, rec, pt) {
+async function generateAIBrief(ticker, company, q, m, earningsArr, rec, pt, nextEarning) {
   const btn = document.getElementById('sp500-ai-btn');
   const text = document.getElementById('sp500-ai-text');
   if (!btn || !text) return;
@@ -349,8 +418,8 @@ async function generateAIBrief(ticker, company, q, m, earningsArr, rec, pt) {
         fwdEps: m.epsNormalizedAnnual?.toFixed(2),
         pe: m.peTTM?.toFixed(1),
         fwdPe: m.peNormalizedAnnual?.toFixed(1),
-        nextEarnings: 'TBD',
-        expEps: 'N/A',
+        nextEarnings: nextEarning ? `${nextEarning.date} (${nextEarning.hour === 'bmo' ? 'Before Open' : 'After Close'}, Q${nextEarning.quarter || '?'} ${nextEarning.year || ''})` : 'TBD',
+        expEps: nextEarning?.epsEstimate?.toFixed(2) || 'N/A',
         rating: `${rec.buy || 0} Buy / ${rec.hold || 0} Hold / ${rec.sell || 0} Sell`,
         target: pt.targetMean?.toFixed(0),
         surprises
