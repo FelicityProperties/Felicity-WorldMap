@@ -336,7 +336,7 @@ function renderSignalCards(grid) {
   grid.innerHTML = featuredHtml + listHtml;
 }
 
-// ── Ask the Desk ──
+// ── Ask Felicity ──
 function initDesk() {
   const input = document.getElementById('desk-input');
   const btn = document.getElementById('desk-btn');
