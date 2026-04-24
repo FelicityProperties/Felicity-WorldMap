@@ -51,7 +51,48 @@ async function loadGeoJSON() {
       if (c.ccn3) idToName[parseInt(c.ccn3)] = c.name.common;
     });
 
-    renderGeo(geo, idToName);
+    // Map world-countries common names to our ciiScores keys where they differ
+    const nameAliases = {
+      'United States': 'United States of America',
+      'Congo': 'Congo',
+      'DR Congo': 'Dem. Rep. Congo',
+      'Czech Republic': 'Czechia',
+      'Ivory Coast': "Côte d'Ivoire",
+      'South Korea': 'S. Korea',
+      'Timor-Leste': 'Timor-Leste',
+      'Cabo Verde': 'Cape Verde',
+      'Sao Tome and Principe': 'São Tomé and Príncipe',
+      'Swaziland': 'Eswatini',
+      'Macedonia': 'North Macedonia',
+      'Myanmar': 'Myanmar',
+      'Brunei Darussalam': 'Brunei',
+    };
+
+    // Reverse: map our ciiScores keys so lookups work both ways
+    const resolvedIdToName = {};
+    for (const [id, name] of Object.entries(idToName)) {
+      resolvedIdToName[id] = name;
+      // If the name from world-countries doesn't exist in ciiScores, try aliases
+      if (!ciiScores[name]) {
+        for (const [alias, canonical] of Object.entries(nameAliases)) {
+          if (name === alias && ciiScores[canonical]) {
+            resolvedIdToName[id] = canonical;
+            break;
+          }
+        }
+        // Also try matching our ciiScores keys by checking if any key is contained in the name
+        if (!ciiScores[resolvedIdToName[id]]) {
+          for (const key of Object.keys(ciiScores)) {
+            if (name.includes(key) || key.includes(name)) {
+              resolvedIdToName[id] = key;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    renderGeo(geo, resolvedIdToName);
   } catch (e) {
     console.error('GeoJSON load failed:', e);
     updateCountryCount();
