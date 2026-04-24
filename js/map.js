@@ -38,7 +38,7 @@ export function initMap() {
 async function loadGeoJSON() {
   try {
     const [topoRes, nameRes] = await Promise.all([
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'),
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'),
       fetch('https://unpkg.com/world-countries@5.0.0/dist/world-countries.json')
     ]);
     const topo = await topoRes.json();
