@@ -47,7 +47,11 @@ export const ciiScores = {
   "Togo":4.4,"Trinidad and Tobago":4.8,"Tunisia":5.1,"Turkey":5.8,"Turkmenistan":4.9,
   "Uganda":5.6,"Ukraine":9.8,"United Arab Emirates":2.1,"United Kingdom":2.4,
   "United States of America":3.0,"United States":3.0,"Uruguay":2.1,"Uzbekistan":4.1,
-  "Venezuela":7.2,"Vietnam":3.0,"Yemen":9.1,"Zambia":4.2,"Zimbabwe":6.1
+  "Venezuela":7.2,"Vietnam":3.0,"Yemen":9.1,"Zambia":4.2,"Zimbabwe":6.1,
+  "Monaco":1.0,"San Marino":1.0,"Vatican City":1.0,
+  "Cape Verde":2.0,"Seychelles":1.6,"São Tomé and Príncipe":2.2,
+  "Kiribati":3.0,"Marshall Islands":2.8,"Micronesia":2.9,"Nauru":2.5,
+  "Palau":2.2,"Samoa":2.3,"Tonga":2.6,"Tuvalu":3.2,"Vanuatu":3.1
 };
 
 // ── Region Map (object — mutated in place) ──
@@ -90,7 +94,36 @@ export const regionMap = {
   "Ukraine":"Europe","United Arab Emirates":"Middle East","United Kingdom":"Europe",
   "United States of America":"N. America","Uruguay":"S. America",
   "Venezuela":"S. America","Vietnam":"Asia",
-  "Yemen":"Middle East","Zimbabwe":"Africa"
+  "Yemen":"Middle East","Zimbabwe":"Africa",
+  "Albania":"Europe","Andorra":"Europe","Angola":"Africa",
+  "Bahrain":"Middle East","Benin":"Africa","Bhutan":"Asia",
+  "Bolivia":"S. America","Brunei":"Asia","Cambodia":"Asia",
+  "Chile":"S. America","China":"Asia","Colombia":"S. America",
+  "Comoros":"Africa","Congo":"Africa","Costa Rica":"C. America",
+  "Croatia":"Europe","Cyprus":"Europe","Czechia":"Europe","Czech Republic":"Europe",
+  "Djibouti":"Africa","DR Congo":"Africa",
+  "Ecuador":"S. America","El Salvador":"C. America",
+  "Equatorial Guinea":"Africa","Eritrea":"Africa","Estonia":"Europe",
+  "Eswatini":"Africa","Fiji":"Oceania","Gabon":"Africa","Gambia":"Africa",
+  "Georgia":"Caucasus","Guinea":"Africa","Guinea-Bissau":"Africa",
+  "Guyana":"S. America","Honduras":"C. America","Iceland":"Europe",
+  "Indonesia":"Asia","Ivory Coast":"Africa","Côte d'Ivoire":"Africa",
+  "Kosovo":"Europe","Kuwait":"Middle East","Kyrgyzstan":"C. Asia",
+  "Laos":"Asia","Latvia":"Europe","Lesotho":"Africa","Liberia":"Africa",
+  "Liechtenstein":"Europe","Lithuania":"Europe","Luxembourg":"Europe",
+  "Madagascar":"Africa","Malawi":"Africa","Maldives":"Asia","Malta":"Europe",
+  "Mauritania":"Africa","Mauritius":"Africa","Moldova":"Europe",
+  "Mongolia":"Asia","Montenegro":"Europe","Namibia":"Africa","Nepal":"Asia",
+  "North Macedonia":"Europe","Oman":"Middle East",
+  "Papua New Guinea":"Oceania","Singapore":"Asia","Slovakia":"Europe",
+  "Slovenia":"Europe","Solomon Islands":"Oceania",
+  "Tajikistan":"C. Asia","Timor-Leste":"Asia","Togo":"Africa",
+  "Tunisia":"Africa","Turkmenistan":"C. Asia","Uganda":"Africa","Zambia":"Africa",
+  "Monaco":"Europe","San Marino":"Europe","Vatican City":"Europe",
+  "Cape Verde":"Africa","Seychelles":"Africa","São Tomé and Príncipe":"Africa",
+  "Kiribati":"Oceania","Marshall Islands":"Oceania","Micronesia":"Oceania",
+  "Nauru":"Oceania","Palau":"Oceania","Samoa":"Oceania","Tonga":"Oceania",
+  "Tuvalu":"Oceania","Vanuatu":"Oceania"
 };
 
 // ── Arrays (mutated in place via splice+push) ──
