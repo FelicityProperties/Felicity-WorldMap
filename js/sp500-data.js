@@ -53,6 +53,51 @@ export const sp500Companies = [
   { ticker: 'GE',    name: 'GE Aerospace',                  sector: 'Industrial',    subIndustry: 'Aerospace & Defense',                        hq: 'Evendale, OH' },
   { ticker: 'RTX',   name: 'RTX Corporation',               sector: 'Industrial',    subIndustry: 'Aerospace & Defense',                        hq: 'Arlington, VA' },
   { ticker: 'LMT',   name: 'Lockheed Martin Corporation',   sector: 'Industrial',    subIndustry: 'Aerospace & Defense',                        hq: 'Bethesda, MD' },
+
+  // ── Airlines ──
+  { ticker: 'DAL',   name: 'Delta Air Lines Inc.',           sector: 'Airlines',      subIndustry: 'Passenger Airlines',                         hq: 'Atlanta, GA' },
+  { ticker: 'UAL',   name: 'United Airlines Holdings Inc.',  sector: 'Airlines',      subIndustry: 'Passenger Airlines',                         hq: 'Chicago, IL' },
+  { ticker: 'AAL',   name: 'American Airlines Group Inc.',   sector: 'Airlines',      subIndustry: 'Passenger Airlines',                         hq: 'Fort Worth, TX' },
+  { ticker: 'LUV',   name: 'Southwest Airlines Co.',         sector: 'Airlines',      subIndustry: 'Low-Cost Airlines',                          hq: 'Dallas, TX' },
+  { ticker: 'ALK',   name: 'Alaska Air Group Inc.',          sector: 'Airlines',      subIndustry: 'Passenger Airlines',                         hq: 'Seattle, WA' },
+  { ticker: 'JBLU',  name: 'JetBlue Airways Corporation',    sector: 'Airlines',      subIndustry: 'Low-Cost Airlines',                          hq: 'Long Island City, NY' },
+  { ticker: 'SAVE',  name: 'Spirit Airlines Inc.',           sector: 'Airlines',      subIndustry: 'Ultra Low-Cost Airlines',                    hq: 'Dania Beach, FL' },
+  { ticker: 'HA',    name: 'Hawaiian Holdings Inc.',         sector: 'Airlines',      subIndustry: 'Passenger Airlines',                         hq: 'Honolulu, HI' },
+  { ticker: 'RYAAY', name: 'Ryanair Holdings plc',           sector: 'Airlines',      subIndustry: 'Low-Cost Airlines (Europe)',                  hq: 'Dublin, Ireland' },
+  { ticker: 'SKYW',  name: 'SkyWest Inc.',                   sector: 'Airlines',      subIndustry: 'Regional Airlines',                          hq: 'St. George, UT' },
+  { ticker: 'MESA',  name: 'Mesa Air Group Inc.',            sector: 'Airlines',      subIndustry: 'Regional Airlines',                          hq: 'Phoenix, AZ' },
+  { ticker: 'ALGT',  name: 'Allegiant Travel Company',       sector: 'Airlines',      subIndustry: 'Leisure Airlines',                           hq: 'Las Vegas, NV' },
+
+  // ── Oil & Gas — Integrated Majors ──
+  { ticker: 'SHEL',  name: 'Shell plc',                      sector: 'Oil & Gas',     subIndustry: 'Integrated Oil & Gas',                       hq: 'London, UK' },
+  { ticker: 'BP',    name: 'BP plc',                         sector: 'Oil & Gas',     subIndustry: 'Integrated Oil & Gas',                       hq: 'London, UK' },
+  { ticker: 'TTE',   name: 'TotalEnergies SE',               sector: 'Oil & Gas',     subIndustry: 'Integrated Oil & Gas',                       hq: 'Courbevoie, France' },
+  { ticker: 'COP',   name: 'ConocoPhillips',                 sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'Houston, TX' },
+  { ticker: 'EOG',   name: 'EOG Resources Inc.',             sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'Houston, TX' },
+  { ticker: 'PXD',   name: 'Pioneer Natural Resources Co.',  sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'Irving, TX' },
+  { ticker: 'OXY',   name: 'Occidental Petroleum Corp.',     sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'Houston, TX' },
+  { ticker: 'DVN',   name: 'Devon Energy Corporation',       sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'Oklahoma City, OK' },
+  { ticker: 'HES',   name: 'Hess Corporation',               sector: 'Oil & Gas',     subIndustry: 'Exploration & Production',                   hq: 'New York, NY' },
+  { ticker: 'MPC',   name: 'Marathon Petroleum Corp.',        sector: 'Oil & Gas',     subIndustry: 'Oil Refining & Marketing',                   hq: 'Findlay, OH' },
+  { ticker: 'VLO',   name: 'Valero Energy Corporation',      sector: 'Oil & Gas',     subIndustry: 'Oil Refining & Marketing',                   hq: 'San Antonio, TX' },
+  { ticker: 'PSX',   name: 'Phillips 66',                    sector: 'Oil & Gas',     subIndustry: 'Oil Refining & Marketing',                   hq: 'Houston, TX' },
+
+  // ── Oil & Gas — Services & Equipment ──
+  { ticker: 'SLB',   name: 'Schlumberger Limited',           sector: 'Oil & Gas',     subIndustry: 'Oilfield Services',                          hq: 'Houston, TX' },
+  { ticker: 'HAL',   name: 'Halliburton Company',            sector: 'Oil & Gas',     subIndustry: 'Oilfield Services',                          hq: 'Houston, TX' },
+  { ticker: 'BKR',   name: 'Baker Hughes Company',           sector: 'Oil & Gas',     subIndustry: 'Oilfield Equipment & Services',              hq: 'Houston, TX' },
+
+  // ── Oil & Gas — Pipelines & Midstream ──
+  { ticker: 'WMB',   name: 'Williams Companies Inc.',        sector: 'Oil & Gas',     subIndustry: 'Oil & Gas Pipelines',                        hq: 'Tulsa, OK' },
+  { ticker: 'KMI',   name: 'Kinder Morgan Inc.',             sector: 'Oil & Gas',     subIndustry: 'Oil & Gas Pipelines',                        hq: 'Houston, TX' },
+  { ticker: 'OKE',   name: 'ONEOK Inc.',                     sector: 'Oil & Gas',     subIndustry: 'Oil & Gas Pipelines',                        hq: 'Tulsa, OK' },
+  { ticker: 'ET',    name: 'Energy Transfer LP',             sector: 'Oil & Gas',     subIndustry: 'Oil & Gas Pipelines',                        hq: 'Dallas, TX' },
+
+  // ── Oil & Gas — LNG & Natural Gas ──
+  { ticker: 'LNG',   name: 'Cheniere Energy Inc.',           sector: 'Oil & Gas',     subIndustry: 'LNG Export',                                 hq: 'Houston, TX' },
+  { ticker: 'EQT',   name: 'EQT Corporation',                sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Pittsburgh, PA' },
+  { ticker: 'AR',    name: 'Antero Resources Corp.',         sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Denver, CO' },
+  { ticker: 'RRC',   name: 'Range Resources Corp.',          sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Fort Worth, TX' },
 ];
 
 // Sector groupings for filter UI
@@ -61,6 +106,8 @@ export const sectorGroups = {
   'Tech':       'Technology',
   'Finance':    'Finance',
   'Healthcare': 'Healthcare',
+  'Oil & Gas':  'Oil & Gas',
+  'Airlines':   'Airlines',
   'Energy':     'Energy',
   'Consumer':   'Consumer',
   'Industrial': 'Industrial',
