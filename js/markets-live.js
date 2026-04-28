@@ -14,12 +14,26 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true';
 
 const YAHOO_SYMBOLS = [
-  { sym: 'XAU', yahoo: 'GC=F', name: 'Gold', type: 'commodity' },
-  { sym: 'WTI', yahoo: 'CL=F', name: 'Crude Oil', type: 'commodity' },
+  // Indices
   { sym: 'DXY', yahoo: 'DX-Y.NYB', name: 'US Dollar Index', type: 'index' },
   { sym: 'SPX', yahoo: '^GSPC', name: 'S&P 500', type: 'index' },
   { sym: 'FTSE', yahoo: '^FTSE', name: 'FTSE 100', type: 'index' },
   { sym: 'NIKKEI', yahoo: '^N225', name: 'Nikkei 225', type: 'index' },
+  // Energy
+  { sym: 'WTI', yahoo: 'CL=F', name: 'Crude Oil', type: 'commodity' },
+  { sym: 'BRENT', yahoo: 'BZ=F', name: 'Brent Crude', type: 'commodity' },
+  { sym: 'NG', yahoo: 'NG=F', name: 'Natural Gas', type: 'commodity' },
+  { sym: 'RBOB', yahoo: 'RB=F', name: 'RBOB Gasoline', type: 'commodity' },
+  { sym: 'HO', yahoo: 'HO=F', name: 'Heating Oil', type: 'commodity' },
+  // Precious metals
+  { sym: 'XAU', yahoo: 'GC=F', name: 'Gold', type: 'commodity' },
+  { sym: 'XAG', yahoo: 'SI=F', name: 'Silver', type: 'commodity' },
+  { sym: 'XPT', yahoo: 'PL=F', name: 'Platinum', type: 'commodity' },
+  { sym: 'XPD', yahoo: 'PA=F', name: 'Palladium', type: 'commodity' },
+  // Base metals
+  { sym: 'HG', yahoo: 'HG=F', name: 'Copper', type: 'commodity' },
+  // Soft commodities
+  { sym: 'ZW', yahoo: 'ZW=F', name: 'Wheat', type: 'commodity' },
 ];
 
 // ── Fetch crypto from CoinGecko ──

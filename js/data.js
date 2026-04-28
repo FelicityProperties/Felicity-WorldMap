@@ -137,6 +137,25 @@ export const markets = [
   { sym: "FTSE", name: "FTSE 100", price: 8247, chg: 0.22, type: "index", reCorrelation: "UK non-dom tax flight to Dubai freehold properties", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-PRIME" },
   { sym: "NIKKEI", name: "Nikkei 225", price: 34880, chg: -0.44, type: "index", reCorrelation: "Japanese institutional allocation to Dubai commercial RE", reAreas: ["DIFC", "Business Bay"], reDirection: "NEUTRAL" },
   { sym: "AED", name: "AED/USD", price: 3.6725, chg: 0.00, type: "forex", reCorrelation: "Peg stability reinforces Dubai as dollar-denominated safe haven", reAreas: ["All segments"], reDirection: "NEUTRAL" },
+
+  // ── Energy Commodities ──
+  { sym: "BRENT", name: "Brent Crude", price: 65.8, chg: -0.92, type: "commodity", reCorrelation: "Global oil benchmark — direct GCC sovereign revenue impact, 4-6mo lag to Dubai prime", reAreas: ["Palm Jumeirah", "Downtown Dubai", "DIFC", "Creek Harbour"], reDirection: "WATCH" },
+  { sym: "NG", name: "Natural Gas", price: 3.42, chg: 1.85, type: "commodity", reCorrelation: "LNG exports drive Qatar/UAE LNG corridor — Dubai South industrial demand", reAreas: ["Dubai South", "JAFZA", "DIP"], reDirection: "BULLISH-INDUSTRIAL" },
+  { sym: "RBOB", name: "RBOB Gasoline", price: 2.12, chg: -0.34, type: "commodity", reCorrelation: "US driving demand proxy — leading indicator for crude refining margins", reAreas: ["Dubai South", "JAFZA"], reDirection: "WATCH" },
+  { sym: "HO", name: "Heating Oil", price: 2.28, chg: 0.18, type: "commodity", reCorrelation: "Diesel/jet fuel proxy — Dubai logistics hub freight cost driver", reAreas: ["Dubai South", "DIP"], reDirection: "WATCH" },
+  { sym: "COAL", name: "Coal (Newcastle)", price: 142.5, chg: -1.20, type: "commodity", reCorrelation: "Asian energy demand proxy — China industrial activity signal", reAreas: ["Dubai South", "JAFZA"], reDirection: "NEUTRAL" },
+
+  // ── Precious Metals ──
+  { sym: "XAG", name: "Silver", price: 32.4, chg: 0.78, type: "commodity", reCorrelation: "Industrial+monetary metal — tech demand proxy, lighter safe-haven correlation", reAreas: ["Dubai Marina", "Business Bay"], reDirection: "BULLISH-MID" },
+  { sym: "XPT", name: "Platinum", price: 985, chg: 0.45, type: "commodity", reCorrelation: "Auto catalyst demand — global manufacturing health indicator", reAreas: ["Business Bay"], reDirection: "NEUTRAL" },
+  { sym: "XPD", name: "Palladium", price: 1080, chg: -0.62, type: "commodity", reCorrelation: "Auto catalyst — Russian supply concentration adds geopolitical premium", reAreas: ["Palm Jumeirah", "DIFC"], reDirection: "WATCH" },
+
+  // ── Base Metals ──
+  { sym: "HG", name: "Copper", price: 4.62, chg: 1.10, type: "commodity", reCorrelation: "Dr. Copper — global growth bellwether, infrastructure demand proxy", reAreas: ["Dubai South", "Expo City", "Creek Harbour"], reDirection: "BULLISH-COMMERCIAL" },
+  { sym: "ALI", name: "Aluminum", price: 2540, chg: 0.32, type: "commodity", reCorrelation: "GCC aluminum producer concentration (EGA/Alba) — UAE export revenue", reAreas: ["Dubai South", "JAFZA"], reDirection: "BULLISH-INDUSTRIAL" },
+
+  // ── Soft Commodities ──
+  { sym: "ZW", name: "Wheat", price: 5.85, chg: -0.42, type: "commodity", reCorrelation: "Food security proxy — GCC import dependency, Black Sea geopolitics", reAreas: ["Dubai South"], reDirection: "NEUTRAL" },
 ];
 
 export const news = [
