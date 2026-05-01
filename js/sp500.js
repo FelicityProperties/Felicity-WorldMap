@@ -333,20 +333,37 @@ function formatRevenue(v) {
   return '$' + v.toLocaleString();
 }
 
+// Robust beat/miss/meet detection — handles null surprisePercent by computing from actual vs estimate
+function getEarningsResult(e) {
+  // Prefer Finnhub's surprisePercent if present
+  let surprisePct = e.surprisePercent;
+
+  // Fallback: compute from actual vs estimate
+  if (surprisePct == null && e.actual != null && e.estimate != null && e.estimate !== 0) {
+    surprisePct = ((e.actual - e.estimate) / Math.abs(e.estimate)) * 100;
+  }
+
+  if (surprisePct == null) return { status: 'unknown', label: '—', cls: 'unknown', pct: null };
+
+  // Tolerance for "meet": within 0.5% of estimate
+  if (Math.abs(surprisePct) < 0.5) return { status: 'meet', label: '= Meet', cls: 'meet', pct: surprisePct };
+  if (surprisePct > 0) return { status: 'beat', label: '✓ Beat', cls: 'beat', pct: surprisePct };
+  return { status: 'miss', label: '✗ Miss', cls: 'miss', pct: surprisePct };
+}
+
 function renderEarnings(earningsArr) {
   if (!earningsArr?.length) return '<div class="sp500-section-title">Earnings History</div><div class="sp500-empty">No earnings data available</div>';
 
   const rows = earningsArr.slice(0, 6).map(e => {
-    const surprise = e.surprisePercent != null ? e.surprisePercent.toFixed(1) : '—';
-    const beat = e.surprisePercent > 0;
-    const cls = beat ? 'beat' : 'miss';
+    const r = getEarningsResult(e);
+    const surprise = r.pct != null ? `${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%` : '—';
     return `
       <tr>
         <td>${e.period || '—'}</td>
-        <td>$${e.actual?.toFixed(2) || '—'}</td>
-        <td>$${e.estimate?.toFixed(2) || '—'}</td>
-        <td class="sp500-earnings--${cls}">${surprise}%</td>
-        <td class="sp500-earnings--${cls}">${beat ? '✓ Beat' : '✗ Miss'}</td>
+        <td>${e.actual != null ? '$' + e.actual.toFixed(2) : '—'}</td>
+        <td>${e.estimate != null ? '$' + e.estimate.toFixed(2) : '—'}</td>
+        <td class="sp500-earnings--${r.cls}">${surprise}</td>
+        <td class="sp500-earnings--${r.cls}">${r.label}</td>
       </tr>
     `;
   }).join('');
@@ -403,9 +420,14 @@ async function generateAIBrief(ticker, company, q, m, earningsArr, rec, pt, next
   btn.textContent = 'Generating...';
   btn.disabled = true;
 
-  const surprises = (earningsArr || []).slice(0, 4).map(e =>
-    `${e.period}: ${e.surprisePercent?.toFixed(1) || '?'}%`
-  ).join(', ');
+  // Build accurate surprise string with explicit beat/miss/meet labels for AI
+  const surprises = (earningsArr || []).slice(0, 4).map(e => {
+    const r = getEarningsResult(e);
+    if (r.pct == null) return `${e.period || '?'}: no data`;
+    const sign = r.pct >= 0 ? '+' : '';
+    const label = r.status.toUpperCase();
+    return `${e.period || '?'}: ${label} ${sign}${r.pct.toFixed(1)}% (actual $${e.actual?.toFixed(2) || '?'} vs est $${e.estimate?.toFixed(2) || '?'})`;
+  }).join('; ');
 
   try {
     const res = await fetch('/api/stocks/ai-brief', {

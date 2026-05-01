@@ -39,13 +39,15 @@ CRITICAL: Every claim must be backed by a specific statistic or data point.
 - No sentence without a number. Dense with data. Zero filler.`;
 
   try {
-    const prompt = `Given this data for ${ticker} (${name || 'Unknown'}):
+    const prompt = `LIVE DATA for ${ticker} (${name || 'Unknown'}) — use these exact numbers. Do NOT substitute training-data figures:
 - Current price: $${price || 'N/A'}, day change ${change || 'N/A'}%
 - EPS TTM: ${eps || 'N/A'}, Forward EPS: ${fwdEps || 'N/A'}
 - P/E: ${pe || 'N/A'}, Forward P/E: ${fwdPe || 'N/A'}
 - Next earnings: ${nextEarnings || 'N/A'}, expected EPS ${expEps || 'N/A'}
 - Analyst consensus: ${rating || 'N/A'}, avg price target $${target || 'N/A'}
-- Last 4 quarter EPS surprises: ${surprises || 'N/A'}
+- Last 4 quarter EPS results (each labeled BEAT/MISS/MEET): ${surprises || 'N/A'}
+
+CRITICAL: The earnings results above are pre-labeled as BEAT/MISS/MEET. Use these labels exactly. Do NOT contradict them or claim a beat was a miss (or vice versa). If the data says BEAT +12.5%, report it as a beat.
 
 Write a 4-5 sentence hedge-fund-grade analytical brief: (1) current setup and valuation read, (2) key risk into earnings with quantified downside, (3) one catalyst to watch with probability, (4) directional call with conviction level. End with a historical analog that parallels the current setup. No hedging, no disclaimers.`;
 

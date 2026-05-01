@@ -540,6 +540,8 @@
 
 .sp500-earnings--beat { color: var(--semantic-green); font-weight: var(--weight-bold); }
 .sp500-earnings--miss { color: var(--semantic-red); font-weight: var(--weight-bold); }
+.sp500-earnings--meet { color: var(--semantic-amber); font-weight: var(--weight-bold); }
+.sp500-earnings--unknown { color: var(--text-muted); }
 
 .sp500-empty {
   padding: var(--space-5);
