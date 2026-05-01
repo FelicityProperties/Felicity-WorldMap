@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const r = await fetch(`https://finnhub.io/api/v1/stock/earnings?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
     if (!r.ok) throw new Error(`Finnhub ${r.status}`);
-    res.setHeader('Cache-Control', 's-maxage=3600');
+    res.setHeader('Cache-Control', 's-maxage=300');
     res.json(await r.json());
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -207,6 +207,11 @@ async function selectStock(ticker) {
   const cal = calendar.value?.earningsCalendar || [];
   const nextEarning = cal.length ? cal[0] : null;
 
+  // Debug log so we can verify Finnhub data accuracy
+  console.log(`[${ticker}] Earnings data:`, e?.slice(0, 4).map(x => ({
+    period: x.period, actual: x.actual, estimate: x.estimate, surprisePct: x.surprisePercent
+  })));
+
   const metricsHtml = renderMetrics(q, m);
   const upcomingHtml = renderUpcomingEarnings(nextEarning, ticker);
   const earningsHtml = renderEarnings(e);
@@ -335,15 +340,25 @@ function formatRevenue(v) {
 
 // Robust beat/miss/meet detection — handles null surprisePercent by computing from actual vs estimate
 function getEarningsResult(e) {
-  // Prefer Finnhub's surprisePercent if present
-  let surprisePct = e.surprisePercent;
+  // Coerce to numbers — Finnhub sometimes returns strings
+  const actual = e.actual != null ? Number(e.actual) : NaN;
+  const estimate = e.estimate != null ? Number(e.estimate) : NaN;
+  let surprisePct = e.surprisePercent != null ? Number(e.surprisePercent) : NaN;
 
-  // Fallback: compute from actual vs estimate
-  if (surprisePct == null && e.actual != null && e.estimate != null && e.estimate !== 0) {
-    surprisePct = ((e.actual - e.estimate) / Math.abs(e.estimate)) * 100;
+  // Fallback 1: compute from actual vs estimate
+  if (isNaN(surprisePct) && !isNaN(actual) && !isNaN(estimate) && estimate !== 0) {
+    surprisePct = ((actual - estimate) / Math.abs(estimate)) * 100;
   }
 
-  if (surprisePct == null) return { status: 'unknown', label: '—', cls: 'unknown', pct: null };
+  // Last resort: if we have actual >= estimate but no surprise %, still call it
+  if (isNaN(surprisePct)) {
+    if (!isNaN(actual) && !isNaN(estimate)) {
+      if (actual > estimate) return { status: 'beat', label: '✓ Beat', cls: 'beat', pct: null };
+      if (actual < estimate) return { status: 'miss', label: '✗ Miss', cls: 'miss', pct: null };
+      return { status: 'meet', label: '= Meet', cls: 'meet', pct: 0 };
+    }
+    return { status: 'unknown', label: '—', cls: 'unknown', pct: null };
+  }
 
   // Tolerance for "meet": within 0.5% of estimate
   if (Math.abs(surprisePct) < 0.5) return { status: 'meet', label: '= Meet', cls: 'meet', pct: surprisePct };
@@ -484,13 +499,17 @@ function exportPDF(ticker, company, q, m, earningsArr, rec, pt) {
   const chgSign = q?.dp >= 0 ? '+' : '';
 
   const earningsRows = (earningsArr || []).slice(0, 6).map(e => {
-    const beat = e.surprisePercent > 0;
+    const r = getEarningsResult(e);
+    const colors = { beat: '#22c55e', miss: '#ef4444', meet: '#f59e0b', unknown: '#888' };
+    const labels = { beat: 'BEAT', miss: 'MISS', meet: 'MEET', unknown: '—' };
+    const color = colors[r.status];
+    const pctStr = r.pct != null ? `${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%` : 'N/A';
     return `<tr>
       <td>${e.period || 'N/A'}</td>
-      <td>$${e.actual?.toFixed(2) || 'N/A'}</td>
-      <td>$${e.estimate?.toFixed(2) || 'N/A'}</td>
-      <td style="color:${beat ? '#22c55e' : '#ef4444'}">${e.surprisePercent?.toFixed(1) || 'N/A'}%</td>
-      <td style="color:${beat ? '#22c55e' : '#ef4444'}">${beat ? 'BEAT' : 'MISS'}</td>
+      <td>$${e.actual != null ? Number(e.actual).toFixed(2) : 'N/A'}</td>
+      <td>$${e.estimate != null ? Number(e.estimate).toFixed(2) : 'N/A'}</td>
+      <td style="color:${color}">${pctStr}</td>
+      <td style="color:${color}">${labels[r.status]}</td>
     </tr>`;
   }).join('');
 
