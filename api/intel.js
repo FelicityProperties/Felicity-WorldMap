@@ -1,11 +1,30 @@
 // Vercel Serverless Function — AI country intelligence brief via Claude
 
+// ── Rate Limiting (in-memory, resets on cold start) ──
+const rateLimit = {};
+const RATE_LIMIT = 20; // requests per minute per IP
+const RATE_WINDOW = 60000; // 1 minute
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  if (!rateLimit[ip]) rateLimit[ip] = [];
+  rateLimit[ip] = rateLimit[ip].filter(t => now - t < RATE_WINDOW);
+  if (rateLimit[ip].length >= RATE_LIMIT) return false;
+  rateLimit[ip].push(now);
+  return true;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Rate limit exceeded. Max 20 requests per minute.' });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

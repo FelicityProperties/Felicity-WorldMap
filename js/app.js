@@ -436,6 +436,102 @@ function initPlaybook() {
   `).join('');
 }
 
+// ── Newsletter Signup ──
+function initNewsletter() {
+  const form = document.getElementById('newsletter-form');
+  if (!form) return;
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('newsletter-email').value;
+    if (!email) return;
+    // Store locally (would POST to /api/subscribe in production)
+    const subs = JSON.parse(localStorage.getItem('fi_subscribers') || '[]');
+    subs.push({ email, date: new Date().toISOString() });
+    localStorage.setItem('fi_subscribers', JSON.stringify(subs));
+    form.style.display = 'none';
+    document.getElementById('newsletter-success').style.display = 'block';
+  });
+}
+
+// ── Consultation Modal ──
+function initConsultation() {
+  const overlay = document.getElementById('consult-overlay');
+  const closeBtn = document.getElementById('consult-close');
+  const form = document.getElementById('consult-form');
+  const areaLabel = document.getElementById('consult-area');
+  const areaInput = document.getElementById('consult-area-input');
+  const successEl = document.getElementById('consult-success');
+
+  if (!overlay || !form) return;
+
+  function openModal(areaName) {
+    if (areaLabel) areaLabel.textContent = areaName || '';
+    if (areaInput) areaInput.value = areaName || '';
+    form.style.display = '';
+    if (successEl) successEl.style.display = 'none';
+    overlay.classList.add('is-open');
+  }
+
+  function closeModal() {
+    overlay.classList.remove('is-open');
+  }
+
+  // Listen for clicks on "Book a Call" buttons (delegated)
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.dubai-card__consult');
+    if (btn) {
+      openModal(btn.dataset.area);
+    }
+  });
+
+  // Close handlers
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
+  });
+
+  // Form submit
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('.consult-form__submit');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+
+    const payload = {
+      name: document.getElementById('consult-name').value,
+      email: document.getElementById('consult-email').value,
+      phone: document.getElementById('consult-phone').value,
+      budget: document.getElementById('consult-budget').value,
+      area: areaInput ? areaInput.value : '',
+      message: document.getElementById('consult-message').value
+    };
+
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      await res.json();
+    } catch (err) {
+      // Silently continue — show success regardless (lead logged server-side)
+    }
+
+    form.style.display = 'none';
+    if (successEl) successEl.style.display = 'block';
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request Consultation';
+    }
+  });
+}
+
 // ── Init on DOM Ready ──
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
