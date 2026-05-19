@@ -365,6 +365,204 @@
   margin: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   PRICING — Subscription Tiers
+   ═══════════════════════════════════════════════════════════ */
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.pricing-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+}
+
+.pricing-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.pricing-card--featured {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.08);
+  transform: scale(1.03);
+}
+
+.pricing-card--featured:hover {
+  transform: scale(1.03) translateY(-2px);
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.12);
+}
+
+.pricing-card__badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bg-deepest);
+  background: var(--accent-primary);
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.pricing-card__header {
+  text-align: center;
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pricing-card__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.pricing-card__price {
+  font-family: var(--font-mono);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+  line-height: 1;
+}
+
+.pricing-card--featured .pricing-card__price {
+  color: var(--accent-primary);
+}
+
+.pricing-card__period {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+}
+
+.pricing-card__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  flex: 1;
+}
+
+.pricing-card__feature {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding-left: var(--space-5);
+  position: relative;
+  line-height: var(--leading-relaxed);
+}
+
+.pricing-card__feature::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--semantic-green);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+}
+
+.pricing-card__feature--disabled {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.pricing-card__feature--disabled::before {
+  content: '✗';
+  color: var(--text-muted);
+}
+
+.pricing-card__cta {
+  margin-top: auto;
+}
+
+.pricing-card__btn {
+  width: 100%;
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  min-height: 44px;
+}
+
+.pricing-card__btn--outline {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-default);
+}
+
+.pricing-card__btn--primary {
+  color: var(--bg-deepest);
+  background: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+}
+
+.pricing-card__btn--primary:hover {
+  background: #33ddff;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.pricing-card__btn--gold {
+  color: var(--bg-deepest);
+  background: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+}
+
+.pricing-card__btn--gold:hover {
+  background: #e0b860;
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.3);
+  transform: translateY(-1px);
+}
+
+.pricing-card__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 1023px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .pricing-card--featured {
+    transform: none;
+    order: -1;
+  }
+
+  .pricing-card--featured:hover {
+    transform: translateY(-2px);
+  }
+}
+
 /* ── Floating WhatsApp Button ── */
 .floating-whatsapp {
   position: fixed;

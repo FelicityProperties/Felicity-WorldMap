@@ -55,6 +55,7 @@ async function boot() {
   // Init monetization features
   initNewsletter();
   initConsultation();
+  initPricing();
 
   // Expose buildTicker globally so sidebar refresh button can update it
   window.__rebuildTicker = buildTicker;
@@ -533,6 +534,56 @@ function initConsultation() {
 }
 
 // ── Init on DOM Ready ──
+// ── Pricing / Stripe Checkout ──
+function initPricing() {
+  document.querySelectorAll('.pricing-card__btn[data-plan]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const plan = btn.dataset.plan;
+      btn.textContent = 'Connecting...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else if (data.setup) {
+          btn.textContent = 'Coming Soon';
+          setTimeout(() => {
+            btn.textContent = plan === 'pro' ? 'Subscribe — $49/mo' : 'Subscribe — $299/mo';
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          btn.textContent = data.error || 'Error';
+          setTimeout(() => {
+            btn.textContent = plan === 'pro' ? 'Subscribe — $49/mo' : 'Subscribe — $299/mo';
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (e) {
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Check URL params for subscription success/cancel
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('subscription') === 'success') {
+    const plan = params.get('plan') || 'pro';
+    localStorage.setItem('fi_subscription', plan);
+    window.history.replaceState({}, '', window.location.pathname);
+    if (window.__openModal) {
+      window.__openModal('Subscription Active!', `Welcome to Felicity Intelligence ${plan.charAt(0).toUpperCase() + plan.slice(1)}. All features are now unlocked.`);
+    }
+  }
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
 } else {
