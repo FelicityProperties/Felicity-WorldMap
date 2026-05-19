@@ -108,7 +108,7 @@ function renderCards() {
           ${area.tags.map(t => `<span class="dubai-card__tag">${t}</span>`).join('')}
         </div>
         <div class="dubai-card__cta">
-          <a href="https://wa.me/971501234567?text=Hi%20Felicity%2C%20I'm%20interested%20in%20${encodeURIComponent(area.name)}%20real%20estate.%20Can%20we%20discuss%3F" target="_blank" rel="noopener" class="dubai-card__whatsapp">
+          <a href="https://wa.me/971563520611?text=Hi%20Felicity%2C%20I'm%20interested%20in%20${encodeURIComponent(area.name)}%20real%20estate.%20Can%20we%20discuss%3F" target="_blank" rel="noopener" class="dubai-card__whatsapp">
             <span class="dubai-card__whatsapp-icon">&#x1F4AC;</span> WhatsApp
           </a>
           <button class="dubai-card__consult" data-area="${area.name}">Book a Call</button>
