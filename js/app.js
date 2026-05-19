@@ -52,6 +52,10 @@ async function boot() {
   initPanels();
   initRegionDrawer();
 
+  // Init monetization features
+  initNewsletter();
+  initConsultation();
+
   // Expose buildTicker globally so sidebar refresh button can update it
   window.__rebuildTicker = buildTicker;
 
