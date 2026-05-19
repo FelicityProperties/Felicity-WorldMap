@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="css/signals.css">
   <link rel="stylesheet" href="css/sp500.css">
   <link rel="stylesheet" href="css/desk.css">
+  <link rel="stylesheet" href="css/monetize.css">
 </head>
 <body>
 
@@ -150,6 +151,23 @@
           <div class="hero__alert">
             <span class="hero__alert-badge">Breaking</span>
             <span class="hero__alert-text" id="alert-text">Loading intelligence feed...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Newsletter Signup -->
+      <section class="newsletter-section section">
+        <div class="newsletter-box">
+          <div class="newsletter-box__content">
+            <h3 class="newsletter-box__title">Weekly Dubai RE Intelligence Brief</h3>
+            <p class="newsletter-box__desc">Get our institutional-grade macro analysis delivered every Monday. No spam. Unsubscribe anytime.</p>
+          </div>
+          <form class="newsletter-box__form" id="newsletter-form">
+            <input type="email" class="newsletter-box__input" id="newsletter-email" placeholder="your@email.com" required>
+            <button type="submit" class="newsletter-box__btn">Subscribe</button>
+          </form>
+          <div class="newsletter-box__success" id="newsletter-success" style="display:none">
+            Subscribed. First brief lands Monday.
           </div>
         </div>
       </section>
@@ -442,6 +460,42 @@
     </div>
     <div class="region-drawer__content" id="region-drawer-content"></div>
   </div>
+
+  <!-- ═══════════════ CONSULTATION MODAL ═══════════════ -->
+  <div class="consult-overlay" id="consult-overlay">
+    <div class="consult-modal">
+      <div class="consult-modal__header">
+        <h3 class="consult-modal__title">Book a Consultation</h3>
+        <button class="consult-modal__close" id="consult-close">&times;</button>
+      </div>
+      <div class="consult-modal__area" id="consult-area"></div>
+      <form class="consult-form" id="consult-form">
+        <input type="text" class="consult-form__input" id="consult-name" placeholder="Full Name *" required>
+        <input type="email" class="consult-form__input" id="consult-email" placeholder="Email *" required>
+        <input type="tel" class="consult-form__input" id="consult-phone" placeholder="Phone (with country code) *" required>
+        <select class="consult-form__select" id="consult-budget">
+          <option value="">Select Budget Range</option>
+          <option value="under-1m">Under AED 1M</option>
+          <option value="1m-3m">AED 1M - 3M</option>
+          <option value="3m-10m">AED 3M - 10M</option>
+          <option value="10m-plus">AED 10M+</option>
+        </select>
+        <input type="text" class="consult-form__input" id="consult-area-input" placeholder="Preferred Area" readonly>
+        <textarea class="consult-form__textarea" id="consult-message" placeholder="Tell us about your investment goals (optional)" rows="3"></textarea>
+        <button type="submit" class="consult-form__submit">Request Consultation</button>
+      </form>
+      <div class="consult-success" id="consult-success" style="display:none">
+        <div class="consult-success__icon">&#10003;</div>
+        <h3>Consultation Requested</h3>
+        <p>Our Dubai RE specialists will contact you within 24 hours.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ FLOATING WHATSAPP ═══════════════ -->
+  <a href="https://wa.me/971501234567?text=Hi%20Felicity%2C%20I'm%20interested%20in%20Dubai%20real%20estate%20opportunities." target="_blank" rel="noopener" class="floating-whatsapp" title="Chat on WhatsApp">
+    <span class="floating-whatsapp__icon">&#x1F4AC;</span>
+  </a>
 
 </div>
 

@@ -1,0 +1,462 @@
+/* ═══════════════════════════════════════════════════════════
+   MONETIZE — Newsletter, Lead Capture, WhatsApp CTAs
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Newsletter Section ── */
+.newsletter-section {
+  padding: 0 var(--space-6) var(--space-8);
+}
+
+.newsletter-box {
+  max-width: var(--content-narrow);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  position: relative;
+  overflow: hidden;
+}
+
+.newsletter-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-hero);
+  pointer-events: none;
+}
+
+.newsletter-box__content {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.newsletter-box__title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.newsletter-box__desc {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.newsletter-box__form {
+  display: flex;
+  gap: var(--space-3);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.newsletter-box__input {
+  width: 260px;
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.newsletter-box__input::placeholder {
+  color: var(--text-muted);
+}
+
+.newsletter-box__input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.newsletter-box__btn {
+  padding: var(--space-2) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--bg-deepest);
+  background: var(--accent-gold);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.newsletter-box__btn:hover {
+  background: #e0b860;
+  box-shadow: 0 0 16px rgba(212, 168, 83, 0.3);
+}
+
+.newsletter-box__success {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--semantic-green);
+  position: relative;
+}
+
+/* ── Dubai Card CTAs ── */
+.dubai-card__cta {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.dubai-card__whatsapp {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: #fff;
+  background: #25d366;
+  border: none;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.dubai-card__whatsapp:hover {
+  background: #20bd5a;
+  box-shadow: 0 0 16px rgba(37, 211, 102, 0.3);
+}
+
+.dubai-card__whatsapp-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.dubai-card__consult {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px solid rgba(212, 168, 83, 0.3);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.dubai-card__consult:hover {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 16px rgba(212, 168, 83, 0.15);
+}
+
+/* ── Consultation Modal Overlay ── */
+.consult-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(6, 8, 12, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.consult-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Consultation Modal ── */
+.consult-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  transform: scale(0.95) translateY(8px);
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.consult-overlay.is-open .consult-modal {
+  transform: scale(1) translateY(0);
+}
+
+.consult-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.consult-modal__title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.consult-modal__close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-xl);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.consult-modal__close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.consult-modal__area {
+  padding: var(--space-3) var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Consultation Form ── */
+.consult-form {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.consult-form__input,
+.consult-form__select,
+.consult-form__textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all var(--duration-fast) var(--ease-out);
+  box-sizing: border-box;
+}
+
+.consult-form__input::placeholder,
+.consult-form__textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.consult-form__input:focus,
+.consult-form__select:focus,
+.consult-form__textarea:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.consult-form__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.consult-form__select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.consult-form__textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.consult-form__submit {
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--bg-deepest);
+  background: var(--accent-gold);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.consult-form__submit:hover {
+  background: #e0b860;
+  box-shadow: 0 0 16px rgba(212, 168, 83, 0.3);
+}
+
+.consult-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Consultation Success ── */
+.consult-success {
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}
+
+.consult-success__icon {
+  font-size: 32px;
+  color: var(--semantic-green);
+  margin-bottom: var(--space-3);
+}
+
+.consult-success h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.consult-success p {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Floating WhatsApp Button ── */
+.floating-whatsapp {
+  position: fixed;
+  bottom: 52px;
+  right: 20px;
+  z-index: var(--z-panel);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #25d366;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-out);
+  animation: whatsapp-pulse 2s ease-in-out infinite;
+}
+
+.floating-whatsapp:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.5);
+}
+
+.floating-whatsapp__icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+@keyframes whatsapp-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(37, 211, 102, 0.6), 0 0 0 8px rgba(37, 211, 102, 0.1);
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .newsletter-section {
+    padding: 0 var(--space-3) var(--space-6);
+  }
+
+  .newsletter-box {
+    flex-direction: column;
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .newsletter-box__form {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .newsletter-box__input {
+    width: 100%;
+    font-size: 16px; /* prevents iOS zoom */
+  }
+
+  .newsletter-box__btn {
+    width: 100%;
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .dubai-card__cta {
+    flex-direction: column;
+  }
+
+  .consult-overlay {
+    padding: var(--space-3);
+  }
+
+  .consult-modal {
+    max-height: 95vh;
+  }
+
+  .consult-form__input,
+  .consult-form__select,
+  .consult-form__textarea {
+    font-size: 16px; /* prevents iOS zoom */
+  }
+
+  .floating-whatsapp {
+    bottom: 48px;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .floating-whatsapp__icon {
+    font-size: 24px;
+  }
+}
