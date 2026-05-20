@@ -441,16 +441,34 @@ function initPlaybook() {
 function initNewsletter() {
   const form = document.getElementById('newsletter-form');
   if (!form) return;
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('newsletter-email').value;
+    const emailInput = document.getElementById('newsletter-email');
+    const btn = form.querySelector('button');
+    const email = emailInput.value.trim();
     if (!email) return;
-    // Store locally (would POST to /api/subscribe in production)
-    const subs = JSON.parse(localStorage.getItem('fi_subscribers') || '[]');
-    subs.push({ email, date: new Date().toISOString() });
-    localStorage.setItem('fi_subscribers', JSON.stringify(subs));
-    form.style.display = 'none';
-    document.getElementById('newsletter-success').style.display = 'block';
+
+    btn.textContent = 'Subscribing...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        form.style.display = 'none';
+        document.getElementById('newsletter-success').style.display = 'block';
+      } else {
+        btn.textContent = data.error || 'Error — try again';
+        btn.disabled = false;
+      }
+    } catch {
+      btn.textContent = 'Error — try again';
+      btn.disabled = false;
+    }
   });
 }
 
