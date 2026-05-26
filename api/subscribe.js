@@ -84,7 +84,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           from: 'Felicity Intelligence <onboarding@resend.dev>',
-          to: ['felicity@felicityproperties.com'],
+          to: [process.env.OWNER_EMAIL || 'mouhannad@felicitypro.com'],
           subject: `New Subscriber: ${email}`,
           html: `<p>New newsletter subscriber: <strong>${email}</strong></p><p>Date: ${new Date().toISOString()}</p>`
         }),
