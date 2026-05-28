@@ -98,6 +98,28 @@ export const sp500Companies = [
   { ticker: 'EQT',   name: 'EQT Corporation',                sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Pittsburgh, PA' },
   { ticker: 'AR',    name: 'Antero Resources Corp.',         sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Denver, CO' },
   { ticker: 'RRC',   name: 'Range Resources Corp.',          sector: 'Oil & Gas',     subIndustry: 'Natural Gas Exploration & Production',       hq: 'Fort Worth, TX' },
+
+  // ── Retail ──
+  { ticker: 'TGT',   name: 'Target Corporation',              sector: 'Retail',        subIndustry: 'General Merchandise',                        hq: 'Minneapolis, MN' },
+  { ticker: 'DG',    name: 'Dollar General Corporation',      sector: 'Retail',        subIndustry: 'Discount Stores',                            hq: 'Goodlettsville, TN' },
+  { ticker: 'DLTR',  name: 'Dollar Tree Inc.',                sector: 'Retail',        subIndustry: 'Discount Stores',                            hq: 'Chesapeake, VA' },
+  { ticker: 'ROST',  name: 'Ross Stores Inc.',                sector: 'Retail',        subIndustry: 'Off-Price Retail',                           hq: 'Dublin, CA' },
+  { ticker: 'TJX',   name: 'The TJX Companies Inc.',          sector: 'Retail',        subIndustry: 'Off-Price Retail',                           hq: 'Framingham, MA' },
+  { ticker: 'BBY',   name: 'Best Buy Co. Inc.',               sector: 'Retail',        subIndustry: 'Electronics Retail',                         hq: 'Richfield, MN' },
+  { ticker: 'KR',    name: 'The Kroger Co.',                  sector: 'Retail',        subIndustry: 'Grocery Retail',                             hq: 'Cincinnati, OH' },
+  { ticker: 'AZO',   name: 'AutoZone Inc.',                   sector: 'Retail',        subIndustry: 'Auto Parts Retail',                          hq: 'Memphis, TN' },
+  { ticker: 'ORLY',  name: "O'Reilly Automotive Inc.",        sector: 'Retail',        subIndustry: 'Auto Parts Retail',                          hq: 'Springfield, MO' },
+  { ticker: 'ULTA',  name: 'Ulta Beauty Inc.',                sector: 'Retail',        subIndustry: 'Beauty Retail',                              hq: 'Bolingbrook, IL' },
+  { ticker: 'NKE',   name: 'Nike Inc.',                       sector: 'Retail',        subIndustry: 'Footwear & Apparel',                         hq: 'Beaverton, OR' },
+  { ticker: 'LULU',  name: 'Lululemon Athletica Inc.',        sector: 'Retail',        subIndustry: 'Athletic Apparel',                           hq: 'Vancouver, Canada' },
+  { ticker: 'GPS',   name: 'Gap Inc.',                        sector: 'Retail',        subIndustry: 'Apparel Retail',                             hq: 'San Francisco, CA' },
+  { ticker: 'M',     name: "Macy's Inc.",                     sector: 'Retail',        subIndustry: 'Department Stores',                          hq: 'New York, NY' },
+  { ticker: 'KSS',   name: "Kohl's Corporation",              sector: 'Retail',        subIndustry: 'Department Stores',                          hq: 'Menomonee Falls, WI' },
+  { ticker: 'FIVE',  name: 'Five Below Inc.',                 sector: 'Retail',        subIndustry: 'Discount & Variety',                         hq: 'Philadelphia, PA' },
+  { ticker: 'BURL',  name: 'Burlington Stores Inc.',          sector: 'Retail',        subIndustry: 'Off-Price Retail',                           hq: 'Burlington, NJ' },
+  { ticker: 'ETSY',  name: 'Etsy Inc.',                       sector: 'Retail',        subIndustry: 'E-Commerce',                                 hq: 'Brooklyn, NY' },
+  { ticker: 'W',     name: 'Wayfair Inc.',                    sector: 'Retail',        subIndustry: 'E-Commerce Furniture',                       hq: 'Boston, MA' },
+  { ticker: 'EBAY',  name: 'eBay Inc.',                       sector: 'Retail',        subIndustry: 'E-Commerce Marketplace',                     hq: 'San Jose, CA' },
 ];
 
 // Sector groupings for filter UI
@@ -107,6 +129,7 @@ export const sectorGroups = {
   'Finance':    'Finance',
   'Healthcare': 'Healthcare',
   'Oil & Gas':  'Oil & Gas',
+  'Retail':     'Retail',
   'Airlines':   'Airlines',
   'Energy':     'Energy',
   'Consumer':   'Consumer',
