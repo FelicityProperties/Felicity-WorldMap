@@ -118,13 +118,24 @@ function parseRSSItems(xmlText, source) {
 }
 
 // ── Fetch with proxy fallback chain ──
+// A fresh cache-buster is generated per call so neither the browser, the CORS
+// proxy, nor the upstream RSS host can serve a stale (cached) response.
 async function fetchWithProxy(url, timeoutMs = 8000) {
+  const cb = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // Bust the upstream RSS URL so the proxy itself fetches a fresh copy.
+  const bustedUrl = url + (url.includes('?') ? '&' : '?') + `_cb=${cb}`;
+
   for (const proxyFn of CORS_PROXIES) {
     try {
-      const proxyUrl = proxyFn(url);
+      // Also bust the proxy URL so the browser HTTP cache can't short-circuit.
+      const proxyUrl = proxyFn(bustedUrl) + `&_pcb=${cb}`;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(proxyUrl, { signal: controller.signal });
+      const res = await fetch(proxyUrl, {
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      });
       clearTimeout(timeout);
 
       if (!res.ok) continue;
