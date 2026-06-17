@@ -158,28 +158,56 @@ async function fetchFeed(feed) {
   return parseRSSItems(xml, feed.source);
 }
 
+// ── Primary path: same-origin serverless endpoint (reliable, no CORS proxy) ──
+async function fetchFromApi() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const res = await fetch(`/api/news?_cb=${Date.now()}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.ok || !Array.isArray(data.items) || !data.items.length) return null;
+    // Add display time (computed client-side from the item timestamp).
+    return data.items.map(it => ({ ...it, time: timeAgo(it._ts ? new Date(it._ts).toISOString() : null) }));
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Fallback path: client-side CORS proxy chain (for local dev / API down) ──
+async function fetchFromProxies() {
+  const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
+  const all = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
+  if (!all.length) return null;
+
+  all.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+  const seen = new Set();
+  const deduped = all.filter(item => {
+    const key = item.title.slice(0, 60).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return deduped;
+}
+
 export async function fetchLiveNews() {
   try {
-    const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
-    const all = results
-      .filter(r => r.status === 'fulfilled')
-      .flatMap(r => r.value);
+    // Try the reliable server-side endpoint first, then fall back to proxies.
+    let items = await fetchFromApi();
+    if (!items) items = await fetchFromProxies();
 
-    if (!all.length) {
+    if (!items || !items.length) {
       console.log('[news-live] No items fetched, keeping existing news');
       return false;
     }
 
-    all.sort((a, b) => (b._ts || 0) - (a._ts || 0));
-    const seen = new Set();
-    const deduped = all.filter(item => {
-      const key = item.title.slice(0, 60).toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    const top = deduped.slice(0, 24);
+    const top = items.slice(0, 24);
     news.length = 0;
     news.push(...top);
 
