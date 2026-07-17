@@ -114,7 +114,7 @@ CRITICAL: Use the BEAT/MISS labels above exactly. Do NOT contradict them.
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-opus-4-7', max_tokens: 800, system: systemPrompt, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-opus-4-8', max_tokens: 800, system: systemPrompt, messages: [{ role: 'user', content: prompt }] })
     });
 
     if (!response.ok) return res.json({ brief: `API error (${response.status}).` });

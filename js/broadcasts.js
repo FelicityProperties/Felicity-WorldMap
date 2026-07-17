@@ -14,7 +14,27 @@
 
 import { broadcastChannels } from './data.js';
 
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// Multiple CORS proxies — try each until one works (single proxy was flaky)
+const CORS_PROXIES = [
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxies(url, timeoutMs = 8000) {
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(proxyFn(url), { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) return res;
+    } catch (e) {
+      continue;
+    }
+  }
+  return null;
+}
 
 export function initBroadcasts() {
   renderCards();
@@ -97,14 +117,9 @@ async function discoverVideoId(ch) {
     try {
       const ytUrl = `https://www.youtube.com/@${ch.handle}/live`;
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(ytUrl)}&format=json`;
-      const proxyUrl = CORS_PROXY + encodeURIComponent(oembedUrl);
+      const res = await fetchViaProxies(oembedUrl);
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(proxyUrl, { signal: controller.signal });
-      clearTimeout(timeout);
-
-      if (res.ok) {
+      if (res) {
         const data = await res.json();
         const match = data.html?.match(/embed\/([a-zA-Z0-9_-]{11})/);
         if (match) {
@@ -121,14 +136,9 @@ async function discoverVideoId(ch) {
   if (ch.channelId) {
     try {
       const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
-      const proxyUrl = CORS_PROXY + encodeURIComponent(rssUrl);
+      const res = await fetchViaProxies(rssUrl);
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(proxyUrl, { signal: controller.signal });
-      clearTimeout(timeout);
-
-      if (res.ok) {
+      if (res) {
         const xml = await res.text();
         const match = xml.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
         if (match) {

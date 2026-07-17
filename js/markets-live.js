@@ -131,15 +131,40 @@ function updateMarkets(newData) {
   return updated > 0;
 }
 
-// ── Main fetch — all sources in parallel ──
+// ── Primary path: same-origin serverless endpoint (no CORS proxy) ──
+async function fetchFromApi() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const res = await fetch(`/api/markets?_cb=${Date.now()}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.ok || !Array.isArray(data.items) || !data.items.length) return null;
+    return data.items;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Main fetch — API first, client-side sources as fallback ──
 export async function fetchLiveMarkets() {
   try {
-    const [crypto, traditional] = await Promise.all([
-      fetchCrypto(),
-      fetchTraditional()
-    ]);
+    let all = await fetchFromApi();
 
-    const all = [...crypto, ...traditional];
+    if (!all) {
+      // Fallback: direct CoinGecko + Yahoo-via-proxy (local dev / API down)
+      const [crypto, traditional] = await Promise.all([
+        fetchCrypto(),
+        fetchTraditional()
+      ]);
+      all = [...crypto, ...traditional];
+    }
+
     if (!all.length) {
       console.log('[markets-live] No data fetched, keeping existing');
       return false;
