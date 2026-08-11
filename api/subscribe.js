@@ -1,4 +1,33 @@
 // Vercel Serverless Function — Newsletter subscription + welcome email
+//
+// Stores each subscriber as a Resend Audience contact (so the scheduled
+// /api/brief broadcast has a real list to send to), then sends a welcome
+// email + owner notification.
+
+const AUDIENCE_NAME = 'Felicity Intelligence Brief';
+
+// Resolve the audience to store contacts in: env override → existing → create.
+async function getAudienceId(resendKey) {
+  if (process.env.RESEND_AUDIENCE_ID) return process.env.RESEND_AUDIENCE_ID;
+
+  const headers = { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' };
+
+  const listRes = await fetch('https://api.resend.com/audiences', { headers });
+  if (listRes.ok) {
+    const list = await listRes.json();
+    const existing = (list.data || []).find(a => a.name === AUDIENCE_NAME) || (list.data || [])[0];
+    if (existing) return existing.id;
+  }
+
+  const createRes = await fetch('https://api.resend.com/audiences', {
+    method: 'POST', headers, body: JSON.stringify({ name: AUDIENCE_NAME }),
+  });
+  if (createRes.ok) {
+    const created = await createRes.json();
+    return created.id;
+  }
+  return null;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,8 +42,29 @@ export default async function handler(req, res) {
   }
 
   const resendKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || 'Felicity Intelligence <onboarding@resend.dev>';
 
-  // Send welcome email via Resend
+  // 1) Store the subscriber in the Resend audience — this is what the
+  //    Monday/Thursday broadcast sends to, so do it first and always.
+  if (resendKey) {
+    try {
+      const audienceId = await getAudienceId(resendKey);
+      if (audienceId) {
+        await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, unsubscribed: false }),
+        });
+        console.log('[subscribe] Contact stored in audience:', email);
+      } else {
+        console.error('[subscribe] Could not resolve/create audience');
+      }
+    } catch (e) {
+      console.error('[subscribe] Audience store error:', e.message);
+    }
+  }
+
+  // 2) Send welcome email via Resend
   if (resendKey) {
     try {
       await fetch('https://api.resend.com/emails', {
@@ -24,9 +74,9 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Felicity Intelligence <onboarding@resend.dev>',
+          from: fromEmail,
           to: [email],
-          subject: 'Welcome to Felicity Intelligence — Your First Brief',
+          subject: 'Welcome to Felicity Intelligence — Briefs Every Mon & Thu',
           html: `
 <!DOCTYPE html>
 <html>
@@ -41,8 +91,8 @@ export default async function handler(req, res) {
   <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:32px 24px;margin-bottom:24px;">
     <h1 style="color:#f0f4f8;font-size:22px;margin:0 0 16px;">Welcome to the Intelligence Brief</h1>
     <p style="color:#8899aa;font-size:15px;line-height:1.7;margin:0 0 20px;">
-      You're now subscribed to our weekly institutional-grade Dubai real estate macro analysis.
-      Every Monday, you'll receive:
+      You're now subscribed to our institutional-grade Dubai real estate macro analysis.
+      Every <strong style="color:#f0f4f8;">Monday</strong> and <strong style="color:#f0f4f8;">Thursday</strong>, you'll receive:
     </p>
     <ul style="color:#8899aa;font-size:14px;line-height:2;margin:0 0 20px;padding-left:20px;">
       <li><strong style="color:#f0f4f8;">Macro Pulse</strong> — Key global events moving Dubai RE this week</li>
@@ -83,7 +133,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Felicity Intelligence <onboarding@resend.dev>',
+          from: fromEmail,
           to: [process.env.OWNER_EMAIL || 'mouhannad@felicitypro.com'],
           subject: `New Subscriber: ${email}`,
           html: `<p>New newsletter subscriber: <strong>${email}</strong></p><p>Date: ${new Date().toISOString()}</p>`
