@@ -17,6 +17,7 @@ export default async function handler(req, res) {
 
   const resendKey = process.env.RESEND_API_KEY;
   const ownerEmail = process.env.OWNER_EMAIL || 'mouhannad@felicitypro.com';
+  const fromEmail = process.env.FROM_EMAIL;
 
   if (resendKey) {
     const budgetLabels = {
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Felicity Leads <onboarding@resend.dev>',
+          from: fromEmail || 'Felicity Leads <onboarding@resend.dev>',
           to: [ownerEmail],
           reply_to: email,
           subject: `🔥 NEW LEAD: ${name} — ${area || 'General'} (${budgetText})`,
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Felicity Intelligence <onboarding@resend.dev>',
+          from: fromEmail || 'Felicity Intelligence <onboarding@resend.dev>',
           to: [email],
           subject: 'Your Dubai RE Consultation Request — Felicity Intelligence',
           html: `
