@@ -7,7 +7,32 @@
   <meta name="description" content="Felicity Intelligence — Institutional-grade global macro intelligence translated into actionable Dubai real estate conviction.">
   <title>Felicity Intelligence — Global Macro. Dubai RE Conviction.</title>
 
+  <!-- SEO / Social sharing -->
+  <link rel="canonical" href="https://felicity-world-map.vercel.app/">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Felicity Intelligence">
+  <meta property="og:title" content="Felicity Intelligence — Global Macro. Dubai RE Conviction.">
+  <meta property="og:description" content="Live world map, S&P 500 terminal, AI desk analysis, and twice-weekly Dubai real estate intelligence briefs. Institutional-grade macro translated into Dubai RE conviction.">
+  <meta property="og:url" content="https://felicity-world-map.vercel.app/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Felicity Intelligence — Global Macro. Dubai RE Conviction.">
+  <meta name="twitter:description" content="Live world map, S&P 500 terminal, AI desk analysis, and twice-weekly Dubai real estate intelligence briefs.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Felicity Intelligence",
+    "description": "Institutional-grade global macro intelligence translated into actionable Dubai real estate conviction.",
+    "url": "https://felicity-world-map.vercel.app/",
+    "areaServed": "Dubai, United Arab Emirates",
+    "telephone": "+971563520611",
+    "email": "mouhannad@felicitypro.com"
+  }
+  </script>
+
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="manifest" href="assets/site.webmanifest">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +62,9 @@
   <link rel="stylesheet" href="css/desk.css">
   <link rel="stylesheet" href="css/monetize.css">
   <link rel="stylesheet" href="css/mobile.css">
+
+  <!-- Vercel Web Analytics (activates once enabled in the Vercel dashboard) -->
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
@@ -161,15 +189,15 @@
       <section class="newsletter-section section">
         <div class="newsletter-box">
           <div class="newsletter-box__content">
-            <h3 class="newsletter-box__title">Weekly Dubai RE Intelligence Brief</h3>
-            <p class="newsletter-box__desc">Get our institutional-grade macro analysis delivered every Monday. No spam. Unsubscribe anytime.</p>
+            <h3 class="newsletter-box__title">Dubai RE Intelligence Brief</h3>
+            <p class="newsletter-box__desc">Get our institutional-grade macro analysis every Monday &amp; Thursday. No spam. Unsubscribe anytime.</p>
           </div>
           <form class="newsletter-box__form" id="newsletter-form">
             <input type="email" class="newsletter-box__input" id="newsletter-email" placeholder="your@email.com" required>
             <button type="submit" class="newsletter-box__btn">Subscribe</button>
           </form>
           <div class="newsletter-box__success" id="newsletter-success" style="display:none">
-            Subscribed. First brief lands Monday.
+            Subscribed. Briefs land every Monday &amp; Thursday.
           </div>
         </div>
       </section>
@@ -541,6 +569,8 @@
       </div>
       <div class="consult-modal__area" id="consult-area"></div>
       <form class="consult-form" id="consult-form">
+        <!-- Honeypot: invisible to humans; bots that fill it are silently dropped -->
+        <input type="text" id="consult-website" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;height:0;width:0;opacity:0" aria-hidden="true">
         <input type="text" class="consult-form__input" id="consult-name" placeholder="Full Name *" required>
         <input type="email" class="consult-form__input" id="consult-email" placeholder="Email *" required>
         <input type="tel" class="consult-form__input" id="consult-phone" placeholder="Phone (with country code) *" required>
