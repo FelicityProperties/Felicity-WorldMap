@@ -1,6 +1,6 @@
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // APP — Main Orchestration, Tab Routing, Init
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
 import { initMap, renderDynLayers, animateTrackers, toggleLayer, setCountryClickHandler, getMap } from './map.js';
 import { initSidebar, refreshCurrentTab, getCurrentTab } from './sidebar.js';
@@ -291,7 +291,7 @@ function renderSignalCards(grid) {
   const rest = filtered.slice(1);
 
   const areasHtml = (areas) => (areas || []).map(a => `<span class="signal-area-tag">${a}</span>`).join('');
-  const sentArrow = (s) => s.sentiment === 'bullish' ? '\u25B2' : s.sentiment === 'bearish' ? '\u25BC' : '\u25CF';
+  const sentArrow = (s) => s.sentiment === 'bullish' ? '▲' : s.sentiment === 'bearish' ? '▼' : '●';
 
   const featuredHtml = `
     <div class="signal-featured signal-featured--${featured.sentiment}">
@@ -527,7 +527,8 @@ function initConsultation() {
       phone: document.getElementById('consult-phone').value,
       budget: document.getElementById('consult-budget').value,
       area: areaInput ? areaInput.value : '',
-      message: document.getElementById('consult-message').value
+      message: document.getElementById('consult-message').value,
+      website: (document.getElementById('consult-website') || {}).value || ''
     };
 
     try {
