@@ -1,6 +1,31 @@
-# Felicity WorldMap
+# Felicity Intelligence (WorldMap)
 
 A real-time global intelligence dashboard built to track macro events, market shifts, and geopolitical movements — and translate them into actionable real estate opportunities in Dubai. This is not just data. This is decision-making power.
+
+**Live:** https://felicity-world-map.vercel.app · Deploys automatically from `main`.
+
+## Environment Variables (Vercel → Settings → Environment Variables)
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | Powers Ask Felicity, country intel, stock AI briefs, and the Mon/Thu newsletter brief (Claude) |
+| `RESEND_API_KEY` | Yes | All email: welcome, lead notifications, and the newsletter broadcast |
+| `FINNHUB_API_KEY` | Yes | Live S&P 500 quotes, earnings, ratings |
+| `FROM_EMAIL` | **Recommended** | Sender for all email, e.g. `Felicity Intelligence <intel@felicitypro.com>`. Without it, emails send from Resend's test address, which **only delivers to the Resend account owner**. Verify the domain in Resend → Domains first. |
+| `OWNER_EMAIL` | No | Where lead/subscriber notifications go (default `mouhannad@felicitypro.com`) |
+| `STRIPE_SECRET_KEY` | For payments | Stripe Checkout subscriptions |
+| `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook verification |
+| `CRON_SECRET` | No | If set, `/api/brief` only accepts scheduled runs from Vercel Cron |
+| `RESEND_AUDIENCE_ID` | No | Pin the newsletter audience; otherwise auto-resolved by name |
+| `DATABASE_URL` | No | Neon Postgres for `/api/data`; hardcoded fallback used if absent |
+
+## Newsletter
+
+Subscribers are stored in a Resend Audience ("Felicity Intelligence Brief").
+A Vercel Cron (`vercel.json`) hits `/api/brief` every **Monday & Thursday
+04:00 UTC (08:00 Dubai)**; Claude writes the brief and Resend broadcasts it
+with per-contact unsubscribe links. Preview without emailing the list:
+`GET /api/brief?test=1` (sends only to `OWNER_EMAIL`).
 
 ## Features
 

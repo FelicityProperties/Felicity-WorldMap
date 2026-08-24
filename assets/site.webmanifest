@@ -1,0 +1,17 @@
+{
+  "name": "Felicity Intelligence",
+  "short_name": "Felicity",
+  "description": "Global Macro. Dubai RE Conviction.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090c10",
+  "theme_color": "#090c10",
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
