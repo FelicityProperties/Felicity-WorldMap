@@ -1,5 +1,15 @@
 // Vercel Serverless Function — Lead capture with email notification
 
+// In-memory rate limit (resets on cold start): 5 leads/min/IP
+const rateLimit = {};
+function checkRateLimit(ip, max = 5, windowMs = 60000) {
+  const now = Date.now();
+  rateLimit[ip] = (rateLimit[ip] || []).filter(t => now - t < windowMs);
+  if (rateLimit[ip].length >= max) return false;
+  rateLimit[ip].push(now);
+  return true;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -7,7 +17,19 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const { name, email, phone, budget, area, message } = req.body || {};
+  const { name, email, phone, budget, area, message, website } = req.body || {};
+
+  // Honeypot: the hidden 'website' field is invisible to humans — a filled
+  // value means a bot. Pretend success so it doesn't retry.
+  if (website) {
+    return res.json({ success: true, message: 'Thank you! Our team will contact you within 24 hours.' });
+  }
+
+  const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again in a minute.' });
+  }
+
   if (!name || !email || !phone) {
     return res.status(400).json({ error: 'Name, email, and phone are required' });
   }

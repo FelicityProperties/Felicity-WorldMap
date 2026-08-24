@@ -6,6 +6,16 @@
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
+// In-memory rate limit (resets on cold start): 5 signups/min/IP
+const rateLimit = {};
+function checkRateLimit(ip, max = 5, windowMs = 60000) {
+  const now = Date.now();
+  rateLimit[ip] = (rateLimit[ip] || []).filter(t => now - t < windowMs);
+  if (rateLimit[ip].length >= max) return false;
+  rateLimit[ip].push(now);
+  return true;
+}
+
 // Resolve the audience to store contacts in: env override → existing → create.
 async function getAudienceId(resendKey) {
   if (process.env.RESEND_AUDIENCE_ID) return process.env.RESEND_AUDIENCE_ID;
@@ -39,6 +49,11 @@ export default async function handler(req, res) {
   const { email } = req.body || {};
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required' });
+  }
+
+  const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again in a minute.' });
   }
 
   const resendKey = process.env.RESEND_API_KEY;
