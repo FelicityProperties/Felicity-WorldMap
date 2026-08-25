@@ -60,6 +60,15 @@ export const pixSignals = [
     detectedOn: '2026-08-19', direction: 1, value: 2229.01, baseline: 1645.73, magnitudePct: 35.44 },
   { type: 'record_psf', entity: 'ZaZEN One', area: 'Al Barsha South Fifth', community: 'jumeirah-village-triangle',
     detectedOn: '2026-08-14', direction: 1, value: 1751.34, baseline: 1425.51, magnitudePct: 22.86 },
+  // Record PSF inside areas tracked on the Dubai Intel tab
+  { type: 'record_psf', entity: 'Mercer House', area: 'Al Thanyah Fifth', community: 'dmcc-ez1',
+    detectedOn: '2026-08-25', direction: 1, value: 3091.27, baseline: 3024.57, magnitudePct: 2.21 },
+  { type: 'record_psf', entity: 'Royal Oceanic Tower', area: 'Marsa Dubai', community: 'dubai-marina',
+    detectedOn: '2026-08-20', direction: 1, value: 2279.21, baseline: 2131.32, magnitudePct: 6.94 },
+  { type: 'record_psf', entity: 'Samana Waves', area: 'Al Barsha South Fourth', community: 'jumeirah-village-circle',
+    detectedOn: '2026-08-20', direction: 1, value: 2006.23, baseline: 1851.69, magnitudePct: 8.35 },
+  { type: 'record_psf', entity: 'Diamond Views 3 - Villas B', area: 'Al Barsha South Fourth', community: 'jumeirah-village-circle',
+    detectedOn: '2026-08-19', direction: 1, value: 1691.12, baseline: 1574.07, magnitudePct: 7.44 },
 
   // ── Highest registered gross yields (top of distribution) ──
   { type: 'yield_leader', entity: 'U-bora Towers', area: 'Business Bay', community: 'business-bay',
