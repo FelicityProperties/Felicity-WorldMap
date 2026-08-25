@@ -7,7 +7,8 @@ import { initSidebar, refreshCurrentTab, getCurrentTab } from './sidebar.js';
 import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
-import { loadFromAPI, dubaiSignals } from './data.js';
+import { loadFromAPI } from './data.js';
+import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge, signalUrl } from './pix-signals.js';
 import { initHero, refreshAlertBanner } from './hero.js';
 import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
@@ -196,149 +197,88 @@ function initSidebarToggle() {
   }
 }
 
-// ── Signals Section Rendering ──
-function signalSentimentClass(sentiment) {
-  if (sentiment === 'bullish') return 'bullish';
-  if (sentiment === 'bearish') return 'bearish';
-  return 'neutral';
-}
-
-function signalActionClass(action) {
-  if (!action) return 'neutral';
-  const a = action.toUpperCase();
-  if (a.includes('BULLISH') || a.includes('ACCUMULATE')) return 'bullish';
-  if (a.includes('BEARISH')) return 'bearish';
-  if (a.includes('WATCH') || a.includes('HOLD')) return 'watch';
-  return 'neutral';
-}
-
-let signalFilters = { sentiment: 'all', segment: 'all', horizon: 'all' };
+// ── Signals Section — real PIX signals from registered DLD evidence ──
+let signalFilter = 'all';
 
 function initSignals() {
   const grid = document.getElementById('signals-grid');
-  if (!grid || !dubaiSignals.length) return;
+  if (!grid || !pixSignals.length) return;
 
-  // Insert filter controls before the grid
   const section = document.getElementById('section-signals');
   if (section && !document.getElementById('signal-filters')) {
-    const filterHtml = `
+    const counts = t => t === 'all' ? pixSignals.length : pixSignals.filter(s => s.type === t).length;
+    const btn = (val, label) =>
+      `<button class="signal-filter-btn${val === 'all' ? ' active' : ''}" data-value="${val}">${label} <span class="signal-filter-btn__n">${counts(val)}</span></button>`;
+
+    grid.insertAdjacentHTML('beforebegin', `
       <div class="signal-filters" id="signal-filters">
         <div class="signal-filter-group">
-          <button class="signal-filter-btn active" data-filter="sentiment" data-value="all">All</button>
-          <button class="signal-filter-btn" data-filter="sentiment" data-value="bullish">Bullish</button>
-          <button class="signal-filter-btn" data-filter="sentiment" data-value="neutral">Watch</button>
-          <button class="signal-filter-btn" data-filter="sentiment" data-value="bearish">Bearish</button>
+          ${btn('all', 'All')}
+          ${Object.entries(SIGNAL_TYPES).map(([k, v]) => btn(k, v.label)).join('')}
         </div>
-        <div class="signal-filter-group">
-          <button class="signal-filter-btn active" data-filter="segment" data-value="all">All</button>
-          <button class="signal-filter-btn" data-filter="segment" data-value="Luxury">Luxury</button>
-          <button class="signal-filter-btn" data-filter="segment" data-value="Premium">Premium</button>
-          <button class="signal-filter-btn" data-filter="segment" data-value="Mid-market">Mid</button>
-          <button class="signal-filter-btn" data-filter="segment" data-value="Affordable">Affordable</button>
-        </div>
-        <div class="signal-filter-group">
-          <button class="signal-filter-btn active" data-filter="horizon" data-value="all">All</button>
-          <button class="signal-filter-btn" data-filter="horizon" data-value="immediate">Immediate</button>
-          <button class="signal-filter-btn" data-filter="horizon" data-value="short">Short</button>
-          <button class="signal-filter-btn" data-filter="horizon" data-value="medium">Medium</button>
-          <button class="signal-filter-btn" data-filter="horizon" data-value="long">Long</button>
+        <div class="signal-source">
+          Live from the DLD register · detected through ${PIX_SIGNALS_AS_OF} ·
+          <a href="https://www.propertyindex.ae" target="_blank" rel="noopener">PropertyIndex ↗</a>
         </div>
       </div>
-    `;
-    grid.insertAdjacentHTML('beforebegin', filterHtml);
+    `);
 
-    // Filter click handler
     document.getElementById('signal-filters').addEventListener('click', e => {
-      const btn = e.target.closest('.signal-filter-btn');
-      if (!btn) return;
-      const filterType = btn.dataset.filter;
-      const filterValue = btn.dataset.value;
-
-      // Update active state within group
-      btn.closest('.signal-filter-group').querySelectorAll('.signal-filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      signalFilters[filterType] = filterValue;
+      const b = e.target.closest('.signal-filter-btn');
+      if (!b) return;
+      b.closest('.signal-filter-group').querySelectorAll('.signal-filter-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      signalFilter = b.dataset.value;
       renderSignalCards(grid);
     });
   }
-
-  // Signal card expand click handler
-  grid.addEventListener('click', e => {
-    const card = e.target.closest('.signal-list-card');
-    if (!card) return;
-    card.classList.toggle('is-expanded');
-  });
 
   renderSignalCards(grid);
 }
 
 function renderSignalCards(grid) {
-  const filtered = dubaiSignals.filter(s => {
-    if (signalFilters.sentiment !== 'all' && s.sentiment !== signalFilters.sentiment) return false;
-    if (signalFilters.segment !== 'all' && (s.segment || '') !== signalFilters.segment) return false;
-    if (signalFilters.horizon !== 'all' && (s.timeHorizon || '') !== signalFilters.horizon) return false;
-    return true;
-  });
+  const list = signalFilter === 'all'
+    ? pixSignals
+    : pixSignals.filter(s => s.type === signalFilter);
 
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="signal-empty">No signals match current filters</div>';
+  if (!list.length) {
+    grid.innerHTML = '<div class="signal-empty">No signals of this type in the current window</div>';
     return;
   }
 
-  // Featured signal (first item)
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
+  grid.innerHTML = list.map((s, i) => {
+    const meta = SIGNAL_TYPES[s.type];
+    const copy = signalCopy(s);
+    const arrow = s.direction === 1 ? '\u25B2' : s.direction === -1 ? '\u25BC' : '\u25CF';
+    return `
+      <div class="signal-list-card signal-list-card--${meta.tone}" style="animation-delay:${i * 40}ms">
+        <div class="signal-list-card__header">
+          <div class="signal-list-card__trigger">${escapeHtml(s.entity)}</div>
+          <span class="signal-list-card__time">${signalAge(s.detectedOn)}</span>
+        </div>
+        <div class="signal-list-card__chain">${escapeHtml(copy.headline)}</div>
+        <div class="signal-list-card__areas">
+          <span class="signal-area-tag">${escapeHtml(s.area || 'Dubai')}</span>
+        </div>
+        <div class="signal-list-card__footer">
+          <span class="signal-list-card__sector">${meta.label}</span>
+          <span class="signal-list-card__sentiment signal-list-card__sentiment--${meta.tone}">${arrow} registered</span>
+        </div>
+        <div class="signal-list-card__magnitude">${escapeHtml(copy.detail)}</div>
+        <div class="signal-evidence">
+          <span class="signal-evidence__badge">DLD</span>
+          <span>Detected ${s.detectedOn}</span>
+          <a href="${signalUrl(s)}" target="_blank" rel="noopener" title="View on PropertyIndex">↗</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-  const areasHtml = (areas) => (areas || []).map(a => `<span class="signal-area-tag">${a}</span>`).join('');
-  const sentArrow = (s) => s.sentiment === 'bullish' ? '▲' : s.sentiment === 'bearish' ? '▼' : '●';
-
-  const featuredHtml = `
-    <div class="signal-featured signal-featured--${featured.sentiment}">
-      <div class="signal-featured__header">
-        <span class="signal-featured__trigger">${featured.trigger}</span>
-        <span class="signal-featured__time">${featured.time} ago</span>
-      </div>
-      <div class="signal-featured__chain">${featured.chain}</div>
-      <div class="signal-featured__areas">${areasHtml(featured.areas)}</div>
-      <div class="signal-featured__footer">
-        <span class="signal-featured__sector">${featured.sector}</span>
-        <span class="signal-action-badge signal-action-badge--${signalActionClass(featured.action)}">${featured.action || ''}</span>
-        <span class="signal-featured__impact signal-featured__impact--${featured.sentiment}">${featured.impact} ${sentArrow(featured)}</span>
-      </div>
-      <div class="signal-featured__detail">
-        <div class="signal-detail-row"><span class="signal-detail-label">Magnitude</span><span class="signal-detail-value">${featured.magnitude || ''}</span></div>
-        <div class="signal-detail-row"><span class="signal-detail-label">Time Horizon</span><span class="signal-detail-value">${featured.timeHorizon || ''}</span></div>
-        <div class="signal-detail-row"><span class="signal-detail-label">Region</span><span class="signal-detail-value">${featured.triggerRegion || ''}</span></div>
-        ${featured.historicalAnalog ? `<div class="signal-historical">${featured.historicalAnalog}</div>` : ''}
-      </div>
-    </div>
-  `;
-
-  const listHtml = rest.map((s, i) => `
-    <div class="signal-list-card signal-list-card--${s.sentiment}" style="animation-delay:${(i + 1) * 60}ms">
-      <div class="signal-list-card__header">
-        <div class="signal-list-card__trigger">${s.trigger}</div>
-        <span class="signal-list-card__time">${s.time} ago</span>
-      </div>
-      <div class="signal-list-card__chain">${s.chain}</div>
-      <div class="signal-list-card__areas">${areasHtml(s.areas)}</div>
-      <div class="signal-list-card__footer">
-        <span class="signal-list-card__sector">${s.sector}</span>
-        <span class="signal-action-badge signal-action-badge--${signalActionClass(s.action)}">${s.action || ''}</span>
-        <span class="signal-list-card__sentiment signal-list-card__sentiment--${s.sentiment}">${s.impact} ${sentArrow(s)}</span>
-      </div>
-      <div class="signal-list-card__magnitude">
-        <span class="signal-detail-label">Magnitude</span> ${s.magnitude || ''}
-        <span class="signal-detail-label" style="margin-left:12px">Horizon</span> ${s.timeHorizon || ''}
-      </div>
-      <div class="signal-list-card__expandable">
-        ${s.historicalAnalog ? `<div class="signal-historical">${s.historicalAnalog}</div>` : ''}
-      </div>
-    </div>
-  `).join('');
-
-  grid.innerHTML = featuredHtml + listHtml;
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str == null ? '' : str);
+  return d.innerHTML;
 }
 
 // ── Ask Felicity ──

@@ -21,7 +21,7 @@ export const PIX_WINDOW = 'Aug 2025 – Jul 2026';
 
 // ── PIX Market Index (base Jan 2012 = 100) ──
 export const pixIndex = {
-  residential: { level: 205.98, momPct: -2.08, yoyPct: -2.62, medianPsf: 1672, txCount: 9582 },
+  residential: { level: 205.98, momPct: -2.08, yoyPct: -2.62, medianPsf: 1672, txCount: 9581 },
   apartment:   { level: 200.58, momPct: -2.00, yoyPct: -3.26, medianPsf: 1688, txCount: 8746 },
   villa:       { level: 263.68, momPct: -2.63, yoyPct: 1.61,  medianPsf: 1510, txCount: 836 },
 };

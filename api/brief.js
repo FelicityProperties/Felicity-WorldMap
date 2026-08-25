@@ -12,6 +12,7 @@
 //                            (use this to preview without touching the list)
 
 import { buildDeskContext } from '../js/pix-data.js';
+import { buildSignalContext } from '../js/pix-signals.js';
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
@@ -25,7 +26,9 @@ Rules:
 - No disclaimers, no 'investors should consider', no 'consult advisor'.
 - Tone: PM note to his book. Dense with data. Zero filler.
 
-${buildDeskContext()}`;
+${buildDeskContext()}
+
+${buildSignalContext()}`;
 
 function buildBriefPrompt() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

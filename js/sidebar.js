@@ -2,7 +2,8 @@
 // SIDEBAR — Tab Switching, Card Rendering
 // ═══════════════════════════════════════════════════════════
 
-import { news, markets, flights, ships, dubaiSignals } from './data.js';
+import { news, markets, flights, ships } from './data.js';
+import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
 import { formatPrice } from './utils.js';
 import { fetchLiveNews } from './news-live.js';
 import { fetchLiveMarkets } from './markets-live.js';
@@ -319,47 +320,34 @@ function renderShips() {
   return header + cards;
 }
 
-// ── Dubai RE Signals ──
+// ── Dubai RE Signals — real PIX signals from the DLD register ──
 function renderSignals() {
-  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  const bullish = dubaiSignals.filter(s => s.sentiment === 'bullish').length;
-  const bearish = dubaiSignals.filter(s => s.sentiment === 'bearish').length;
-  const neutral = dubaiSignals.length - bullish - bearish;
+  const up = pixSignals.filter(s => s.direction === 1).length;
+  const dn = pixSignals.filter(s => s.direction === -1).length;
 
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${bullish} bullish \u00b7 ${neutral} neutral \u00b7 ${bearish} bearish \u00b7 ${ts}
+        <span class="news-header__live"><span class="news-header__live-dot"></span>DLD</span> ${up} rising \u00b7 ${dn} falling \u00b7 to ${PIX_SIGNALS_AS_OF}
       </div>
       <button class="news-refresh-btn" id="signals-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
-  const sentArrow = (s) => s.sentiment === 'bullish' ? '\u25b2' : s.sentiment === 'bearish' ? '\u25bc' : '\u25cf';
-  const actionCls = (a) => {
-    if (!a) return 'neutral';
-    const u = a.toUpperCase();
-    if (u.includes('BULLISH') || u.includes('ACCUMULATE')) return 'bullish';
-    if (u.includes('BEARISH')) return 'bearish';
-    if (u.includes('WATCH') || u.includes('HOLD')) return 'watch';
-    return 'neutral';
-  };
-
-  const cards = dubaiSignals.map(s => {
-    const areasHtml = (s.areas || []).map(a => `<span class="signal-area-tag">${a}</span>`).join('');
-    const actionHtml = s.action ? `<span class="signal-action-badge signal-action-badge--${actionCls(s.action)}">${s.action}</span>` : '';
-    const magHtml = s.magnitude ? `<div class="signal-card__magnitude"><span class="signal-detail-label">Magnitude</span> ${s.magnitude}</div>` : '';
+  const cards = pixSignals.map(s => {
+    const meta = SIGNAL_TYPES[s.type];
+    const copy = signalCopy(s);
+    const arrow = s.direction === 1 ? '\u25b2' : s.direction === -1 ? '\u25bc' : '\u25cf';
     return `
-    <div class="signal-card signal-card--${s.sentiment || 'neutral'}">
-      <div class="signal-card__trigger">${s.trigger}</div>
-      <div class="signal-card__chain">${s.chain}</div>
-      ${areasHtml ? `<div class="signal-card__areas">${areasHtml}</div>` : ''}
+    <div class="signal-card signal-card--${meta.tone}">
+      <div class="signal-card__trigger">${escapeHtml(s.entity)}</div>
+      <div class="signal-card__chain">${escapeHtml(copy.headline)}</div>
+      <div class="signal-card__areas"><span class="signal-area-tag">${escapeHtml(s.area || 'Dubai')}</span></div>
       <div class="signal-card__footer">
-        <span class="signal-card__sector">${s.sector}</span>
-        ${actionHtml}
-        <span class="signal-card__sentiment ${s.sentiment}">${s.impact} ${sentArrow(s)}</span>
+        <span class="signal-card__sector">${meta.label}</span>
+        <span class="signal-card__sentiment ${meta.tone}">${signalAge(s.detectedOn)} ${arrow}</span>
       </div>
-      ${magHtml}
+      <div class="signal-card__magnitude"><span class="signal-detail-label">Evidence</span> ${escapeHtml(copy.detail)}</div>
     </div>
   `;
   }).join('');

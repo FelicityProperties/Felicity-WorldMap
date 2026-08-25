@@ -1,6 +1,7 @@
 // Vercel Serverless Function — Hedge Fund Desk Intelligence via Claude
 
 import { buildDeskContext } from '../../js/pix-data.js';
+import { buildSignalContext } from '../../js/pix-signals.js';
 
 // ── Rate Limiting (in-memory, resets on cold start) ──
 const rateLimit = {};
@@ -30,7 +31,9 @@ Rules:
 - If the user's question framing is weak, reject it and redirect to the right question.
 - Tone: Druckenmiller meets local Dubai RE domain depth. Every response reads like a PM note to his book.
 
-${buildDeskContext()}`;
+${buildDeskContext()}
+
+${buildSignalContext()}`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
