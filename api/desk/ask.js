@@ -26,7 +26,14 @@ Rules:
 - End every call with conviction: LOW / MODERATE / HIGH / VERY HIGH / MAXIMUM with reasoning.
 - Think in probabilities: 'Base case 60%: X. Bull case 25%: Y. Bear case 15%: Z.'
 - If the user's question framing is weak, reject it and redirect to the right question.
-- Tone: Druckenmiller meets local Dubai RE domain depth. Every response reads like a PM note to his book.`;
+- Tone: Druckenmiller meets local Dubai RE domain depth. Every response reads like a PM note to his book.
+
+LIVE MARKET STATE (PIX index, DLD data via PropertyIndex, as of Jul 2026 — anchor every call to this):
+- Residential index 206.0 (base Jan 2012=100): -2.6% YoY, -2.1% MoM. The market has ROLLED OVER from its Dec 2025 peak of 223.2 after a +14% YoY run in mid-2025.
+- Apartments -3.3% YoY, median AED 1,688/sqft. Villas +1.6% YoY, median AED 1,510/sqft — villas are outperforming apartments by ~5pts.
+- ~9,600 registered transactions/month emirate-wide.
+- L12M registered sales by area: Business Bay 9,532 sales (AED 31.1B), JVC 13,672 (AED 16.3B), Dubai South 13,061 (AED 18.3B), Downtown 3,492 (AED 15.6B), Palm Jumeirah 1,257 (AED 12.5B), Dubai Hills Estate 2,986 (AED 11.3B), Creek Harbour 3,029 (AED 8.6B), Marina 2,501 (AED 7.0B).
+Do not describe the market as uniformly bullish — it is correcting. Distinguish segments and areas using these numbers.`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -313,3 +313,189 @@
     font-size: var(--text-md);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PIX — Official Market Evidence (DLD via PropertyIndex)
+   ═══════════════════════════════════════════════════════════ */
+
+.pix-strip {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.pix-strip__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.pix-strip__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pix-strip__badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-primary);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+}
+
+.pix-strip__spark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pix-strip__spark-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pix-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.pix-strip__seg {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.pix-strip__seg-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.pix-strip__seg-level {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-bottom: var(--space-1);
+}
+
+.pix-strip__seg-changes {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-1);
+}
+
+.pix-chg {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.pix-chg--up {
+  color: var(--semantic-green);
+  background: var(--semantic-green-glow);
+}
+
+.pix-chg--dn {
+  color: var(--semantic-red);
+  background: var(--semantic-red-glow);
+}
+
+.pix-strip__seg-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.pix-strip__source {
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.pix-strip__source a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+/* ── Per-card evidence row ── */
+.pix-evidence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.pix-evidence__badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-primary);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: var(--radius-xs);
+  padding: 2px 5px;
+  flex-shrink: 0;
+}
+
+.pix-evidence__stats {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.pix-evidence__scope {
+  color: var(--text-muted);
+}
+
+.pix-evidence__link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .pix-strip__grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .pix-strip__seg-level {
+    font-size: var(--text-xl);
+  }
+}
