@@ -3,7 +3,16 @@
 // ═══════════════════════════════════════════════════════════
 
 import { dubaiAreas } from './data.js';
-import { pixIndex, pixAreas, PIX_AS_OF, PIX_SOURCE, fmtAedBillions, fmtCount, fmtPct, pixSparkline } from './pix-data.js';
+import {
+  pixIndex, pixAreas, PIX_AS_OF, PIX_SOURCE, PIX_WINDOW,
+  fmtAedBillions, fmtCount, fmtPct, fmtPrice, fmtRent, yieldClass, pixSparkline,
+} from './pix-data.js';
+
+// Registry yield where PropertyIndex has evidence, else the desk estimate
+function effectiveYield(area) {
+  const p = pixAreas[area.name];
+  return (p && p.yieldPct != null) ? p.yieldPct : area.rentalYield;
+}
 
 let currentSort = 'score';
 let currentFilter = '';
@@ -47,10 +56,74 @@ function renderPixStrip() {
         ${seg('Apartments', pixIndex.apartment)}
         ${seg('Villas', pixIndex.villa)}
       </div>
-      <div class="pix-strip__source">Source: ${PIX_SOURCE} · as of ${PIX_AS_OF} · base Jan 2012 = 100 · <a href="https://www.propertyindex.ae" target="_blank" rel="noopener">propertyindex.ae ↗</a></div>
+      <div class="pix-strip__source">Source: ${PIX_SOURCE} · index as of ${PIX_AS_OF} (base Jan 2012 = 100) · area medians from registered transactions ${PIX_WINDOW} · gross yields exclude service charges and voids · <a href="https://www.propertyindex.ae" target="_blank" rel="noopener">propertyindex.ae ↗</a></div>
     </div>`;
 
   controls.insertAdjacentHTML('beforebegin', html);
+}
+
+// Metrics grid — registry medians first, desk scores second.
+// Values sourced from the DLD register carry a "reg" marker; the rest
+// are Felicity desk assessments.
+function metricsHtml(area, dirClass, dirIcon) {
+  const p = pixAreas[area.name];
+  const reg = '<span class="metric-src metric-src--reg" title="Registered DLD evidence">reg</span>';
+
+  const yieldVal = (p && p.yieldPct != null)
+    ? `<span class="dubai-card__metric-value dubai-card__metric-value--accent">${p.yieldPct.toFixed(1)}%${reg}</span>`
+    : `<span class="dubai-card__metric-value dubai-card__metric-value--accent">${area.rentalYield}%<span class="metric-src" title="Felicity desk estimate — no registry evidence in window">est</span></span>`;
+
+  const psfVal = p
+    ? `<span class="dubai-card__metric-value">${fmtCount(p.psf)}${reg}</span>`
+    : '<span class="dubai-card__metric-value">—</span>';
+
+  const priceVal = p
+    ? `<span class="dubai-card__metric-value">${fmtPrice(p.price)}${reg}</span>`
+    : '<span class="dubai-card__metric-value">—</span>';
+
+  const rentVal = (p && p.rent != null)
+    ? `<span class="dubai-card__metric-value">${fmtRent(p.rent)}${reg}</span>`
+    : '<span class="dubai-card__metric-value">—</span>';
+
+  return `
+        <div class="dubai-card__metrics">
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Med. PSF</span>
+            ${psfVal}
+          </div>
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Gross Yield</span>
+            ${yieldVal}
+          </div>
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Med. Price</span>
+            ${priceVal}
+          </div>
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Med. Rent</span>
+            ${rentVal}
+          </div>
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Price Trend</span>
+            <span class="dubai-card__metric-value ${dirClass}">${dirIcon} ${area.priceDirection}</span>
+          </div>
+          <div class="dubai-card__metric">
+            <span class="dubai-card__metric-label">Score</span>
+            <span class="dubai-card__metric-value dubai-card__metric-value--accent">${area.opportunityScore}</span>
+          </div>
+        </div>
+        ${villaRowHtml(p)}`;
+}
+
+// Second cohort line for communities with meaningful villa volume
+function villaRowHtml(p) {
+  if (!p || !p.villa) return '';
+  const v = p.villa;
+  return `
+        <div class="pix-cohort">
+          <span class="pix-cohort__label">Villas</span>
+          <span class="pix-cohort__stats">${fmtCount(v.psf)}/sqft · ${fmtPrice(v.price)} · ${fmtRent(v.rent)} · <strong class="pix-cohort__yield pix-cohort__yield--${yieldClass(v.yieldPct)}">${v.yieldPct.toFixed(1)}%</strong></span>
+        </div>`;
 }
 
 // Evidence footer for one area card — registered DLD activity, L12M
@@ -58,12 +131,13 @@ function pixEvidenceHtml(areaName) {
   const p = pixAreas[areaName];
   if (!p) return '';
   const scope = p.scope ? ` <span class="pix-evidence__scope">(${p.scope})</span>` : '';
+  const note = p.note ? `<div class="pix-evidence__note">${p.note}</div>` : '';
   return `
     <div class="pix-evidence">
       <span class="pix-evidence__badge">DLD L12M</span>
       <span class="pix-evidence__stats">${fmtCount(p.sales)} sales · ${fmtAedBillions(p.valueAed)} · ${fmtCount(p.rentals)} rentals${scope}</span>
-      <a class="pix-evidence__link" href="${p.url}" target="_blank" rel="noopener" title="Registered activity, last 12 months to ${PIX_AS_OF} — ${PIX_SOURCE}">↗</a>
-    </div>`;
+      <a class="pix-evidence__link" href="${p.url}" target="_blank" rel="noopener" title="Registered activity ${PIX_WINDOW} — ${PIX_SOURCE}">↗</a>
+    </div>${note}`;
 }
 
 function getFilteredAreas() {
@@ -86,7 +160,7 @@ function getFilteredAreas() {
       areas.sort((a, b) => b.opportunityScore - a.opportunityScore);
       break;
     case 'yield':
-      areas.sort((a, b) => b.rentalYield - a.rentalYield);
+      areas.sort((a, b) => effectiveYield(b) - effectiveYield(a));
       break;
     case 'demand':
       areas.sort((a, b) => b.demandStrength - a.demandStrength);
@@ -124,32 +198,7 @@ function renderCards() {
           <span class="dubai-card__sentiment ${sentimentClass}">${sentimentIcon} ${area.sentiment}</span>
         </div>
         <div class="dubai-card__desc">${area.description}</div>
-        <div class="dubai-card__metrics">
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Price</span>
-            <span class="dubai-card__metric-value ${dirClass}">${dirIcon} ${area.priceDirection}</span>
-          </div>
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Yield</span>
-            <span class="dubai-card__metric-value dubai-card__metric-value--accent">${area.rentalYield}%</span>
-          </div>
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Demand</span>
-            <span class="dubai-card__metric-value">${area.demandStrength}/10</span>
-          </div>
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Outlook</span>
-            <span class="dubai-card__metric-value">${area.investorOutlook}</span>
-          </div>
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Score</span>
-            <span class="dubai-card__metric-value dubai-card__metric-value--accent">${area.opportunityScore}</span>
-          </div>
-          <div class="dubai-card__metric">
-            <span class="dubai-card__metric-label">Sentiment</span>
-            <span class="dubai-card__metric-value ${dirClass}">${area.sentiment}</span>
-          </div>
-        </div>
+        ${metricsHtml(area, dirClass, dirIcon)}
         <div class="dubai-card__score-section">
           <span class="dubai-card__score-label">Opportunity</span>
           <div class="dubai-card__score-bar">

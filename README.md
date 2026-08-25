@@ -19,6 +19,31 @@ A real-time global intelligence dashboard built to track macro events, market sh
 | `RESEND_AUDIENCE_ID` | No | Pin the newsletter audience; otherwise auto-resolved by name |
 | `DATABASE_URL` | No | Neon Postgres for `/api/data`; hardcoded fallback used if absent |
 
+## Dubai Market Data (PIX / PropertyIndex)
+
+`js/pix-data.js` holds a snapshot of official **Dubai Land Department**
+evidence modelled by [PropertyIndex](https://www.propertyindex.ae):
+
+- **PIX Market Index** — residential / apartment / villa levels, YoY, MoM,
+  median PSF, monthly transaction counts, plus a 13-month trend series.
+- **Per-area registry medians** for all 19 tracked areas — median registered
+  sale PSF, median registered price, median registered annual rent, and a
+  **gross yield** computed as registered rent PSF ÷ registered sale PSF for
+  the *same property-type cohort* in the *same community*, over the last 12
+  complete months. Separate villa cohorts are carried where volume supports it.
+- `buildDeskContext()` renders this into the system prompt for **both**
+  Ask Felicity (`api/desk/ask.js`) and the newsletter brief (`api/brief.js`),
+  so the AI quotes registry numbers rather than assuming market direction.
+
+Card values marked **reg** are registered DLD evidence; **est** marks a
+Felicity desk estimate used only where the registry has no rental evidence
+in the window (currently Jumeirah, DIFC, Dubai Islands).
+
+**Refreshing:** the snapshot is manual and dated. DLD data closes by calendar
+month, so monthly is the natural cadence — ask Claude to "refresh the PIX
+data" and it will re-query PropertyIndex and regenerate `js/pix-data.js`.
+Update `PIX_AS_OF` and `PIX_WINDOW` when you do.
+
 ## Newsletter
 
 Subscribers are stored in a Resend Audience ("Felicity Intelligence Brief").

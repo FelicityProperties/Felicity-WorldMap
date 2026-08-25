@@ -499,3 +499,63 @@
     font-size: var(--text-xl);
   }
 }
+
+/* ── Registry vs desk-estimate source markers ── */
+.metric-src {
+  display: inline-block;
+  margin-left: 4px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
+  padding: 0 3px;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.metric-src--reg {
+  color: var(--accent-primary);
+  border-color: rgba(0, 212, 255, 0.35);
+  background: rgba(0, 212, 255, 0.07);
+}
+
+/* ── Second cohort (villas) line ── */
+.pix-cohort {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.pix-cohort__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pix-cohort__stats {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.pix-cohort__yield--high { color: var(--semantic-green); }
+.pix-cohort__yield--mid  { color: var(--accent-gold); }
+.pix-cohort__yield--low  { color: var(--text-secondary); }
+
+.pix-evidence__note {
+  padding: 0 var(--space-4) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  background: rgba(0, 212, 255, 0.03);
+}

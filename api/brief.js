@@ -11,6 +11,8 @@
 //   GET /api/brief?test=1  → generates the brief but emails ONLY the owner
 //                            (use this to preview without touching the list)
 
+import { buildDeskContext } from '../js/pix-data.js';
+
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
 const BRIEF_SYSTEM_PROMPT = `You are the senior macro strategist at Felicity Intelligence writing the twice-weekly intelligence brief for Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
@@ -23,11 +25,7 @@ Rules:
 - No disclaimers, no 'investors should consider', no 'consult advisor'.
 - Tone: PM note to his book. Dense with data. Zero filler.
 
-LIVE MARKET STATE (PIX index, DLD data via PropertyIndex, as of Jul 2026 — anchor the brief to this):
-- Residential index 206.0: -2.6% YoY, -2.1% MoM — the market has rolled over from its Dec 2025 peak of 223.2 after a +14% YoY run in mid-2025.
-- Apartments -3.3% YoY (median AED 1,688/sqft); villas +1.6% YoY (median AED 1,510/sqft) — villas outperforming.
-- ~9,600 registered transactions/month. L12M sales leaders: Business Bay AED 31.1B, Dubai South AED 18.3B, JVC AED 16.3B, Downtown AED 15.6B, Palm Jumeirah AED 12.5B.
-Do not describe the market as uniformly bullish — it is correcting. Frame calls around the correction and segment divergence.`;
+${buildDeskContext()}`;
 
 function buildBriefPrompt() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
