@@ -33,13 +33,33 @@ function resolveAsset(symbol) {
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 // ── Rate limiting (in-memory, resets on cold start) ──
+//
+// The bucket is keyed by action AS WELL AS IP. It used to be keyed by IP
+// alone while four actions passed four different ceilings into it, so the
+// lowest ceiling governed everything: browsing ten instruments (each firing
+// a quote and a news call) filled the shared bucket and the screener came
+// back "too many scans" before it had ever been run once. Separate buckets
+// mean a quote never spends the advisor's allowance.
 const rateLimit = {};
-function checkRateLimit(ip, max, windowMs = 60000) {
+function checkRateLimit(key, max, windowMs = 60000) {
   const now = Date.now();
-  rateLimit[ip] = (rateLimit[ip] || []).filter(t => now - t < windowMs);
-  if (rateLimit[ip].length >= max) return false;
-  rateLimit[ip].push(now);
+
+  // Cheap sweep — a warm lambda would otherwise hold every caller forever
+  if (Object.keys(rateLimit).length > 5000) {
+    for (const k of Object.keys(rateLimit)) {
+      if (!rateLimit[k].some(t => now - t < windowMs)) delete rateLimit[k];
+    }
+  }
+
+  rateLimit[key] = (rateLimit[key] || []).filter(t => now - t < windowMs);
+  if (rateLimit[key].length >= max) return false;
+  rateLimit[key].push(now);
   return true;
+}
+
+// Callers pass this so each action gets its own allowance
+function limitKey(req, action) {
+  return `${action}:${req.headers['x-forwarded-for'] || 'unknown'}`;
 }
 
 async function timedFetch(url, ms = 8000, headers = {}) {
@@ -218,10 +238,9 @@ Because the reader supplied these figures, DO give a concrete ${cur} amount for 
 async function handleAdvise(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const ip = req.headers['x-forwarded-for'] || 'unknown';
   // A watchlist sweep issues one analysis per holding back to back, so this
   // has to comfortably exceed a realistic watchlist size.
-  if (!checkRateLimit(ip, 30)) {
+  if (!checkRateLimit(limitKey(req, 'advise'), 30)) {
     return res.status(429).json({
       ok: false,
       error: 'Too many analyses in the last minute (limit 30). Wait a moment and continue the sweep.',
@@ -334,19 +353,22 @@ Produce the analysis as specified JSON.`;
 // screened and backtested from the same real source. Nothing is modelled
 // or synthesised — if the history is unavailable the row says so.
 
+// Whitelisted history windows — `range` reaches the Yahoo query string
+const RANGES = new Set(['6mo', '1y', '2y', '5y', '10y', 'max']);
+
 function candleSymbol(asset) {
   if (asset.yahoo) return asset.yahoo;
   if (asset.class === 'crypto') return `${asset.symbol}-USD`;
   return asset.symbol;
 }
 
-async function fetchCandles(asset, range = '1y', interval = '1d') {
+async function fetchCandles(asset, range = '1y', interval = '1d', timeoutMs = 9000) {
   const sym = candleSymbol(asset);
   for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
     try {
       const r = await timedFetch(
-        `https://${host}/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}`,
-        9000, { 'User-Agent': UA }
+        `https://${host}/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${encodeURIComponent(range)}`,
+        timeoutMs, { 'User-Agent': UA }
       );
       if (!r.ok) continue;
       const res = (await r.json())?.chart?.result?.[0];
@@ -435,6 +457,11 @@ function indicatorSnapshot(k) {
 }
 
 // ── Screener ──
+// Kept in step with SCAN_CAP in js/invest.js so the button never promises
+// more instruments than the endpoint will actually look at.
+const SCAN_CAP = 60;
+const SCAN_BUDGET_MS = 40000;   // inside the 60s maxDuration below
+
 function passesFilters(ind, f) {
   if (f.rsiBelow != null && !(ind.rsi14 != null && ind.rsi14 < f.rsiBelow)) return false;
   if (f.rsiAbove != null && !(ind.rsi14 != null && ind.rsi14 > f.rsiAbove)) return false;
@@ -449,8 +476,7 @@ function passesFilters(ind, f) {
 
 async function handleScan(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST only' });
-  const ip = req.headers['x-forwarded-for'] || 'unknown';
-  if (!checkRateLimit(ip, 10)) {
+  if (!checkRateLimit(limitKey(req, 'scan'), 10)) {
     return res.status(429).json({ ok: false, error: 'Too many scans in the last minute. Wait a moment.' });
   }
 
@@ -460,13 +486,22 @@ async function handleScan(req, res) {
   }
 
   // Hard cap: each symbol is one upstream request
-  const assets = symbols.slice(0, 60).map(resolveAsset).filter(Boolean);
+  const assets = symbols.slice(0, SCAN_CAP).map(resolveAsset).filter(Boolean);
   const matches = [], failed = [];
 
-  for (let i = 0; i < assets.length; i += 8) {
-    const batch = assets.slice(i, i + 8);
+  // A serverless function is killed at its wall-clock limit, and a killed
+  // scan returns nothing at all — the user sees a 504 and loses the work
+  // already done. So stop starting batches once the budget is nearly spent
+  // and return what completed, naming what was skipped. A short scan that
+  // says what it missed beats a long one that dies silently.
+  const deadline = Date.now() + SCAN_BUDGET_MS;
+  let cursor = 0;
+
+  for (; cursor < assets.length; cursor += 8) {
+    if (Date.now() > deadline) break;
+    const batch = assets.slice(cursor, cursor + 8);
     const settled = await Promise.allSettled(batch.map(async a => {
-      const k = await fetchCandles(a, '1y', '1d');
+      const k = await fetchCandles(a, '1y', '1d', 6000);
       return { asset: a, ind: indicatorSnapshot(k) };
     }));
     settled.forEach((r, idx) => {
@@ -482,11 +517,15 @@ async function handleScan(req, res) {
     });
   }
 
+  const skipped = assets.slice(Math.min(cursor, assets.length)).map(a => a.symbol);
+
   res.status(200).json({
     ok: true,
-    scanned: assets.length,
+    requested: symbols.length,
+    scanned: assets.length - skipped.length,
     matched: matches.length,
     failed,
+    skipped,
     filters,
     results: matches,
     source: 'Yahoo Finance daily OHLCV, indicators computed server-side',
@@ -546,18 +585,41 @@ const STRATEGIES = {
 
 async function handleBacktest(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST only' });
-  const ip = req.headers['x-forwarded-for'] || 'unknown';
-  if (!checkRateLimit(ip, 20)) {
+  if (!checkRateLimit(limitKey(req, 'backtest'), 20)) {
     return res.status(429).json({ ok: false, error: 'Too many backtests in the last minute. Wait a moment.' });
   }
 
-  const { symbol, strategy = 'rsi_reversion', params = {}, range = '2y', feePct = 0.1 } = req.body || {};
+  const { symbol, strategy = 'rsi_reversion', params = {}, range: rawRange = '2y', feePct: rawFee = 0.1 } = req.body || {};
   const asset = resolveAsset(symbol);
   if (!asset) return res.status(400).json({ ok: false, error: `Unknown symbol: ${symbol}` });
 
   const strat = STRATEGIES[strategy];
   if (!strat) return res.status(400).json({ ok: false, error: `Unknown strategy: ${strategy}` });
-  const p = { ...strat.defaults, ...params };
+
+  // Every knob is caller-supplied, so none of it is trusted.
+  //
+  // `range` used to be interpolated straight into the Yahoo query string —
+  // a whitelist keeps it from carrying extra parameters. And a non-numeric
+  // feePct made Math.max(0, NaN) return NaN, which then propagated through
+  // every price into stats that serialise as null: a result that looks like
+  // an answer but is arithmetic on NaN. Bad input must be refused, not
+  // quietly turned into a blank report.
+  const range = RANGES.has(rawRange) ? rawRange : '2y';
+  const feeNum = Number(rawFee);
+  if (!Number.isFinite(feeNum) || feeNum < 0 || feeNum > 5) {
+    return res.status(400).json({ ok: false, error: 'feePct must be a number between 0 and 5.' });
+  }
+  const feePct = feeNum;
+
+  const p = { ...strat.defaults };
+  for (const [k, v] of Object.entries(params || {})) {
+    if (!(k in strat.defaults)) continue;
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      return res.status(400).json({ ok: false, error: `Parameter "${k}" must be a number.` });
+    }
+    p[k] = Math.min(400, Math.max(1, n));
+  }
 
   let k;
   try {
@@ -669,8 +731,7 @@ export default async function handler(req, res) {
   const asset = resolveAsset(symbol);
   if (!asset) return res.status(400).json({ ok: false, error: `Unknown symbol: ${symbol}` });
 
-  const ip = req.headers['x-forwarded-for'] || 'unknown';
-  if (!checkRateLimit(ip, 90)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+  if (!checkRateLimit(limitKey(req, action), 90)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
 
   try {
     if (action === 'quote') {
@@ -690,3 +751,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, symbol: asset.symbol, error: e.message });
   }
 }
+
+// A screener pass makes up to SCAN_CAP upstream history requests, which does
+// not fit the default 10s. Hobby allows 60.
+export const config = { maxDuration: 60 };

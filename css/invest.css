@@ -1082,7 +1082,7 @@
   font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--text-muted);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 6px var(--space-3);
@@ -1104,7 +1104,7 @@
   color: var(--text-secondary);
   line-height: 1.7;
   padding: var(--space-3);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   border-left: 2px solid var(--accent-primary);
   border-radius: var(--radius-xs);
   margin: var(--space-4) 0;
@@ -1129,7 +1129,7 @@
   font-family: var(--font-display);
   font-size: var(--text-sm);
   color: var(--text-primary);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
 }
@@ -1226,7 +1226,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
 }
 
 .screen-table__row {
@@ -1236,7 +1236,7 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 
-.screen-table__row:hover { background: var(--surface-raised); }
+.screen-table__row:hover { background: var(--bg-secondary); }
 
 .screen-table__sym {
   display: flex;
@@ -1250,7 +1250,7 @@
 .screen-table__sym em {
   font-family: var(--font-display);
   font-style: normal;
-  font-weight: var(--weight-regular);
+  font-weight: var(--weight-normal);
   font-size: var(--text-xs);
   color: var(--text-muted);
   overflow: hidden;
@@ -1289,7 +1289,7 @@
   color: var(--text-primary);
 }
 
-.bt__name { font-family: var(--font-display); font-weight: var(--weight-regular); font-size: var(--text-sm); color: var(--text-muted); }
+.bt__name { font-family: var(--font-display); font-weight: var(--weight-normal); font-size: var(--text-sm); color: var(--text-muted); }
 .bt__strat { font-size: var(--text-xs); color: var(--text-secondary); margin-top: 3px; line-height: 1.6; }
 
 .bt__period {
@@ -1309,7 +1309,7 @@
 }
 
 .bt__big {
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-4);
@@ -1332,7 +1332,7 @@
 .bt__big-value { font-family: var(--font-mono); font-size: var(--text-lg); font-weight: var(--weight-bold); }
 
 .bt__chart {
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: var(--space-4);
@@ -1378,7 +1378,7 @@
   padding: var(--space-4);
   border-radius: var(--radius-sm);
   border-left: 2px solid var(--text-muted);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
   margin-bottom: var(--space-4);
 }
 
@@ -1404,7 +1404,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  background: var(--surface-raised);
+  background: var(--bg-secondary);
 }
 
 .bt__trade { border-top: 1px solid var(--border-subtle); color: var(--text-secondary); }

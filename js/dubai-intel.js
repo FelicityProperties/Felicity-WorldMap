@@ -7,6 +7,7 @@ import {
   pixIndex, pixAreas, PIX_AS_OF, PIX_SOURCE, PIX_WINDOW,
   fmtAedBillions, fmtCount, fmtPct, fmtPrice, fmtRent, yieldClass, pixSparkline,
 } from './pix-data.js';
+import { safeUrl } from './safe.js';
 
 // Registry yield where PropertyIndex has evidence, else the desk estimate
 function effectiveYield(area) {
@@ -136,7 +137,7 @@ function pixEvidenceHtml(areaName) {
     <div class="pix-evidence">
       <span class="pix-evidence__badge">DLD L12M</span>
       <span class="pix-evidence__stats">${fmtCount(p.sales)} sales · ${fmtAedBillions(p.valueAed)} · ${fmtCount(p.rentals)} rentals${scope}</span>
-      <a class="pix-evidence__link" href="${p.url}" target="_blank" rel="noopener" title="Registered activity ${PIX_WINDOW} — ${PIX_SOURCE}">↗</a>
+      <a class="pix-evidence__link" href="${safeUrl(p.url)}" target="_blank" rel="noopener" title="Registered activity ${PIX_WINDOW} — ${PIX_SOURCE}">↗</a>
     </div>${note}`;
 }
 

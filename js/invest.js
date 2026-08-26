@@ -661,11 +661,17 @@ const SCREENS = {
 let screenKey = 'oversold';
 let screenScope = 'watchlist';
 
+// Must match SCAN_CAP in api/invest/[action].js. The watchlist used to be
+// passed uncapped, so a 140-name watchlist showed "Scan 140 instruments"
+// and got back "matched 3 of 60" — the button promised a scan the endpoint
+// was never going to run.
 const SCAN_CAP = 60;
 
 function screenUniverse() {
-  if (screenScope === 'watchlist') return getWatchlist().map(s => findAsset(s)).filter(Boolean);
-  return filtered().slice(0, SCAN_CAP);
+  const pool = screenScope === 'watchlist'
+    ? getWatchlist().map(s => findAsset(s)).filter(Boolean)
+    : filtered();
+  return { list: pool.slice(0, SCAN_CAP), total: pool.length };
 }
 
 function renderScreener() {
@@ -674,7 +680,7 @@ function renderScreener() {
   selected = null;
   document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
 
-  const universe = screenUniverse();
+  const { list: universe, total } = screenUniverse();
   const chips = Object.entries(SCREENS).map(([k, s]) =>
     `<button class="tool-chip${k === screenKey ? ' is-on' : ''}" data-screen="${k}">${esc(s.label)}</button>`).join('');
 
@@ -708,7 +714,9 @@ function renderScreener() {
           Scan ${universe.length} ${universe.length === 1 ? 'instrument' : 'instruments'} →
         </button>
         <span class="tool__note" id="screen-note">${universe.length
-          ? `One live history pull each · capped at ${SCAN_CAP}`
+          ? (total > universe.length
+              ? `One live history pull each · ${total - universe.length} of ${total} left out by the ${SCAN_CAP}-instrument cap`
+              : 'One live history pull each')
           : (screenScope === 'watchlist'
               ? 'Your watchlist is empty — star some instruments first.'
               : 'Nothing in the current list to scan.')}</span>
@@ -731,7 +739,7 @@ function renderScreener() {
 }
 
 async function runScreen() {
-  const list = screenUniverse();
+  const { list } = screenUniverse();
   const out = document.getElementById('screen-out');
   const btn = document.getElementById('screen-run');
   if (!list.length || !out) return;
@@ -758,6 +766,7 @@ async function runScreen() {
         <strong>${d.matched}</strong> of ${d.scanned} matched
         <span class="screen-summary__crit">${esc(SCREENS[screenKey].sub)}</span>
         ${d.failed.length ? `<span class="screen-summary__fail">${d.failed.length} had no usable history: ${esc(d.failed.slice(0, 8).join(', '))}${d.failed.length > 8 ? '…' : ''}</span>` : ''}
+        ${d.skipped?.length ? `<span class="screen-summary__fail">${d.skipped.length} not reached before the time budget ran out: ${esc(d.skipped.slice(0, 8).join(', '))}${d.skipped.length > 8 ? '…' : ''}</span>` : ''}
       </div>`;
 
     if (!d.results.length) {
@@ -1011,8 +1020,8 @@ function backtestHtml(d) {
       <div class="bt__stats">
         <div><span>Trades</span><strong>${s.trades}</strong></div>
         <div><span>Win rate</span><strong>${s.winRatePct}%</strong></div>
-        <div><span>Avg win</span><strong class="up">${fmtPct(s.avgWinPct)}</strong></div>
-        <div><span>Avg loss</span><strong class="dn">${fmtPct(s.avgLossPct)}</strong></div>
+        <div><span>Avg win</span><strong class="${s.avgWinPct ? 'up' : ''}">${s.avgWinPct ? fmtPct(s.avgWinPct) : '—'}</strong></div>
+        <div><span>Avg loss</span><strong class="${s.avgLossPct ? 'dn' : ''}">${s.avgLossPct ? fmtPct(s.avgLossPct) : '—'}</strong></div>
         <div><span>Profit factor</span><strong>${s.profitFactor ?? '—'}</strong></div>
         <div><span>Max drawdown</span><strong class="dn">−${s.maxDrawdownPct}%</strong></div>
       </div>
