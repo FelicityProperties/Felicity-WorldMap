@@ -3,6 +3,8 @@
 //   GET  /api/invest/quote?symbol=AAPL      live price for any asset class
 //   GET  /api/invest/news?symbol=AAPL       daily news for that instrument
 //   POST /api/invest/advise                 Felicity Bot investment analysis
+//   POST /api/invest/scan                   screen instruments on real indicators
+//   POST /api/invest/backtest               historical strategy simulation
 //
 // Every price and headline is fetched live from a real provider:
 //   US equities  → Finnhub    (quote, company-news)
@@ -322,6 +324,332 @@ Produce the analysis as specified JSON.`;
   }
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// CANDLES + INDICATORS — real OHLCV, computed server-side
+// ═══════════════════════════════════════════════════════════
+//
+// Yahoo's chart endpoint returns full OHLCV arrays for equities, indices,
+// FX, futures and crypto, so every instrument in the universe can be
+// screened and backtested from the same real source. Nothing is modelled
+// or synthesised — if the history is unavailable the row says so.
+
+function candleSymbol(asset) {
+  if (asset.yahoo) return asset.yahoo;
+  if (asset.class === 'crypto') return `${asset.symbol}-USD`;
+  return asset.symbol;
+}
+
+async function fetchCandles(asset, range = '1y', interval = '1d') {
+  const sym = candleSymbol(asset);
+  for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
+    try {
+      const r = await timedFetch(
+        `https://${host}/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}`,
+        9000, { 'User-Agent': UA }
+      );
+      if (!r.ok) continue;
+      const res = (await r.json())?.chart?.result?.[0];
+      const q = res?.indicators?.quote?.[0];
+      if (!res || !q) continue;
+
+      // Drop bars with holes so indicators never straddle a gap
+      const out = { t: [], o: [], h: [], l: [], c: [], v: [] };
+      for (let i = 0; i < res.timestamp.length; i++) {
+        if (q.close?.[i] == null || q.open?.[i] == null) continue;
+        out.t.push(res.timestamp[i] * 1000);
+        out.o.push(q.open[i]); out.h.push(q.high[i]);
+        out.l.push(q.low[i]);  out.c.push(q.close[i]);
+        out.v.push(q.volume?.[i] ?? 0);
+      }
+      if (out.c.length < 30) continue;
+      return out;
+    } catch { /* try next host */ }
+  }
+  throw new Error('No price history available');
+}
+
+// Wilder's RSI
+function rsiSeries(c, period = 14) {
+  const out = new Array(c.length).fill(null);
+  if (c.length <= period) return out;
+  let gain = 0, loss = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = c[i] - c[i - 1];
+    if (d >= 0) gain += d; else loss -= d;
+  }
+  gain /= period; loss /= period;
+  out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+  for (let i = period + 1; i < c.length; i++) {
+    const d = c[i] - c[i - 1];
+    gain = (gain * (period - 1) + (d > 0 ? d : 0)) / period;
+    loss = (loss * (period - 1) + (d < 0 ? -d : 0)) / period;
+    out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+  }
+  return out;
+}
+
+function smaAt(arr, n, i) {
+  if (i + 1 < n) return null;
+  let s = 0;
+  for (let k = i - n + 1; k <= i; k++) s += arr[k];
+  return s / n;
+}
+
+function maxDrawdown(equity) {
+  let peak = equity[0] ?? 1, mdd = 0;
+  for (const v of equity) {
+    if (v > peak) peak = v;
+    const dd = peak ? (peak - v) / peak : 0;
+    if (dd > mdd) mdd = dd;
+  }
+  return mdd * 100;
+}
+
+// Snapshot of the indicators the screener filters on
+function indicatorSnapshot(k) {
+  const n = k.c.length - 1;
+  const rsi = rsiSeries(k.c);
+  const volAvg20 = smaAt(k.v, 20, n);
+  const hi52 = Math.max(...k.h.slice(-252));
+  const lo52 = Math.min(...k.l.slice(-252));
+  const sma50 = smaAt(k.c, 50, n);
+  const sma200 = smaAt(k.c, 200, n);
+  const price = k.c[n];
+
+  return {
+    price,
+    rsi14: rsi[n] != null ? +rsi[n].toFixed(1) : null,
+    volume: k.v[n],
+    volSurgePct: volAvg20 ? +(((k.v[n] - volAvg20) / volAvg20) * 100).toFixed(0) : null,
+    sma50: sma50 != null ? +sma50.toFixed(2) : null,
+    sma200: sma200 != null ? +sma200.toFixed(2) : null,
+    aboveSma50: sma50 != null ? price > sma50 : null,
+    aboveSma200: sma200 != null ? price > sma200 : null,
+    pctFrom52wHigh: +(((price - hi52) / hi52) * 100).toFixed(1),
+    pctFrom52wLow: +(((price - lo52) / lo52) * 100).toFixed(1),
+    chg5dPct: k.c.length > 5 ? +(((price - k.c[n - 5]) / k.c[n - 5]) * 100).toFixed(2) : null,
+    bars: k.c.length,
+    asOf: k.t[n],
+  };
+}
+
+// ── Screener ──
+function passesFilters(ind, f) {
+  if (f.rsiBelow != null && !(ind.rsi14 != null && ind.rsi14 < f.rsiBelow)) return false;
+  if (f.rsiAbove != null && !(ind.rsi14 != null && ind.rsi14 > f.rsiAbove)) return false;
+  if (f.volSurgeAbove != null && !(ind.volSurgePct != null && ind.volSurgePct > f.volSurgeAbove)) return false;
+  if (f.aboveSma50 === true && ind.aboveSma50 !== true) return false;
+  if (f.aboveSma50 === false && ind.aboveSma50 !== false) return false;
+  if (f.aboveSma200 === true && ind.aboveSma200 !== true) return false;
+  if (f.nearHighWithin != null && !(ind.pctFrom52wHigh > -Math.abs(f.nearHighWithin))) return false;
+  if (f.downFromHighAtLeast != null && !(ind.pctFrom52wHigh < -Math.abs(f.downFromHighAtLeast))) return false;
+  return true;
+}
+
+async function handleScan(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST only' });
+  const ip = req.headers['x-forwarded-for'] || 'unknown';
+  if (!checkRateLimit(ip, 10)) {
+    return res.status(429).json({ ok: false, error: 'Too many scans in the last minute. Wait a moment.' });
+  }
+
+  const { symbols, filters = {} } = req.body || {};
+  if (!Array.isArray(symbols) || !symbols.length) {
+    return res.status(400).json({ ok: false, error: 'Provide a symbols array to scan.' });
+  }
+
+  // Hard cap: each symbol is one upstream request
+  const assets = symbols.slice(0, 60).map(resolveAsset).filter(Boolean);
+  const matches = [], failed = [];
+
+  for (let i = 0; i < assets.length; i += 8) {
+    const batch = assets.slice(i, i + 8);
+    const settled = await Promise.allSettled(batch.map(async a => {
+      const k = await fetchCandles(a, '1y', '1d');
+      return { asset: a, ind: indicatorSnapshot(k) };
+    }));
+    settled.forEach((r, idx) => {
+      if (r.status !== 'fulfilled') { failed.push(batch[idx].symbol); return; }
+      if (passesFilters(r.value.ind, filters)) {
+        matches.push({
+          symbol: r.value.asset.symbol,
+          name: r.value.asset.name,
+          assetClass: r.value.asset.class,
+          ...r.value.ind,
+        });
+      }
+    });
+  }
+
+  res.status(200).json({
+    ok: true,
+    scanned: assets.length,
+    matched: matches.length,
+    failed,
+    filters,
+    results: matches,
+    source: 'Yahoo Finance daily OHLCV, indicators computed server-side',
+  });
+}
+
+// ── Backtest ──
+// Long-only, one position at a time. A signal computed on bar i is executed
+// at the OPEN of bar i+1, so the test never trades on information it could
+// not have had. Fees are charged on both sides.
+const STRATEGIES = {
+  rsi_reversion: {
+    label: 'RSI mean reversion',
+    describe: p => `Buy when RSI(14) closes below ${p.oversold}; sell when it closes above ${p.overbought}.`,
+    defaults: { oversold: 30, overbought: 70 },
+    signals(k, p) {
+      const rsi = rsiSeries(k.c);
+      return k.c.map((_, i) => {
+        if (rsi[i] == null) return 0;
+        if (rsi[i] < p.oversold) return 1;
+        if (rsi[i] > p.overbought) return -1;
+        return 0;
+      });
+    },
+  },
+  sma_cross: {
+    label: 'Moving-average crossover',
+    describe: p => `Buy when the ${p.fast}-day SMA crosses above the ${p.slow}-day; sell on the cross back below.`,
+    defaults: { fast: 50, slow: 200 },
+    signals(k, p) {
+      return k.c.map((_, i) => {
+        const f = smaAt(k.c, p.fast, i), s = smaAt(k.c, p.slow, i);
+        const pf = smaAt(k.c, p.fast, i - 1), ps = smaAt(k.c, p.slow, i - 1);
+        if (f == null || s == null || pf == null || ps == null) return 0;
+        if (pf <= ps && f > s) return 1;
+        if (pf >= ps && f < s) return -1;
+        return 0;
+      });
+    },
+  },
+  breakout: {
+    label: 'Donchian breakout',
+    describe: p => `Buy a close above the ${p.entry}-day high; exit on a close below the ${p.exit}-day low.`,
+    defaults: { entry: 20, exit: 10 },
+    signals(k, p) {
+      return k.c.map((_, i) => {
+        if (i < Math.max(p.entry, p.exit)) return 0;
+        const hi = Math.max(...k.h.slice(i - p.entry, i));
+        const lo = Math.min(...k.l.slice(i - p.exit, i));
+        if (k.c[i] > hi) return 1;
+        if (k.c[i] < lo) return -1;
+        return 0;
+      });
+    },
+  },
+};
+
+async function handleBacktest(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST only' });
+  const ip = req.headers['x-forwarded-for'] || 'unknown';
+  if (!checkRateLimit(ip, 20)) {
+    return res.status(429).json({ ok: false, error: 'Too many backtests in the last minute. Wait a moment.' });
+  }
+
+  const { symbol, strategy = 'rsi_reversion', params = {}, range = '2y', feePct = 0.1 } = req.body || {};
+  const asset = resolveAsset(symbol);
+  if (!asset) return res.status(400).json({ ok: false, error: `Unknown symbol: ${symbol}` });
+
+  const strat = STRATEGIES[strategy];
+  if (!strat) return res.status(400).json({ ok: false, error: `Unknown strategy: ${strategy}` });
+  const p = { ...strat.defaults, ...params };
+
+  let k;
+  try {
+    k = await fetchCandles(asset, range, '1d');
+  } catch (e) {
+    return res.status(200).json({ ok: false, error: `No price history for ${asset.symbol}: ${e.message}` });
+  }
+
+  const sig = strat.signals(k, p);
+  const fee = Math.max(0, Number(feePct)) / 100;
+
+  const trades = [];
+  let inPos = false, entryPx = 0, entryAt = 0;
+  let equity = 1;
+  const curve = [];
+
+  for (let i = 0; i < k.c.length - 1; i++) {
+    // Mark to market on the close of each bar. `b` is buy-and-hold on the
+    // same axis, so the chart shows whether the strategy actually earned
+    // its trading — the comparison the demos always leave out.
+    curve.push({
+      t: k.t[i],
+      v: inPos ? equity * (k.c[i] / entryPx) : equity,
+      b: k.c[i] / k.c[0],
+    });
+
+    const execPx = k.o[i + 1];            // executed on the NEXT bar's open
+    if (!inPos && sig[i] === 1) {
+      inPos = true; entryPx = execPx * (1 + fee); entryAt = k.t[i + 1];
+    } else if (inPos && sig[i] === -1) {
+      const exitPx = execPx * (1 - fee);
+      const ret = (exitPx - entryPx) / entryPx;
+      equity *= (1 + ret);
+      trades.push({
+        entryAt, exitAt: k.t[i + 1],
+        entryPx: +entryPx.toFixed(4), exitPx: +exitPx.toFixed(4),
+        returnPct: +(ret * 100).toFixed(2),
+        bars: Math.round((k.t[i + 1] - entryAt) / 86400000),
+      });
+      inPos = false;
+    }
+  }
+
+  // Close any open position at the last available price
+  if (inPos) {
+    const exitPx = k.c[k.c.length - 1] * (1 - fee);
+    const ret = (exitPx - entryPx) / entryPx;
+    equity *= (1 + ret);
+    trades.push({
+      entryAt, exitAt: k.t[k.t.length - 1],
+      entryPx: +entryPx.toFixed(4), exitPx: +exitPx.toFixed(4),
+      returnPct: +(ret * 100).toFixed(2),
+      bars: Math.round((k.t[k.t.length - 1] - entryAt) / 86400000),
+      openAtEnd: true,
+    });
+  }
+
+  const wins = trades.filter(t => t.returnPct > 0);
+  const losses = trades.filter(t => t.returnPct <= 0);
+  const grossWin = wins.reduce((s, t) => s + t.returnPct, 0);
+  const grossLoss = Math.abs(losses.reduce((s, t) => s + t.returnPct, 0));
+  const buyHold = ((k.c[k.c.length - 1] - k.c[0]) / k.c[0]) * 100;
+  const stratRet = (equity - 1) * 100;
+
+  res.status(200).json({
+    ok: true,
+    symbol: asset.symbol,
+    name: asset.name,
+    strategy: { key: strategy, label: strat.label, description: strat.describe(p), params: p },
+    period: {
+      from: k.t[0], to: k.t[k.t.length - 1],
+      bars: k.c.length, range,
+    },
+    stats: {
+      trades: trades.length,
+      winRatePct: trades.length ? +((wins.length / trades.length) * 100).toFixed(1) : 0,
+      strategyReturnPct: +stratRet.toFixed(2),
+      buyHoldReturnPct: +buyHold.toFixed(2),
+      edgeVsBuyHoldPct: +(stratRet - buyHold).toFixed(2),
+      avgWinPct: wins.length ? +(grossWin / wins.length).toFixed(2) : 0,
+      avgLossPct: losses.length ? +(-grossLoss / losses.length).toFixed(2) : 0,
+      profitFactor: grossLoss ? +(grossWin / grossLoss).toFixed(2) : null,
+      maxDrawdownPct: +maxDrawdown(curve.map(x => x.v)).toFixed(2),
+      feePctPerSide: feePct,
+    },
+    trades: trades.slice(-30),
+    curve: curve.filter((_, i) => i % Math.max(1, Math.floor(curve.length / 120)) === 0),
+    method: 'Signals are evaluated on each daily close and executed at the next bar\'s open, so the test never trades on information it could not have had. Fees are charged on entry and exit. Long-only, one position at a time. This is a historical simulation, not a prediction.',
+    source: 'Yahoo Finance daily OHLCV',
+  });
+}
+
 // ── Router ──
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -333,7 +661,9 @@ export default async function handler(req, res) {
   const action = url.pathname.split('/').filter(Boolean)[2] || '';
   const finnhubKey = process.env.FINNHUB_API_KEY;
 
-  if (action === 'advise') return handleAdvise(req, res);
+  if (action === 'advise')   return handleAdvise(req, res);
+  if (action === 'scan')     return handleScan(req, res);
+  if (action === 'backtest') return handleBacktest(req, res);
 
   const symbol = url.searchParams.get('symbol');
   const asset = resolveAsset(symbol);

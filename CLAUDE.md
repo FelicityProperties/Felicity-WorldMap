@@ -121,6 +121,33 @@ from `/api/data`.
   every URL handed to `window.open()`. Both reject anything that is not
   http/https, so a `javascript:` link cannot execute.
 
+### Backtesting — the honesty rules
+
+`/api/invest/backtest` is a historical simulation, and a simulation is
+trivially easy to make lie. Three rules hold it straight:
+
+1. **No lookahead.** A signal computed on the close of bar *i* is executed
+   at the **open of bar i+1**. Never let a fill use the same bar's close, or
+   any high/low the rule could not have known at decision time.
+2. **Always report buy-and-hold on the same axis.** A strategy returning
+   40% where holding returned 60% *lost*. `edgeVsBuyHoldPct` is the number
+   that matters and it is never omitted, never buried, and never hidden when
+   it is negative.
+3. **Costs are charged.** Fees on entry and exit, default 0.1% per side.
+   A zero-cost backtest is a marketing asset, not a result.
+
+A rule that never triggers reports **0 trades** — it does not get its
+parameters quietly loosened until it produces something. Every response
+carries a `method` string stating it is a simulation, not a prediction,
+and the UI states plainly that slippage, liquidity, taxes and the
+discipline to actually follow the rule are not modelled.
+
+The screener (`/api/invest/scan`) computes RSI, volume-versus-20-day,
+moving averages and 52-week position from real Yahoo daily OHLCV at scan
+time. Instruments whose history could not be fetched are returned in
+`failed` and shown — never silently dropped, which would make a partial
+scan look complete.
+
 ---
 
 ## Project
@@ -128,7 +155,7 @@ from `/api/data`.
 Vanilla HTML/CSS/JS SPA (no build step), ES modules, deployed on Vercel from
 `main`. Live: https://felicity-world-map.vercel.app
 
-- **Vercel Hobby caps serverless functions at 12.** Currently 10 in `api/`.
+- **Vercel Hobby caps serverless functions at 12.** Currently 11 in `api/`.
   Consolidate with `[action].js` dynamic routes rather than adding files.
 - Claude model: `claude-opus-4-8` for desk-grade output.
 - Env vars are documented in `README.md` — `FROM_EMAIL` must be a

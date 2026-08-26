@@ -100,6 +100,8 @@ function renderShell() {
       <div class="invest-classes" id="invest-classes">${tabs}</div>
     </div>
     <div class="invest-views" id="invest-views">
+      <button class="invest-view-btn" data-view="screener">Screener</button>
+      <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="heatmap">S&amp;P 500 Heatmap</button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
@@ -145,7 +147,10 @@ function renderShell() {
     if (!b) return;
     document.querySelectorAll('.invest-view-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    showMarketView(b.dataset.view);
+    const v = b.dataset.view;
+    if (v === 'screener') renderScreener();
+    else if (v === 'backtest') renderBacktester();
+    else showMarketView(v);
   });
 
   document.getElementById('invest-profile-chip').addEventListener('click', () => {
@@ -609,6 +614,430 @@ async function loadNews(asset) {
     meta.textContent = '';
     list.innerHTML = `<div class="invest-news__empty">News unavailable — ${esc(e.message)}</div>`;
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREENER — filter a universe on real computed indicators
+// ═══════════════════════════════════════════════════════════
+//
+// Every number here is computed server-side from Yahoo daily OHLCV. No
+// instrument is scored, ranked or predicted — a row either satisfies the
+// filter or it does not, and anything whose history could not be fetched
+// is reported as failed rather than quietly dropped.
+
+const SCREENS = {
+  oversold: {
+    label: 'Oversold',
+    sub: 'RSI(14) below 30 — stretched to the downside.',
+    filters: { rsiBelow: 30 },
+  },
+  overbought: {
+    label: 'Overbought',
+    sub: 'RSI(14) above 70 — stretched to the upside.',
+    filters: { rsiAbove: 70 },
+  },
+  volume: {
+    label: 'Volume surge',
+    sub: 'Latest session traded more than 150% above its 20-day average volume.',
+    filters: { volSurgeAbove: 150 },
+  },
+  momentum: {
+    label: 'Momentum leaders',
+    sub: 'Within 3% of the 52-week high and holding above the 200-day average.',
+    filters: { nearHighWithin: 3, aboveSma200: true },
+  },
+  pullback: {
+    label: 'Pullback in an uptrend',
+    sub: '20% or more off the 52-week high but still above the 200-day average.',
+    filters: { downFromHighAtLeast: 20, aboveSma200: true },
+  },
+  trend: {
+    label: 'Above both averages',
+    sub: 'Trading above the 50-day and the 200-day.',
+    filters: { aboveSma50: true, aboveSma200: true },
+  },
+};
+
+let screenKey = 'oversold';
+let screenScope = 'watchlist';
+
+const SCAN_CAP = 60;
+
+function screenUniverse() {
+  if (screenScope === 'watchlist') return getWatchlist().map(s => findAsset(s)).filter(Boolean);
+  return filtered().slice(0, SCAN_CAP);
+}
+
+function renderScreener() {
+  const el = document.getElementById('invest-detail');
+  if (!el) return;
+  selected = null;
+  document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
+
+  const universe = screenUniverse();
+  const chips = Object.entries(SCREENS).map(([k, s]) =>
+    `<button class="tool-chip${k === screenKey ? ' is-on' : ''}" data-screen="${k}">${esc(s.label)}</button>`).join('');
+
+  el.innerHTML = `
+    <div class="tool">
+      <div class="tool__head">
+        <div>
+          <div class="tool__title">Screener</div>
+          <div class="tool__sub">RSI, volume, moving averages and 52-week position — computed live from daily OHLCV, not stored.</div>
+        </div>
+        <span class="tool__src">Yahoo Finance</span>
+      </div>
+
+      <div class="tool__row">
+        <span class="tool__label">Screen</span>
+        <div class="tool__chips">${chips}</div>
+      </div>
+
+      <div class="tool__row">
+        <span class="tool__label">Universe</span>
+        <div class="tool__chips">
+          <button class="tool-chip${screenScope === 'watchlist' ? ' is-on' : ''}" data-scope="watchlist">Watchlist</button>
+          <button class="tool-chip${screenScope === 'view' ? ' is-on' : ''}" data-scope="view">Current list</button>
+        </div>
+      </div>
+
+      <div class="tool__criteria" id="screen-criteria">${esc(SCREENS[screenKey].sub)}</div>
+
+      <div class="tool__actions">
+        <button class="tool__run" id="screen-run"${universe.length ? '' : ' disabled'}>
+          Scan ${universe.length} ${universe.length === 1 ? 'instrument' : 'instruments'} →
+        </button>
+        <span class="tool__note" id="screen-note">${universe.length
+          ? `One live history pull each · capped at ${SCAN_CAP}`
+          : (screenScope === 'watchlist'
+              ? 'Your watchlist is empty — star some instruments first.'
+              : 'Nothing in the current list to scan.')}</span>
+      </div>
+
+      <div class="tool__out" id="screen-out"></div>
+    </div>`;
+
+  revealDetail();
+
+  el.querySelectorAll('[data-screen]').forEach(b => b.addEventListener('click', () => {
+    screenKey = b.dataset.screen;
+    renderScreener();
+  }));
+  el.querySelectorAll('[data-scope]').forEach(b => b.addEventListener('click', () => {
+    screenScope = b.dataset.scope;
+    renderScreener();
+  }));
+  document.getElementById('screen-run')?.addEventListener('click', runScreen);
+}
+
+async function runScreen() {
+  const list = screenUniverse();
+  const out = document.getElementById('screen-out');
+  const btn = document.getElementById('screen-run');
+  if (!list.length || !out) return;
+
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Scanning…';
+  out.innerHTML = `<div class="tool__loading">Pulling a year of daily bars for ${list.length} ${list.length === 1 ? 'instrument' : 'instruments'} and computing the indicators…</div>`;
+
+  try {
+    const r = await fetch('/api/invest/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbols: list.map(a => a.symbol),
+        filters: SCREENS[screenKey].filters,
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) { out.innerHTML = `<div class="tool__fail">${esc(d.error || 'Scan unavailable.')}</div>`; return; }
+
+    const head = `
+      <div class="screen-summary">
+        <strong>${d.matched}</strong> of ${d.scanned} matched
+        <span class="screen-summary__crit">${esc(SCREENS[screenKey].sub)}</span>
+        ${d.failed.length ? `<span class="screen-summary__fail">${d.failed.length} had no usable history: ${esc(d.failed.slice(0, 8).join(', '))}${d.failed.length > 8 ? '…' : ''}</span>` : ''}
+      </div>`;
+
+    if (!d.results.length) {
+      out.innerHTML = head + '<div class="tool__empty">Nothing in this universe meets the criteria right now. That is a result, not a failure — the screen is not loosened to manufacture hits.</div>';
+      return;
+    }
+
+    out.innerHTML = head + `
+      <div class="screen-table">
+        <div class="screen-table__head">
+          <span>Symbol</span><span>Price</span><span>RSI</span><span>Vol vs 20d</span><span>vs 52w high</span><span>Trend</span>
+        </div>
+        ${d.results.map(row => {
+          const rsiCls = row.rsi14 == null ? '' : row.rsi14 < 30 ? 'dn' : row.rsi14 > 70 ? 'up' : '';
+          const trend = [
+            row.aboveSma50 === true ? '50d' : null,
+            row.aboveSma200 === true ? '200d' : null,
+          ].filter(Boolean);
+          return `
+            <div class="screen-table__row" data-symbol="${esc(row.symbol)}">
+              <span class="screen-table__sym">${esc(row.symbol)}<em>${esc(row.name)}</em></span>
+              <span>${fmtPrice(row.price, row.assetClass)}</span>
+              <span class="${rsiCls}">${row.rsi14 ?? '—'}</span>
+              <span class="${row.volSurgePct > 0 ? 'up' : 'dn'}">${row.volSurgePct == null ? '—' : `${row.volSurgePct > 0 ? '+' : ''}${row.volSurgePct}%`}</span>
+              <span class="dn">${row.pctFrom52wHigh}%</span>
+              <span class="screen-table__trend">${trend.length ? trend.map(t => `<em>above ${t}</em>`).join('') : '<em class="is-off">below both</em>'}</span>
+            </div>`;
+        }).join('')}
+      </div>
+      <div class="tool__method">Indicators computed from Yahoo daily OHLCV at scan time. RSI is Wilder's 14-period. Volume is compared with its own 20-day average. This is a filter on measured history — it is not a recommendation and carries no view on what happens next.</div>`;
+
+    out.querySelectorAll('.screen-table__row').forEach(row => {
+      row.addEventListener('click', () => selectAsset(row.dataset.symbol));
+    });
+  } catch (e) {
+    out.innerHTML = `<div class="tool__fail">Scan failed — ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BACKTEST — a historical simulation, reported honestly
+// ═══════════════════════════════════════════════════════════
+//
+// The result always shows buy-and-hold on the same axis. A strategy that
+// returns 40% while simply holding returned 60% did not work, and the
+// number that matters is the difference between them.
+
+const STRATS = {
+  rsi_reversion: {
+    label: 'RSI mean reversion',
+    params: [
+      { k: 'oversold', label: 'Buy when RSI is below', def: 30, min: 5, max: 45 },
+      { k: 'overbought', label: 'Sell when RSI is above', def: 70, min: 55, max: 95 },
+    ],
+  },
+  sma_cross: {
+    label: 'Moving-average crossover',
+    params: [
+      { k: 'fast', label: 'Fast average (days)', def: 50, min: 2, max: 100 },
+      { k: 'slow', label: 'Slow average (days)', def: 200, min: 10, max: 300 },
+    ],
+  },
+  breakout: {
+    label: 'Donchian breakout',
+    params: [
+      { k: 'entry', label: 'Entry: break the N-day high', def: 20, min: 5, max: 200 },
+      { k: 'exit', label: 'Exit: break the N-day low', def: 10, min: 3, max: 200 },
+    ],
+  },
+};
+
+let btStrategy = 'rsi_reversion';
+
+function renderBacktester() {
+  const el = document.getElementById('invest-detail');
+  if (!el) return;
+  const symbol = selected || getWatchlist()[0] || 'SPY';
+  selected = null;
+  document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
+
+  const strat = STRATS[btStrategy];
+
+  el.innerHTML = `
+    <div class="tool">
+      <div class="tool__head">
+        <div>
+          <div class="tool__title">Backtest</div>
+          <div class="tool__sub">Run a rule over real daily history. Signals execute at the <em>next</em> bar's open, so the test never trades on information it could not have had.</div>
+        </div>
+        <span class="tool__src">Yahoo Finance</span>
+      </div>
+
+      <div class="tool__form">
+        <label class="tool__field">
+          <span class="tool__label">Symbol</span>
+          <input id="bt-symbol" class="tool__input" value="${esc(symbol)}" placeholder="AAPL, BTC, SPY, EURUSD">
+        </label>
+        <label class="tool__field">
+          <span class="tool__label">Strategy</span>
+          <select id="bt-strategy" class="tool__select">
+            ${Object.entries(STRATS).map(([k, s]) =>
+              `<option value="${k}"${k === btStrategy ? ' selected' : ''}>${esc(s.label)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="tool__field tool__field--sm">
+          <span class="tool__label">History</span>
+          <select id="bt-range" class="tool__select">
+            <option value="1y">1 year</option>
+            <option value="2y" selected>2 years</option>
+            <option value="5y">5 years</option>
+            <option value="10y">10 years</option>
+          </select>
+        </label>
+        ${strat.params.map(p => `
+          <label class="tool__field tool__field--sm">
+            <span class="tool__label">${esc(p.label)}</span>
+            <input type="number" id="bt-p-${p.k}" class="tool__input" value="${p.def}" min="${p.min}" max="${p.max}" step="1">
+          </label>`).join('')}
+        <label class="tool__field tool__field--sm">
+          <span class="tool__label">Fee per side (%)</span>
+          <input type="number" id="bt-fee" class="tool__input" value="0.1" min="0" max="5" step="0.01">
+        </label>
+      </div>
+
+      <div class="tool__actions">
+        <button class="tool__run" id="bt-run">Run backtest →</button>
+        <span class="tool__note">Long only, one position at a time, fees charged both sides.</span>
+      </div>
+
+      <div class="tool__out" id="bt-out"></div>
+    </div>`;
+
+  revealDetail();
+
+  document.getElementById('bt-strategy').addEventListener('change', e => {
+    btStrategy = e.target.value;
+    renderBacktester();
+  });
+  document.getElementById('bt-run').addEventListener('click', runBacktest);
+  document.getElementById('bt-symbol').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runBacktest();
+  });
+}
+
+async function runBacktest() {
+  const out = document.getElementById('bt-out');
+  const btn = document.getElementById('bt-run');
+  const symbol = document.getElementById('bt-symbol').value.trim().toUpperCase();
+  if (!symbol) return;
+
+  const params = {};
+  STRATS[btStrategy].params.forEach(p => {
+    const v = parseFloat(document.getElementById(`bt-p-${p.k}`).value);
+    if (isFinite(v)) params[p.k] = v;
+  });
+
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  out.innerHTML = `<div class="tool__loading">Pulling the daily history for ${esc(symbol)} and walking it bar by bar…</div>`;
+
+  try {
+    const r = await fetch('/api/invest/backtest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol,
+        strategy: btStrategy,
+        params,
+        range: document.getElementById('bt-range').value,
+        feePct: parseFloat(document.getElementById('bt-fee').value) || 0,
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) { out.innerHTML = `<div class="tool__fail">${esc(d.error || 'Backtest unavailable.')}</div>`; return; }
+    out.innerHTML = backtestHtml(d);
+  } catch (e) {
+    out.innerHTML = `<div class="tool__fail">Backtest failed — ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run backtest →';
+  }
+}
+
+function pathFor(points, min, max, w, h) {
+  if (points.length < 2) return '';
+  const span = (max - min) || 1;
+  return points.map((v, i) => {
+    const x = (i / (points.length - 1)) * w;
+    const y = h - ((v - min) / span) * h;
+    return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+}
+
+function backtestHtml(d) {
+  const s = d.stats;
+  const beat = s.edgeVsBuyHoldPct > 0;
+  const dt = ms => new Date(ms).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  // Strategy and buy-and-hold on one shared axis
+  const strat = d.curve.map(p => p.v);
+  const hold = d.curve.map(p => p.b);
+  const all = strat.concat(hold);
+  const min = Math.min(...all), max = Math.max(...all);
+  const W = 640, H = 150;
+
+  const verdict = s.trades === 0
+    ? 'This rule never triggered over the period tested. No trades, no result — the honest answer is that it says nothing about this instrument.'
+    : beat
+      ? `Over this window the rule beat simply holding by ${s.edgeVsBuyHoldPct.toFixed(2)} percentage points, across ${s.trades} ${s.trades === 1 ? 'trade' : 'trades'}. One window is not evidence of an edge — test other periods and other instruments before trusting it.`
+      : `Over this window the rule <strong>underperformed simply holding</strong> by ${Math.abs(s.edgeVsBuyHoldPct).toFixed(2)} percentage points. All the trading, the fees and the risk bought less than doing nothing.`;
+
+  return `
+    <div class="bt">
+      <div class="bt__head">
+        <div>
+          <div class="bt__sym">${esc(d.symbol)} <span class="bt__name">${esc(d.name)}</span></div>
+          <div class="bt__strat">${esc(d.strategy.description)}</div>
+        </div>
+        <div class="bt__period">${dt(d.period.from)} → ${dt(d.period.to)}<br><span>${d.period.bars} trading days</span></div>
+      </div>
+
+      <div class="bt__headline">
+        <div class="bt__big">
+          <span class="bt__big-label">Strategy</span>
+          <span class="bt__big-value ${s.strategyReturnPct >= 0 ? 'up' : 'dn'}">${fmtPct(s.strategyReturnPct)}</span>
+        </div>
+        <div class="bt__big">
+          <span class="bt__big-label">Buy &amp; hold</span>
+          <span class="bt__big-value ${s.buyHoldReturnPct >= 0 ? 'up' : 'dn'}">${fmtPct(s.buyHoldReturnPct)}</span>
+        </div>
+        <div class="bt__big bt__big--edge">
+          <span class="bt__big-label">Edge</span>
+          <span class="bt__big-value ${beat ? 'up' : 'dn'}">${fmtPct(s.edgeVsBuyHoldPct)}</span>
+        </div>
+      </div>
+
+      <div class="bt__chart">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Strategy equity versus buy and hold">
+          <path d="${pathFor(hold, min, max, W, H)}" class="bt__line bt__line--hold" />
+          <path d="${pathFor(strat, min, max, W, H)}" class="bt__line bt__line--strat" />
+        </svg>
+        <div class="bt__legend">
+          <span class="bt__key bt__key--strat">Strategy</span>
+          <span class="bt__key bt__key--hold">Buy &amp; hold</span>
+        </div>
+      </div>
+
+      <div class="bt__stats">
+        <div><span>Trades</span><strong>${s.trades}</strong></div>
+        <div><span>Win rate</span><strong>${s.winRatePct}%</strong></div>
+        <div><span>Avg win</span><strong class="up">${fmtPct(s.avgWinPct)}</strong></div>
+        <div><span>Avg loss</span><strong class="dn">${fmtPct(s.avgLossPct)}</strong></div>
+        <div><span>Profit factor</span><strong>${s.profitFactor ?? '—'}</strong></div>
+        <div><span>Max drawdown</span><strong class="dn">−${s.maxDrawdownPct}%</strong></div>
+      </div>
+
+      <div class="bt__verdict ${beat ? 'is-good' : 'is-bad'}">${verdict}</div>
+
+      ${d.trades.length ? `
+        <div class="bt__trades">
+          <div class="bt__trades-head"><span>Entry</span><span>Exit</span><span>Held</span><span>Return</span></div>
+          ${d.trades.slice().reverse().map(t => `
+            <div class="bt__trade">
+              <span>${dt(t.entryAt)}<em>${t.entryPx}</em></span>
+              <span>${t.openAtEnd ? 'open' : dt(t.exitAt)}<em>${t.exitPx}</em></span>
+              <span>${t.bars}d</span>
+              <span class="${t.returnPct >= 0 ? 'up' : 'dn'}">${fmtPct(t.returnPct)}</span>
+            </div>`).join('')}
+        </div>
+        ${d.stats.trades > d.trades.length ? `<div class="bt__more">Showing the last ${d.trades.length} of ${d.stats.trades} trades.</div>` : ''}
+      ` : ''}
+
+      <div class="tool__method">
+        ${esc(d.method)} Fees: ${s.feePctPerSide}% per side. Source: ${esc(d.source)}.
+        Past behaviour of a rule over one window is not evidence it will work again — and slippage, liquidity, taxes and the discipline to actually follow it are not modelled here.
+      </div>
+    </div>`;
 }
 
 // ── Felicity Bot ──
