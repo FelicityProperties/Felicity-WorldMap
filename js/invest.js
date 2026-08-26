@@ -146,6 +146,18 @@ function refreshWatchCount() {
   if (el) el.textContent = getWatchlist().length;
 }
 
+
+// On narrow screens the detail pane sits below the list, so a tap can look
+// like nothing happened. Bring the result into view.
+function revealDetail() {
+  if (window.innerWidth > 767) return;
+  const el = document.getElementById('invest-detail');
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 // ── Instrument list ──
 function filtered() {
   if (showWatchlist) {
@@ -264,6 +276,7 @@ function showMarketView(view) {
     </div>`;
 
   meta.mount('tv-view-host');
+  revealDetail();
 }
 
 // ── Daily news across the whole watchlist, in one consolidated feed ──
@@ -284,6 +297,7 @@ async function runWatchlistNews() {
       <div class="wnews" id="wnews-body"></div>
     </div>`;
 
+  revealDetail();
   const body = document.getElementById('wnews-body');
   const prog = document.getElementById('wnews-progress');
   let done = 0;
@@ -367,6 +381,7 @@ async function runSweep() {
       <div class="sweep__list" id="sweep-list"></div>
     </div>`;
 
+  revealDetail();
   const out = document.getElementById('sweep-list');
   const prog = document.getElementById('sweep-progress');
   const profile = getProfile();
@@ -487,6 +502,7 @@ async function selectAsset(symbol) {
   mountChart(asset);
   loadQuote(asset);
   loadNews(asset);
+  revealDetail();
 
   document.getElementById('invest-advise-btn').addEventListener('click', () => runAdvisor(asset));
 

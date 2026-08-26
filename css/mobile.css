@@ -212,3 +212,137 @@ iframe {
     padding-right: var(--space-2);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   INVESTING COCKPIT — MOBILE
+   Loaded last, so these win over css/invest.css.
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+
+  /* ── Tap targets ──
+     The star is the primary way to build a watchlist and was a ~22x18px
+     hit area. Expand it to a proper touch target without changing the
+     visual size of the glyph. ── */
+  .invest-row__star {
+    width: 40px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -8px;
+    font-size: 17px;
+    padding: 0;
+  }
+
+  .invest-detail__star {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-left: 0;
+  }
+
+  .invest-view-btn,
+  .invest-sweepbar__run,
+  .invest-sweepbar__news,
+  .invest-sweepbar__clear { min-height: 42px; }
+
+  /* ── Rows: give symbols room, never let them clip ── */
+  .invest-row {
+    grid-template-columns: 32px minmax(56px, auto) minmax(0, 1fr) auto auto;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    min-height: 52px;
+  }
+
+  .invest-row__class { display: none; }
+
+  .invest-row__sym {
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .invest-row__name {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Both price and change stay visible — the change is the point of the row.
+     The name column absorbs the squeeze instead. */
+  .invest-row__price { font-size: 11px; text-align: right; }
+  .invest-row__chg { font-size: 10px; min-width: 46px; }
+
+  /* ── List / detail proportions ── */
+  .invest-list { max-height: 46vh; }
+
+  /* ── Detail header ── */
+  .invest-detail__head { gap: var(--space-3); }
+  .invest-detail__sym { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-xl); }
+  .invest-detail__price { font-size: var(--text-xl); }
+
+  /* ── TradingView widgets ── */
+  .tv-tape { height: 76px; }
+  .tv-view__body { height: 68vh; min-height: 380px; }
+  #invest-tv, #tv-chart { height: 260px; }
+
+  /* ── Advisor output ── */
+  .invest-advisor__head { gap: var(--space-3); }
+  .invest-call { gap: var(--space-2); }
+  .invest-call__badge { font-size: var(--text-sm); padding: 5px 12px; }
+
+  /* ── Watchlist news + sweep ── */
+  .wnews__item { padding: var(--space-3) var(--space-4); min-height: 52px; }
+  .wnews__group-head { padding: var(--space-3) var(--space-4) var(--space-2); }
+  .wnews__name { display: none; }
+  .sweep__item { padding: var(--space-3) var(--space-4); }
+  .sweep__head { flex-wrap: wrap; }
+
+  /* ── Profile modal: full screen on a phone ── */
+  .profile-overlay { padding: 0; align-items: stretch; }
+
+  .profile-modal {
+    max-width: none;
+    max-height: none;
+    min-height: 100%;
+    border: none;
+    border-radius: 0;
+  }
+
+  .profile-modal__header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg-secondary);
+  }
+
+  .profile-form__actions {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    padding-top: var(--space-3);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: 0;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 419px) {
+  .invest-row { grid-template-columns: 28px minmax(50px, auto) minmax(0, 1fr) auto auto; }
+  .invest-row__name { display: none; }
+  .invest-detail__sym { font-size: var(--text-lg); }
+  .tv-view__body { height: 62vh; min-height: 340px; }
+  .invest-profile-chip__value { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Landscape phones: the modal and widgets must not exceed the viewport */
+@media (max-height: 500px) and (max-width: 900px) {
+  .profile-modal { min-height: auto; max-height: 100vh; }
+  .tv-view__body { height: 82vh; min-height: 260px; }
+  .invest-list { max-height: 60vh; }
+}
