@@ -15,6 +15,7 @@ import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { initSP500 } from './sp500.js';
+import { initInvest } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
 import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
@@ -44,6 +45,7 @@ async function boot() {
   initBroadcasts();
   initDubaiIntel();
   initSP500();
+  initInvest();
   initSignals();
   initDesk();
   initDeskCalls();

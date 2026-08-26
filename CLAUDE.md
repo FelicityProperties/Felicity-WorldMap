@@ -68,6 +68,30 @@ They are fine to keep — an intelligence product is allowed a view — but they
 must never be presented as measured evidence, and any numeric field that PIX
 can source should be migrated to PIX.
 
+### Global markets (the Investing Cockpit)
+
+The same integrity rule applies outside Dubai. Every price and headline in
+the Invest tab is fetched live, server-side, from a real provider — nothing
+is simulated:
+
+| Asset class | Live source | Route |
+|---|---|---|
+| US equities | Finnhub `/quote`, `/company-news` | `api/invest/[action].js` |
+| Indices, FX, futures | Yahoo Finance chart API | same |
+| Crypto | CoinGecko `/simple/price` | same |
+
+`js/invest-data.js` defines the 145-instrument universe; each entry declares
+its `source` so the server routes the quote correctly. The `drivers` field is
+domain knowledge about what moves an instrument — never a price or forecast.
+
+**Felicity Bot (`/api/invest/advise`)** fetches the live quote and real news
+FIRST, then passes only that evidence to Claude. Its system prompt forbids
+inventing any price, level or news event, and requires it to cite the supplied
+figures. If the live price cannot be fetched, it returns an error instead of
+analysing — never a guess. Output is framed as research with an explicit
+"not personalised financial advice" line, and position size is expressed as a
+percentage of a stated risk budget, never an absolute cash amount.
+
 ---
 
 ## Project

@@ -44,6 +44,25 @@ month, so monthly is the natural cadence — ask Claude to "refresh the PIX
 data" and it will re-query PropertyIndex and regenerate `js/pix-data.js`.
 Update `PIX_AS_OF` and `PIX_WINDOW` when you do.
 
+## Investing Cockpit (Invest tab)
+
+A 145-instrument multi-asset research desk: 105 S&P 500 stocks, 10 indices,
+10 crypto, 10 FX pairs, 10 commodities.
+
+- **Live prices** routed per asset class — Finnhub (equities), Yahoo Finance
+  (indices/FX/futures), CoinGecko (crypto). All server-side, no CORS proxies.
+- **Daily news per instrument** — Finnhub company-news for equities, filtered
+  category news for everything else, last 7 days.
+- **TradingView chart** for every instrument.
+- **Felicity Bot** (`POST /api/invest/advise`) fetches the live quote and real
+  headlines first, then produces a positioned call: direction, conviction,
+  horizon, position size as % of risk budget, invalidation level, target,
+  thesis, bear case and catalysts. It is prompt-constrained never to invent a
+  price or a news event, and refuses to analyse if the live price is
+  unavailable.
+
+Requires `FINNHUB_API_KEY` (quotes + news) and `ANTHROPIC_API_KEY` (analysis).
+
 ## Newsletter
 
 Subscribers are stored in a Resend Audience ("Felicity Intelligence Brief").
