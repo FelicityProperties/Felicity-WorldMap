@@ -172,10 +172,19 @@ function initMapTab() {
 
 // ── Overview Cards — Navigate to tabs ──
 function initOverviewCards() {
-  document.querySelectorAll('.overview-card[data-goto]').forEach(card => {
+  // Overview cards and footer links both route by data-goto
+  document.querySelectorAll('[data-goto]').forEach(card => {
     card.addEventListener('click', () => {
       const target = card.dataset.goto;
       if (target) switchTab(target);
+    });
+  });
+
+  // Footer links that scroll to a section on the current tab
+  document.querySelectorAll('[data-scroll]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = document.getElementById(btn.dataset.scroll);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
 }

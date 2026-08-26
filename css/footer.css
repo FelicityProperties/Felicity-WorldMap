@@ -1,11 +1,16 @@
 /* ═══════════════════════════════════════════════════════════
-   FOOTER — Site Footer
+   FOOTER — Attribution, navigation, contact, disclosure
+   ═══════════════════════════════════════════════════════════
+   Source attribution is a requirement, not decoration: the Finnhub
+   free tier requires attribution wherever its data is shown, and
+   PropertyIndex requires their URLs to be cited.
    ═══════════════════════════════════════════════════════════ */
 
 .site-footer {
   background: var(--bg-primary);
   border-top: 1px solid var(--border-subtle);
-  padding: var(--space-12) var(--space-6) var(--space-6);
+  padding: var(--space-10) var(--space-6) var(--space-5);
+  margin-top: var(--space-10);
 }
 
 .site-footer__inner {
@@ -15,126 +20,166 @@
 
 .site-footer__grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: var(--space-10);
-  margin-bottom: var(--space-10);
+  grid-template-columns: 1.6fr 1fr 1fr 1.1fr;
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
 }
 
-/* ── Brand Column ── */
-.site-footer__brand {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
+/* ── Brand ── */
+/* Grid children need an explicit min-width or long unbroken strings
+   (an email address, a URL) can blow the column out. */
+.site-footer__brand,
+.site-footer__grid > div { min-width: 0; }
 
 .site-footer__logo {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
-.site-footer__logo-icon {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
+.site-footer__logo-icon { width: 26px; height: 26px; flex-shrink: 0; }
+.site-footer__logo-icon svg { width: 100%; height: 100%; }
 
 .site-footer__logo-text {
   font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .site-footer__tagline {
-  font-family: var(--font-display);
   font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-relaxed);
+  line-height: 1.75;
+  color: var(--text-muted);
   max-width: 320px;
 }
 
-/* ── Link Columns ── */
+.site-footer__integrity {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: rgba(0, 212, 255, 0.04);
+  border-left: 2px solid var(--accent-primary);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 340px;
+}
+
+.site-footer__integrity strong { color: var(--accent-primary); }
+
+/* ── Columns ── */
 .site-footer__col-title {
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: var(--weight-bold);
-  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
+  color: var(--text-muted);
   margin-bottom: var(--space-4);
 }
 
 .site-footer__links {
   list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.site-footer__links a {
+.site-footer__links a,
+.site-footer__links button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
   font-family: var(--font-display);
   font-size: var(--text-sm);
   color: var(--text-secondary);
+  text-decoration: none;
+  background: none;
+  padding: 2px 0;
+  text-align: left;
   transition: color var(--duration-fast) var(--ease-out);
-  text-decoration: none;
 }
 
-.site-footer__links a:hover {
-  color: var(--accent-primary);
-  text-decoration: none;
+.site-footer__links a:hover,
+.site-footer__links button:hover { color: var(--accent-primary); }
+
+.site-footer__src-note {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  opacity: 0.75;
 }
 
-/* ── Bottom Bar ── */
-.site-footer__bottom {
-  display: flex;
+/* ── Contact ── */
+.site-footer__cta {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--border-subtle);
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: #22c55e;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
+
+.site-footer__cta:hover { opacity: 0.88; }
+
+/* ── Bottom bar ── */
+.site-footer__bottom {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.site-footer__disclosure {
+  font-size: var(--text-xs);
+  line-height: 1.75;
+  color: var(--text-muted);
+  max-width: 640px;
+}
+
+.site-footer__disclosure strong { color: var(--accent-gold); }
 
 .site-footer__copyright {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-muted);
-  letter-spacing: 0.04em;
-}
-
-.site-footer__powered {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.site-footer__powered-brand {
-  color: var(--accent-gold);
+  white-space: nowrap;
 }
 
 /* ── Responsive ── */
 @media (max-width: 1023px) {
-  .site-footer__grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
-  }
+  .site-footer__grid { grid-template-columns: 1fr 1fr; gap: var(--space-6); }
 }
 
 @media (max-width: 767px) {
   .site-footer {
-    padding: var(--space-8) var(--space-4) var(--space-4);
+    padding: var(--space-8) var(--space-4) var(--space-5);
+    padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
   }
 
-  .site-footer__grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-  }
-
-  .site-footer__bottom {
-    flex-direction: column;
-    gap: var(--space-2);
-    text-align: center;
-  }
+  .site-footer__grid { grid-template-columns: 1fr; gap: var(--space-6); }
+  .site-footer__tagline,
+  .site-footer__integrity { max-width: none; }
+  .site-footer__links a,
+  .site-footer__links button { min-height: 34px; align-items: center; }
+  .site-footer__bottom { flex-direction: column; gap: var(--space-3); }
+  .site-footer__copyright { white-space: normal; }
 }
