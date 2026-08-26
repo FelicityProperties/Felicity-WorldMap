@@ -8,8 +8,13 @@
 // ═══════════════════════════════════════════════════════════
 
 import { investUniverse, assetsByClass, findAsset, ASSET_CLASSES } from './invest-data.js';
+import {
+  getWatchlist, isWatched, toggleWatch, clearWatchlist,
+  getProfile, hasProfile, profileSummary, openProfileModal,
+} from './invest-profile.js';
 
 let currentClass = 'all';
+let showWatchlist = false;
 let search = '';
 let selected = null;
 let quoteCache = {};
@@ -62,8 +67,18 @@ function renderShell() {
   }).join('');
 
   el.innerHTML = `
+    <div class="invest-topbar">
+      <button class="invest-watch-toggle" id="invest-watch-toggle">
+        <span class="invest-star">★</span> Watchlist
+        <span class="invest-class-btn__n" id="invest-watch-count">${getWatchlist().length}</span>
+      </button>
+      <button class="invest-profile-chip" id="invest-profile-chip">
+        <span class="invest-profile-chip__label">Investor profile</span>
+        <span class="invest-profile-chip__value" id="invest-profile-value">${esc(profileSummary(getProfile()))}</span>
+      </button>
+    </div>
     <div class="invest-controls">
-      <input type="search" class="dubai-search invest-search" id="invest-search" placeholder="Search any asset — AAPL, Bitcoin, Gold, EURUSD...">
+      <input type="search" class="dubai-search invest-search" id="invest-search" placeholder="Search 600+ assets — AAPL, Samsung, Bitcoin, Gold, EURUSD, KOSPI...">
       <div class="invest-classes" id="invest-classes">${tabs}</div>
     </div>
     <div class="invest-layout">
@@ -87,14 +102,39 @@ function renderShell() {
     const b = e.target.closest('.invest-class-btn');
     if (!b) return;
     currentClass = b.dataset.class;
+    showWatchlist = false;
+    document.getElementById('invest-watch-toggle').classList.remove('active');
     document.querySelectorAll('.invest-class-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     renderList();
   });
+
+  document.getElementById('invest-watch-toggle').addEventListener('click', () => {
+    showWatchlist = !showWatchlist;
+    document.getElementById('invest-watch-toggle').classList.toggle('active', showWatchlist);
+    if (showWatchlist) document.querySelectorAll('.invest-class-btn').forEach(x => x.classList.remove('active'));
+    else document.querySelector('.invest-class-btn[data-class="' + currentClass + '"]')?.classList.add('active');
+    renderList();
+  });
+
+  document.getElementById('invest-profile-chip').addEventListener('click', () => {
+    openProfileModal(p => {
+      document.getElementById('invest-profile-value').textContent = profileSummary(p);
+    });
+  });
+}
+
+function refreshWatchCount() {
+  const el = document.getElementById('invest-watch-count');
+  if (el) el.textContent = getWatchlist().length;
 }
 
 // ── Instrument list ──
 function filtered() {
+  if (showWatchlist) {
+    const w = getWatchlist();
+    return w.map(sym => findAsset(sym)).filter(Boolean);
+  }
   let list = assetsByClass(currentClass);
   if (search) {
     list = list.filter(a =>
@@ -112,16 +152,25 @@ function renderList() {
   const list = filtered();
 
   if (!list.length) {
-    el.innerHTML = '<div class="dubai-empty">No instruments match your search</div>';
+    el.innerHTML = showWatchlist
+      ? '<div class="dubai-empty">Your watchlist is empty — tap the ★ on any instrument to add it.</div>'
+      : '<div class="dubai-empty">No instruments match your search</div>';
     return;
   }
 
-  el.innerHTML = list.map(a => {
+  const sweepBar = showWatchlist ? `
+    <div class="invest-sweepbar">
+      <button class="invest-sweepbar__run" id="invest-sweep-run">Run sweep on ${list.length} ${list.length === 1 ? 'name' : 'names'} →</button>
+      <button class="invest-sweepbar__clear" id="invest-sweep-clear">Clear</button>
+    </div>` : '';
+
+  el.innerHTML = sweepBar + list.map(a => {
     const c = quoteCache[a.symbol];
     const q = c && Date.now() - c.ts < QUOTE_TTL ? c.data : null;
     const cls = q ? (q.changePct >= 0 ? 'up' : 'dn') : '';
     return `
       <div class="invest-row${a.symbol === selected ? ' is-active' : ''}" data-symbol="${esc(a.symbol)}">
+        <button class="invest-row__star${isWatched(a.symbol) ? ' is-on' : ''}" data-star="${esc(a.symbol)}" title="Toggle watchlist">★</button>
         <div class="invest-row__sym">${esc(a.symbol)}</div>
         <div class="invest-row__name">${esc(a.name)}</div>
         <div class="invest-row__class"><span class="invest-tag invest-tag--${a.class}">${ASSET_CLASSES[a.class].label}</span></div>
@@ -131,8 +180,90 @@ function renderList() {
   }).join('');
 
   el.querySelectorAll('.invest-row').forEach(r => {
-    r.addEventListener('click', () => selectAsset(r.dataset.symbol));
+    r.addEventListener('click', e => {
+      if (e.target.closest('[data-star]')) return;
+      selectAsset(r.dataset.symbol);
+    });
   });
+
+  document.getElementById('invest-sweep-run')?.addEventListener('click', runSweep);
+  document.getElementById('invest-sweep-clear')?.addEventListener('click', () => {
+    clearWatchlist();
+    refreshWatchCount();
+    renderList();
+  });
+
+  el.querySelectorAll('[data-star]').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleWatch(b.dataset.star);
+      refreshWatchCount();
+      renderList();
+    });
+  });
+}
+
+// ── Watchlist sweep: analyse every held name in one pass ──
+async function runSweep() {
+  const list = getWatchlist().map(s => findAsset(s)).filter(Boolean);
+  const el = document.getElementById('invest-detail');
+  if (!list.length) return;
+
+  el.innerHTML = `
+    <div class="sweep">
+      <div class="sweep__head">
+        <div>
+          <div class="sweep__title">Watchlist Sweep</div>
+          <div class="sweep__sub">Felicity Bot is working through ${list.length} ${list.length === 1 ? 'name' : 'names'}, one live pull each.</div>
+        </div>
+        <div class="sweep__progress" id="sweep-progress">0 / ${list.length}</div>
+      </div>
+      <div class="sweep__list" id="sweep-list"></div>
+    </div>`;
+
+  const out = document.getElementById('sweep-list');
+  const prog = document.getElementById('sweep-progress');
+  const profile = getProfile();
+  let done = 0;
+
+  for (const asset of list) {
+    const card = document.createElement('div');
+    card.className = 'sweep__item';
+    card.innerHTML = `<div class="sweep__item-sym">${esc(asset.symbol)}</div>
+      <div class="sweep__item-body"><span class="sweep__pending">analysing…</span></div>`;
+    out.appendChild(card);
+
+    try {
+      const r = await fetch('/api/invest/advise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: asset.symbol, profile }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        card.querySelector('.sweep__item-body').innerHTML =
+          `<span class="sweep__fail">${esc(d.error || 'unavailable')}</span>`;
+      } else {
+        const a = d.analysis;
+        const tone = CALL_TONE[a.call] || 'neutral';
+        card.querySelector('.sweep__item-body').innerHTML = `
+          <div class="sweep__item-head">
+            <span class="invest-call__badge invest-call__badge--${tone}">${esc(a.call)}</span>
+            <span class="sweep__item-conv">${esc(a.conviction)}</span>
+            <span class="sweep__item-price">${fmtPrice(d.quote.price, d.assetClass)} <span class="${d.quote.changePct >= 0 ? 'up' : 'dn'}">${fmtPct(d.quote.changePct)}</span></span>
+          </div>
+          <div class="sweep__item-thesis">${esc(a.thesis)}</div>
+          <div class="sweep__item-size"><strong>Size:</strong> ${esc(a.sizing)}</div>`;
+      }
+    } catch (e) {
+      card.querySelector('.sweep__item-body').innerHTML = `<span class="sweep__fail">${esc(e.message)}</span>`;
+    }
+
+    done++;
+    prog.textContent = `${done} / ${list.length}`;
+  }
+
+  prog.textContent = `${done} / ${list.length} complete`;
 }
 
 // ── Detail ──
@@ -148,7 +279,9 @@ async function selectAsset(symbol) {
   el.innerHTML = `
     <div class="invest-detail__head">
       <div>
-        <div class="invest-detail__sym">${esc(asset.symbol)}</div>
+        <div class="invest-detail__sym">${esc(asset.symbol)}
+          <button class="invest-detail__star${isWatched(asset.symbol) ? ' is-on' : ''}" id="invest-detail-star" title="Toggle watchlist">★</button>
+        </div>
         <div class="invest-detail__name">${esc(asset.name)}</div>
         <div class="invest-detail__meta">
           <span class="invest-tag invest-tag--${asset.class}">${ASSET_CLASSES[asset.class].label}</span>
@@ -177,7 +310,9 @@ async function selectAsset(symbol) {
       <div class="invest-advisor__head">
         <div>
           <div class="invest-advisor__title">Felicity Bot</div>
-          <div class="invest-advisor__sub">Positioned call from the live price and the news below</div>
+          <div class="invest-advisor__sub" id="invest-advisor-sub">${hasProfile()
+            ? 'Sized to your profile — a real amount, not a percentage'
+            : 'Set your investor profile to get a real position size'}</div>
         </div>
         <button class="invest-advisor__btn" id="invest-advise-btn">Analyse ${esc(asset.symbol)} →</button>
       </div>
@@ -201,6 +336,13 @@ async function selectAsset(symbol) {
   loadNews(asset);
 
   document.getElementById('invest-advise-btn').addEventListener('click', () => runAdvisor(asset));
+
+  document.getElementById('invest-detail-star').addEventListener('click', e => {
+    const on = toggleWatch(asset.symbol);
+    e.currentTarget.classList.toggle('is-on', on);
+    refreshWatchCount();
+    renderList();
+  });
 }
 
 function mountChart(asset) {
@@ -303,7 +445,7 @@ async function runAdvisor(asset) {
     const r = await fetch('/api/invest/advise', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol: asset.symbol }),
+      body: JSON.stringify({ symbol: asset.symbol, profile: getProfile() }),
     });
     const d = await r.json();
 

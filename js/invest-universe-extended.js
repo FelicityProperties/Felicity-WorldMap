@@ -1,0 +1,257 @@
+// ═══════════════════════════════════════════════════════════
+// EXTENDED UNIVERSE — global equities beyond the curated core
+// ═══════════════════════════════════════════════════════════
+//
+// Compact tuples: [ticker, name, sector]
+//
+// US names route to Finnhub. International names route to Yahoo
+// Finance using the exchange suffix (.L London, .DE XETRA, .PA Paris,
+// .AS Amsterdam, .SW Swiss, .MI Milan, .MC Madrid, .KS Korea, .T Tokyo).
+//
+// These are index constituents, which change over time as companies are
+// added, removed, merged or renamed. Prices are always fetched live, so
+// a stale or wrong symbol fails visibly with "price unavailable" — it
+// can never render a fabricated number.
+// ═══════════════════════════════════════════════════════════
+
+// ── US: S&P 500 / Nasdaq-100 / Dow constituents ──
+const US = [
+  ['ABBV','AbbVie Inc.','Healthcare'],['ABNB','Airbnb Inc.','Consumer'],['ABT','Abbott Laboratories','Healthcare'],
+  ['ACGL','Arch Capital Group','Finance'],['ACN','Accenture plc','Technology'],['ADI','Analog Devices','Technology'],
+  ['ADM','Archer-Daniels-Midland','Consumer'],['ADP','Automatic Data Processing','Technology'],['ADSK','Autodesk Inc.','Technology'],
+  ['AEE','Ameren Corp.','Utilities'],['AEP','American Electric Power','Utilities'],['AFL','Aflac Inc.','Finance'],
+  ['AIG','American International Group','Finance'],['AJG','Arthur J. Gallagher','Finance'],['AKAM','Akamai Technologies','Technology'],
+  ['ALB','Albemarle Corp.','Materials'],['ALGN','Align Technology','Healthcare'],['ALL','Allstate Corp.','Finance'],
+  ['AMCR','Amcor plc','Materials'],['AMD','Advanced Micro Devices','Technology'],['AME','Ametek Inc.','Industrial'],
+  ['AMGN','Amgen Inc.','Healthcare'],['AMP','Ameriprise Financial','Finance'],['AMT','American Tower','Real Estate'],
+  ['ANET','Arista Networks','Technology'],['ANSS','Ansys Inc.','Technology'],['AON','Aon plc','Finance'],
+  ['APD','Air Products & Chemicals','Materials'],['APH','Amphenol Corp.','Technology'],['APTV','Aptiv PLC','Consumer'],
+  ['ARE','Alexandria Real Estate','Real Estate'],['ATO','Atmos Energy','Utilities'],['AVB','AvalonBay Communities','Real Estate'],
+  ['AVGO','Broadcom Inc.','Technology'],['AVY','Avery Dennison','Materials'],['AWK','American Water Works','Utilities'],
+  ['AXP','American Express','Finance'],['AZO','AutoZone Inc.','Retail'],['BA','Boeing Co.','Industrial'],
+  ['BALL','Ball Corp.','Materials'],['BAX','Baxter International','Healthcare'],['BDX','Becton Dickinson','Healthcare'],
+  ['BEN','Franklin Resources','Finance'],['BIIB','Biogen Inc.','Healthcare'],['BK','Bank of New York Mellon','Finance'],
+  ['BKNG','Booking Holdings','Consumer'],['BKR','Baker Hughes','Oil & Gas'],['BLDR','Builders FirstSource','Industrial'],
+  ['BLK','BlackRock Inc.','Finance'],['BMY','Bristol-Myers Squibb','Healthcare'],['BR','Broadridge Financial','Technology'],
+  ['BRO','Brown & Brown','Finance'],['BSX','Boston Scientific','Healthcare'],['BX','Blackstone Inc.','Finance'],
+  ['C','Citigroup Inc.','Finance'],['CAG','Conagra Brands','Consumer'],['CAH','Cardinal Health','Healthcare'],
+  ['CARR','Carrier Global','Industrial'],['CB','Chubb Ltd.','Finance'],['CBRE','CBRE Group','Real Estate'],
+  ['CCI','Crown Castle Inc.','Real Estate'],['CDNS','Cadence Design Systems','Technology'],['CDW','CDW Corp.','Technology'],
+  ['CE','Celanese Corp.','Materials'],['CEG','Constellation Energy','Utilities'],['CF','CF Industries','Materials'],
+  ['CHD','Church & Dwight','Consumer'],['CHTR','Charter Communications','Communication'],['CI','Cigna Group','Healthcare'],
+  ['CINF','Cincinnati Financial','Finance'],['CL','Colgate-Palmolive','Consumer'],['CLX','Clorox Co.','Consumer'],
+  ['CMCSA','Comcast Corp.','Communication'],['CME','CME Group','Finance'],['CMG','Chipotle Mexican Grill','Consumer'],
+  ['CMI','Cummins Inc.','Industrial'],['CMS','CMS Energy','Utilities'],['CNC','Centene Corp.','Healthcare'],
+  ['CNP','CenterPoint Energy','Utilities'],['COF','Capital One Financial','Finance'],['COO','Cooper Companies','Healthcare'],
+  ['COR','Cencora Inc.','Healthcare'],['CPB','Campbell Soup','Consumer'],['CPRT','Copart Inc.','Industrial'],
+  ['CPT','Camden Property Trust','Real Estate'],['CRM','Salesforce Inc.','Technology'],['CRWD','CrowdStrike Holdings','Technology'],
+  ['CSGP','CoStar Group','Real Estate'],['CSX','CSX Corp.','Industrial'],['CTAS','Cintas Corp.','Industrial'],
+  ['CTRA','Coterra Energy','Oil & Gas'],['CTSH','Cognizant Technology','Technology'],['CTVA','Corteva Inc.','Materials'],
+  ['CVS','CVS Health','Healthcare'],['D','Dominion Energy','Utilities'],['DAL','Delta Air Lines','Airlines'],
+  ['DD','DuPont de Nemours','Materials'],['DE','Deere & Co.','Industrial'],['DECK','Deckers Outdoor','Consumer'],
+  ['DFS','Discover Financial','Finance'],['DHI','D.R. Horton','Consumer'],['DHR','Danaher Corp.','Healthcare'],
+  ['DLR','Digital Realty Trust','Real Estate'],['DOV','Dover Corp.','Industrial'],['DOW','Dow Inc.','Materials'],
+  ['DRI','Darden Restaurants','Consumer'],['DTE','DTE Energy','Utilities'],['DUK','Duke Energy','Utilities'],
+  ['DVN','Devon Energy','Oil & Gas'],['DXCM','DexCom Inc.','Healthcare'],['EA','Electronic Arts','Communication'],
+  ['EBAY','eBay Inc.','Retail'],['ECL','Ecolab Inc.','Materials'],['ED','Consolidated Edison','Utilities'],
+  ['EFX','Equifax Inc.','Industrial'],['EIX','Edison International','Utilities'],['EL','Estee Lauder','Consumer'],
+  ['ELV','Elevance Health','Healthcare'],['EMR','Emerson Electric','Industrial'],['ENPH','Enphase Energy','Technology'],
+  ['EOG','EOG Resources','Oil & Gas'],['EQIX','Equinix Inc.','Real Estate'],['EQR','Equity Residential','Real Estate'],
+  ['EQT','EQT Corp.','Oil & Gas'],['ES','Eversource Energy','Utilities'],['ESS','Essex Property Trust','Real Estate'],
+  ['ETN','Eaton Corp.','Industrial'],['ETR','Entergy Corp.','Utilities'],['EW','Edwards Lifesciences','Healthcare'],
+  ['EXC','Exelon Corp.','Utilities'],['EXPD','Expeditors International','Industrial'],['EXPE','Expedia Group','Consumer'],
+  ['EXR','Extra Space Storage','Real Estate'],['F','Ford Motor Co.','Consumer'],['FANG','Diamondback Energy','Oil & Gas'],
+  ['FAST','Fastenal Co.','Industrial'],['FCX','Freeport-McMoRan','Materials'],['FDS','FactSet Research','Finance'],
+  ['FDX','FedEx Corp.','Industrial'],['FE','FirstEnergy Corp.','Utilities'],['FFIV','F5 Inc.','Technology'],
+  ['FI','Fiserv Inc.','Technology'],['FICO','Fair Isaac Corp.','Technology'],['FIS','Fidelity National Info','Technology'],
+  ['FITB','Fifth Third Bancorp','Finance'],['FSLR','First Solar','Technology'],['FTNT','Fortinet Inc.','Technology'],
+  ['FTV','Fortive Corp.','Industrial'],['GD','General Dynamics','Industrial'],['GE','GE Aerospace','Industrial'],
+  ['GEHC','GE HealthCare','Healthcare'],['GEN','Gen Digital','Technology'],['GILD','Gilead Sciences','Healthcare'],
+  ['GIS','General Mills','Consumer'],['GLW','Corning Inc.','Technology'],['GM','General Motors','Consumer'],
+  ['GPC','Genuine Parts Co.','Retail'],['GPN','Global Payments','Technology'],['GRMN','Garmin Ltd.','Technology'],
+  ['GS','Goldman Sachs Group','Finance'],['GWW','W.W. Grainger','Industrial'],['HAL','Halliburton Co.','Oil & Gas'],
+  ['HBAN','Huntington Bancshares','Finance'],['HCA','HCA Healthcare','Healthcare'],['HD','Home Depot','Retail'],
+  ['HES','Hess Corp.','Oil & Gas'],['HIG','Hartford Financial','Finance'],['HLT','Hilton Worldwide','Consumer'],
+  ['HOLX','Hologic Inc.','Healthcare'],['HON','Honeywell International','Industrial'],['HPE','Hewlett Packard Enterprise','Technology'],
+  ['HPQ','HP Inc.','Technology'],['HRL','Hormel Foods','Consumer'],['HSY','Hershey Co.','Consumer'],
+  ['HUBB','Hubbell Inc.','Industrial'],['HUM','Humana Inc.','Healthcare'],['IBM','IBM Corp.','Technology'],
+  ['ICE','Intercontinental Exchange','Finance'],['IDXX','IDEXX Laboratories','Healthcare'],['IEX','IDEX Corp.','Industrial'],
+  ['IFF','International Flavors','Materials'],['INCY','Incyte Corp.','Healthcare'],['INTU','Intuit Inc.','Technology'],
+  ['INVH','Invitation Homes','Real Estate'],['IP','International Paper','Materials'],['IQV','IQVIA Holdings','Healthcare'],
+  ['IR','Ingersoll Rand','Industrial'],['IRM','Iron Mountain','Real Estate'],['ISRG','Intuitive Surgical','Healthcare'],
+  ['IT','Gartner Inc.','Technology'],['ITW','Illinois Tool Works','Industrial'],['IVZ','Invesco Ltd.','Finance'],
+  ['J','Jacobs Solutions','Industrial'],['JBHT','J.B. Hunt Transport','Industrial'],['JCI','Johnson Controls','Industrial'],
+  ['JKHY','Jack Henry & Associates','Technology'],['K','Kellanova','Consumer'],['KDP','Keurig Dr Pepper','Consumer'],
+  ['KEY','KeyCorp','Finance'],['KEYS','Keysight Technologies','Technology'],['KHC','Kraft Heinz','Consumer'],
+  ['KIM','Kimco Realty','Real Estate'],['KLAC','KLA Corp.','Technology'],['KMB','Kimberly-Clark','Consumer'],
+  ['KMI','Kinder Morgan','Oil & Gas'],['L','Loews Corp.','Finance'],['LDOS','Leidos Holdings','Industrial'],
+  ['LEN','Lennar Corp.','Consumer'],['LH','Labcorp Holdings','Healthcare'],['LHX','L3Harris Technologies','Industrial'],
+  ['LIN','Linde plc','Materials'],['LKQ','LKQ Corp.','Retail'],['LMT','Lockheed Martin','Industrial'],
+  ['LNT','Alliant Energy','Utilities'],['LOW','Lowe\'s Companies','Retail'],['LRCX','Lam Research','Technology'],
+  ['LVS','Las Vegas Sands','Consumer'],['LYB','LyondellBasell','Materials'],['MAA','Mid-America Apartment','Real Estate'],
+  ['MAR','Marriott International','Consumer'],['MAS','Masco Corp.','Industrial'],['MCHP','Microchip Technology','Technology'],
+  ['MCK','McKesson Corp.','Healthcare'],['MCO','Moody\'s Corp.','Finance'],['MDLZ','Mondelez International','Consumer'],
+  ['MDT','Medtronic plc','Healthcare'],['MET','MetLife Inc.','Finance'],['MHK','Mohawk Industries','Consumer'],
+  ['MKC','McCormick & Co.','Consumer'],['MKTX','MarketAxess Holdings','Finance'],['MLM','Martin Marietta','Materials'],
+  ['MMC','Marsh & McLennan','Finance'],['MMM','3M Co.','Industrial'],['MNST','Monster Beverage','Consumer'],
+  ['MOH','Molina Healthcare','Healthcare'],['MOS','Mosaic Co.','Materials'],['MPC','Marathon Petroleum','Oil & Gas'],
+  ['MPWR','Monolithic Power','Technology'],['MRNA','Moderna Inc.','Healthcare'],['MRO','Marathon Oil','Oil & Gas'],
+  ['MSCI','MSCI Inc.','Finance'],['MSI','Motorola Solutions','Technology'],['MTB','M&T Bank','Finance'],
+  ['MTD','Mettler-Toledo','Healthcare'],['MU','Micron Technology','Technology'],['NDAQ','Nasdaq Inc.','Finance'],
+  ['NDSN','Nordson Corp.','Industrial'],['NEE','NextEra Energy','Utilities'],['NEM','Newmont Corp.','Materials'],
+  ['NI','NiSource Inc.','Utilities'],['NOC','Northrop Grumman','Industrial'],['NRG','NRG Energy','Utilities'],
+  ['NSC','Norfolk Southern','Industrial'],['NTAP','NetApp Inc.','Technology'],['NTRS','Northern Trust','Finance'],
+  ['NUE','Nucor Corp.','Materials'],['NVR','NVR Inc.','Consumer'],['NWSA','News Corp.','Communication'],
+  ['NXPI','NXP Semiconductors','Technology'],['O','Realty Income','Real Estate'],['ODFL','Old Dominion Freight','Industrial'],
+  ['OKE','ONEOK Inc.','Oil & Gas'],['OMC','Omnicom Group','Communication'],['ON','ON Semiconductor','Technology'],
+  ['OTIS','Otis Worldwide','Industrial'],['OXY','Occidental Petroleum','Oil & Gas'],['PANW','Palo Alto Networks','Technology'],
+  ['PAYX','Paychex Inc.','Technology'],['PCAR','PACCAR Inc.','Industrial'],['PCG','PG&E Corp.','Utilities'],
+  ['PEG','Public Service Enterprise','Utilities'],['PFG','Principal Financial','Finance'],['PGR','Progressive Corp.','Finance'],
+  ['PH','Parker-Hannifin','Industrial'],['PHM','PulteGroup Inc.','Consumer'],['PKG','Packaging Corp of America','Materials'],
+  ['PLD','Prologis Inc.','Real Estate'],['PNC','PNC Financial Services','Finance'],['PNR','Pentair plc','Industrial'],
+  ['PNW','Pinnacle West Capital','Utilities'],['PODD','Insulet Corp.','Healthcare'],['POOL','Pool Corp.','Retail'],
+  ['PPG','PPG Industries','Materials'],['PPL','PPL Corp.','Utilities'],['PRU','Prudential Financial','Finance'],
+  ['PSA','Public Storage','Real Estate'],['PSX','Phillips 66','Oil & Gas'],['PTC','PTC Inc.','Technology'],
+  ['PWR','Quanta Services','Industrial'],['PYPL','PayPal Holdings','Technology'],['QCOM','Qualcomm Inc.','Technology'],
+  ['RCL','Royal Caribbean','Consumer'],['REG','Regency Centers','Real Estate'],['REGN','Regeneron Pharmaceuticals','Healthcare'],
+  ['RF','Regions Financial','Finance'],['RJF','Raymond James Financial','Finance'],['RMD','ResMed Inc.','Healthcare'],
+  ['ROK','Rockwell Automation','Industrial'],['ROL','Rollins Inc.','Industrial'],['ROP','Roper Technologies','Technology'],
+  ['RSG','Republic Services','Industrial'],['RTX','RTX Corp.','Industrial'],['RVTY','Revvity Inc.','Healthcare'],
+  ['SBAC','SBA Communications','Real Estate'],['SCHW','Charles Schwab','Finance'],['SHW','Sherwin-Williams','Materials'],
+  ['SJM','J.M. Smucker','Consumer'],['SLB','Schlumberger NV','Oil & Gas'],['SNA','Snap-on Inc.','Industrial'],
+  ['SNPS','Synopsys Inc.','Technology'],['SO','Southern Co.','Utilities'],['SPG','Simon Property Group','Real Estate'],
+  ['SPGI','S&P Global Inc.','Finance'],['SRE','Sempra','Utilities'],['STE','Steris plc','Healthcare'],
+  ['STLD','Steel Dynamics','Materials'],['STT','State Street Corp.','Finance'],['STX','Seagate Technology','Technology'],
+  ['STZ','Constellation Brands','Consumer'],['SWK','Stanley Black & Decker','Industrial'],['SWKS','Skyworks Solutions','Technology'],
+  ['SYF','Synchrony Financial','Finance'],['SYK','Stryker Corp.','Healthcare'],['SYY','Sysco Corp.','Consumer'],
+  ['T','AT&T Inc.','Communication'],['TAP','Molson Coors','Consumer'],['TDG','TransDigm Group','Industrial'],
+  ['TDY','Teledyne Technologies','Technology'],['TECH','Bio-Techne Corp.','Healthcare'],['TEL','TE Connectivity','Technology'],
+  ['TER','Teradyne Inc.','Technology'],['TFC','Truist Financial','Finance'],['TMO','Thermo Fisher Scientific','Healthcare'],
+  ['TMUS','T-Mobile US','Communication'],['TRGP','Targa Resources','Oil & Gas'],['TRMB','Trimble Inc.','Technology'],
+  ['TROW','T. Rowe Price Group','Finance'],['TRV','Travelers Companies','Finance'],['TSCO','Tractor Supply','Retail'],
+  ['TSN','Tyson Foods','Consumer'],['TT','Trane Technologies','Industrial'],['TTWO','Take-Two Interactive','Communication'],
+  ['TXN','Texas Instruments','Technology'],['TXT','Textron Inc.','Industrial'],['TYL','Tyler Technologies','Technology'],
+  ['UAL','United Airlines','Airlines'],['UDR','UDR Inc.','Real Estate'],['UHS','Universal Health Services','Healthcare'],
+  ['UNP','Union Pacific','Industrial'],['UPS','United Parcel Service','Industrial'],['URI','United Rentals','Industrial'],
+  ['USB','U.S. Bancorp','Finance'],['V','Visa Inc.','Technology'],['VLO','Valero Energy','Oil & Gas'],
+  ['VMC','Vulcan Materials','Materials'],['VRSK','Verisk Analytics','Industrial'],['VRSN','VeriSign Inc.','Technology'],
+  ['VRTX','Vertex Pharmaceuticals','Healthcare'],['VST','Vistra Corp.','Utilities'],['VTR','Ventas Inc.','Real Estate'],
+  ['VTRS','Viatris Inc.','Healthcare'],['VZ','Verizon Communications','Communication'],['WAB','Wabtec Corp.','Industrial'],
+  ['WAT','Waters Corp.','Healthcare'],['WBD','Warner Bros. Discovery','Communication'],['WDC','Western Digital','Technology'],
+  ['WEC','WEC Energy Group','Utilities'],['WELL','Welltower Inc.','Real Estate'],['WFC','Wells Fargo & Co.','Finance'],
+  ['WM','Waste Management','Industrial'],['WMB','Williams Companies','Oil & Gas'],['WRB','W.R. Berkley','Finance'],
+  ['WST','West Pharmaceutical','Healthcare'],['WTW','Willis Towers Watson','Finance'],['WY','Weyerhaeuser Co.','Real Estate'],
+  ['XEL','Xcel Energy','Utilities'],['XYL','Xylem Inc.','Industrial'],['YUM','Yum! Brands','Consumer'],
+  ['ZBH','Zimmer Biomet','Healthcare'],['ZBRA','Zebra Technologies','Technology'],['ZTS','Zoetis Inc.','Healthcare'],
+  // Nasdaq-100 names outside the S&P 500
+  ['ARM','Arm Holdings plc','Technology'],['ASTS','AST SpaceMobile','Communication'],['AZN','AstraZeneca plc ADR','Healthcare'],
+  ['COIN','Coinbase Global','Finance'],['DASH','DoorDash Inc.','Consumer'],['DDOG','Datadog Inc.','Technology'],
+  ['HOOD','Robinhood Markets','Finance'],['MELI','MercadoLibre Inc.','Retail'],['MRVL','Marvell Technology','Technology'],
+  ['MSTR','MicroStrategy Inc.','Technology'],['PDD','PDD Holdings ADR','Retail'],['PLTR','Palantir Technologies','Technology'],
+  ['RIVN','Rivian Automotive','Consumer'],['ROST','Ross Stores','Retail'],['SMCI','Super Micro Computer','Technology'],
+  ['SNOW','Snowflake Inc.','Technology'],['TEAM','Atlassian Corp.','Technology'],['TTD','The Trade Desk','Technology'],
+  ['WDAY','Workday Inc.','Technology'],['ZS','Zscaler Inc.','Technology'],
+].map(([symbol, name, sector]) => ({
+  symbol, name, sector, class: 'stocks', source: 'finnhub', tv: symbol, region: 'US',
+}));
+
+// ── Europe (Yahoo suffixes, TradingView exchange prefixes) ──
+const EUROPE = [
+  // Germany — XETRA
+  ['SAP','SAP SE','SAP.DE','XETR:SAP','Technology'],['SIE','Siemens AG','SIE.DE','XETR:SIE','Industrial'],
+  ['ALV','Allianz SE','ALV.DE','XETR:ALV','Finance'],['DTE.DE','Deutsche Telekom','DTE.DE','XETR:DTE','Communication'],
+  ['MBG','Mercedes-Benz Group','MBG.DE','XETR:MBG','Consumer'],['BMW','BMW AG','BMW.DE','XETR:BMW','Consumer'],
+  ['VOW3','Volkswagen AG','VOW3.DE','XETR:VOW3','Consumer'],['BAS','BASF SE','BAS.DE','XETR:BAS','Materials'],
+  ['BAYN','Bayer AG','BAYN.DE','XETR:BAYN','Healthcare'],['DBK','Deutsche Bank','DBK.DE','XETR:DBK','Finance'],
+  ['MUV2','Munich Re','MUV2.DE','XETR:MUV2','Finance'],['IFX','Infineon Technologies','IFX.DE','XETR:IFX','Technology'],
+  ['ADS','Adidas AG','ADS.DE','XETR:ADS','Consumer'],['RWE','RWE AG','RWE.DE','XETR:RWE','Utilities'],
+  ['AIR','Airbus SE','AIR.DE','XETR:AIR','Industrial'],
+  // France — Euronext Paris
+  ['MC','LVMH','MC.PA','EURONEXT:MC','Consumer'],['OR','L\'Oreal SA','OR.PA','EURONEXT:OR','Consumer'],
+  ['TTE','TotalEnergies SE','TTE.PA','EURONEXT:TTE','Oil & Gas'],['SAN','Sanofi SA','SAN.PA','EURONEXT:SAN','Healthcare'],
+  ['SU','Schneider Electric','SU.PA','EURONEXT:SU','Industrial'],['AI','Air Liquide','AI.PA','EURONEXT:AI','Materials'],
+  ['BNP','BNP Paribas','BNP.PA','EURONEXT:BNP','Finance'],['RMS','Hermes International','RMS.PA','EURONEXT:RMS','Consumer'],
+  ['KER','Kering SA','KER.PA','EURONEXT:KER','Consumer'],['CS','AXA SA','CS.PA','EURONEXT:CS','Finance'],
+  ['DG.PA','Vinci SA','DG.PA','EURONEXT:DG','Industrial'],['EL.PA','EssilorLuxottica','EL.PA','EURONEXT:EL','Healthcare'],
+  // Netherlands — Euronext Amsterdam
+  ['ASML','ASML Holding','ASML.AS','EURONEXT:ASML','Technology'],['INGA','ING Groep','INGA.AS','EURONEXT:INGA','Finance'],
+  ['AD','Ahold Delhaize','AD.AS','EURONEXT:AD','Retail'],['PRX','Prosus NV','PRX.AS','EURONEXT:PRX','Technology'],
+  ['HEIA','Heineken NV','HEIA.AS','EURONEXT:HEIA','Consumer'],
+  // UK — London Stock Exchange
+  
+  ['HSBA','HSBC Holdings','HSBA.L','LSE:HSBA','Finance'],['ULVR','Unilever plc','ULVR.L','LSE:ULVR','Consumer'],
+  ['BP','BP plc','BP.L','LSE:BP','Oil & Gas'],['GSK','GSK plc','GSK.L','LSE:GSK','Healthcare'],
+  ['RIO','Rio Tinto plc','RIO.L','LSE:RIO','Materials'],['GLEN','Glencore plc','GLEN.L','LSE:GLEN','Materials'],
+  ['BATS','British American Tobacco','BATS.L','LSE:BATS','Consumer'],['DGE','Diageo plc','DGE.L','LSE:DGE','Consumer'],
+  ['LSEG','London Stock Exchange Group','LSEG.L','LSE:LSEG','Finance'],['BARC','Barclays plc','BARC.L','LSE:BARC','Finance'],
+  ['REL','RELX plc','REL.L','LSE:REL','Industrial'],['NG.L','National Grid plc','NG.L','LSE:NG','Utilities'],
+  // Switzerland — SIX
+  ['NESN','Nestle SA','NESN.SW','SIX:NESN','Consumer'],['ROG','Roche Holding','ROG.SW','SIX:ROG','Healthcare'],
+  ['NOVN','Novartis AG','NOVN.SW','SIX:NOVN','Healthcare'],['UBSG','UBS Group','UBSG.SW','SIX:UBSG','Finance'],
+  ['ZURN','Zurich Insurance','ZURN.SW','SIX:ZURN','Finance'],['ABBN','ABB Ltd.','ABBN.SW','SIX:ABBN','Industrial'],
+  // Italy / Spain
+  ['ENI','Eni SpA','ENI.MI','MIL:ENI','Oil & Gas'],['ISP','Intesa Sanpaolo','ISP.MI','MIL:ISP','Finance'],
+  ['ENEL','Enel SpA','ENEL.MI','MIL:ENEL','Utilities'],['UCG','UniCredit SpA','UCG.MI','MIL:UCG','Finance'],
+  ['SAN_MC','Banco Santander','SAN.MC','BME:SAN','Finance'],['IBE','Iberdrola SA','IBE.MC','BME:IBE','Utilities'],
+  ['ITX','Industria de Diseno Textil','ITX.MC','BME:ITX','Retail'],['BBVA','BBVA SA','BBVA.MC','BME:BBVA','Finance'],
+].map(([symbol, name, yahoo, tv, sector]) => ({
+  symbol, name, yahoo, tv, sector, class: 'stocks', source: 'yahoo', region: 'Europe',
+}));
+
+// ── South Korea — KOSPI (Yahoo .KS, TradingView KRX) ──
+const KOREA = [
+  ['005930','Samsung Electronics','Technology'],['000660','SK Hynix','Technology'],
+  ['373220','LG Energy Solution','Industrial'],['207940','Samsung Biologics','Healthcare'],
+  ['005380','Hyundai Motor','Consumer'],['000270','Kia Corp.','Consumer'],
+  ['068270','Celltrion Inc.','Healthcare'],['105560','KB Financial Group','Finance'],
+  ['055550','Shinhan Financial Group','Finance'],['035420','NAVER Corp.','Communication'],
+  ['012330','Hyundai Mobis','Consumer'],['051910','LG Chem','Materials'],
+  ['006400','Samsung SDI','Technology'],['035720','Kakao Corp.','Communication'],
+  ['028260','Samsung C&T','Industrial'],['086790','Hana Financial Group','Finance'],
+  ['015760','Korea Electric Power','Utilities'],['032830','Samsung Life Insurance','Finance'],
+  ['003670','POSCO Future M','Materials'],['009150','Samsung Electro-Mechanics','Technology'],
+  ['066570','LG Electronics','Consumer'],['017670','SK Telecom','Communication'],
+  ['316140','Woori Financial Group','Finance'],['010130','Korea Zinc','Materials'],
+].map(([code, name, sector]) => ({
+  symbol: `KRX:${code}`, name, sector, yahoo: `${code}.KS`, tv: `KRX:${code}`,
+  class: 'stocks', source: 'yahoo', region: 'Korea',
+}));
+
+// ── Japan — Nikkei / TOPIX majors (Yahoo .T, TradingView TSE) ──
+const JAPAN = [
+  ['7203','Toyota Motor','Consumer'],['6758','Sony Group','Technology'],
+  ['8306','Mitsubishi UFJ Financial','Finance'],['6861','Keyence Corp.','Technology'],
+  ['9984','SoftBank Group','Technology'],['6098','Recruit Holdings','Industrial'],
+  ['8035','Tokyo Electron','Technology'],['4063','Shin-Etsu Chemical','Materials'],
+  ['9433','KDDI Corp.','Communication'],['8058','Mitsubishi Corp.','Industrial'],
+  ['7974','Nintendo Co.','Communication'],['6501','Hitachi Ltd.','Industrial'],
+  ['8316','Sumitomo Mitsui Financial','Finance'],['4568','Daiichi Sankyo','Healthcare'],
+  ['6902','Denso Corp.','Consumer'],['7267','Honda Motor','Consumer'],
+  ['9432','Nippon Telegraph & Telephone','Communication'],['4502','Takeda Pharmaceutical','Healthcare'],
+].map(([code, name, sector]) => ({
+  symbol: `TSE:${code}`, name, sector, yahoo: `${code}.T`, tv: `TSE:${code}`,
+  class: 'stocks', source: 'yahoo', region: 'Japan',
+}));
+
+export const extendedEquities = [...US, ...EUROPE, ...KOREA, ...JAPAN].map(a => ({
+  ...a,
+  drivers: `${a.sector} sector fundamentals, earnings delivery versus consensus, and sector-relative multiple.`,
+}));
+
+// ── Additional global indices ──
+export const extendedIndices = [
+  ['KOSPI','KOSPI Composite','^KS11','KRX:KOSPI','South Korean large caps — memory-chip cycle, export demand, won direction.'],
+  ['KOSDAQ','KOSDAQ Composite','^KQ11','KRX:KOSDAQ','Korean growth and biotech names; higher beta than KOSPI.'],
+  ['CAC','CAC 40','^FCHI','EURONEXT:PX1','French large caps — luxury demand from China, industrials, energy.'],
+  ['AEX','AEX Index','^AEX','EURONEXT:AEX','Dutch index, dominated by ASML — a semiconductor-capex proxy.'],
+  ['SMI','Swiss Market Index','^SSMI','SIX:SMI','Defensive: pharma and staples heavyweights. Franc strength is a headwind.'],
+  ['IBEX','IBEX 35','^IBEX','BME:IBC','Spanish banks and utilities; Latin American exposure via Santander and BBVA.'],
+  ['FTSEMIB','FTSE MIB','FTSEMIB.MI','MIL:FTSEMIB','Italian banks and energy; sensitive to BTP-Bund spread.'],
+  ['TSX','S&P/TSX Composite','^GSPTSE','TSX:TSX','Canadian energy, materials and banks — a commodity-levered index.'],
+  ['ASX','S&P/ASX 200','^AXJO','ASX:XJO','Australian miners and banks; the cleanest China-demand equity proxy.'],
+  ['SENSEX','BSE Sensex','^BSESN','BSE:SENSEX','Indian large caps — domestic consumption, IT services exports, oil import costs.'],
+  ['NIFTY','Nifty 50','^NSEI','NSE:NIFTY','India benchmark; broader and more liquid in derivatives than Sensex.'],
+  ['TASI','Tadawul All Share','^TASI.SR','TADAWUL:TASI','Saudi market — Aramco-dominated, oil-price and Vision 2030 spending driven.'],
+].map(([symbol, name, yahoo, tv, drivers]) => ({
+  symbol, name, yahoo, tv, drivers, class: 'indices', source: 'yahoo',
+}));

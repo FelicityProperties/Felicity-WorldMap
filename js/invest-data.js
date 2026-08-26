@@ -14,6 +14,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { sp500Companies } from './sp500-data.js';
+import { extendedEquities, extendedIndices } from './invest-universe-extended.js';
 
 export const ASSET_CLASSES = {
   all:         { label: 'All',         icon: '◆' },
@@ -132,7 +133,25 @@ const STOCKS = sp500Companies.map(c => ({
   drivers: `${c.sector} sector fundamentals, earnings delivery versus consensus, and sector-relative multiple.`,
 }));
 
-export const investUniverse = [...INDICES, ...CRYPTO, ...FOREX, ...COMMODITIES, ...STOCKS];
+// Merge every source, de-duplicating by symbol. Earlier entries win, so the
+// curated core (richer metadata) takes precedence over the extended list.
+function dedupe(lists) {
+  const seen = new Set();
+  const out = [];
+  for (const a of lists.flat()) {
+    const k = a.symbol.toUpperCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(a);
+  }
+  return out;
+}
+
+export const investUniverse = dedupe([
+  INDICES, extendedIndices, CRYPTO, FOREX, COMMODITIES, STOCKS, extendedEquities,
+]);
+
+export const REGIONS = ['US', 'Europe', 'Korea', 'Japan'];
 
 export function findAsset(symbol) {
   if (!symbol) return null;

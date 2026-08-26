@@ -14,6 +14,20 @@
 
 import { findAsset } from '../../js/invest-data.js';
 
+// Any symbol outside the curated universe is treated as a US equity and
+// routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
+// a ticker we never hardcoded — while still failing visibly if it isn't real.
+function resolveAsset(symbol) {
+  const known = findAsset(symbol);
+  if (known) return known;
+  const s = String(symbol || '').trim().toUpperCase();
+  if (!/^[A-Z][A-Z0-9.\-]{0,9}$/.test(s)) return null;
+  return {
+    symbol: s, name: s, class: 'stocks', source: 'finnhub', tv: s, adhoc: true,
+    drivers: 'Sector fundamentals, earnings delivery versus consensus, and sector-relative multiple.',
+  };
+}
+
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 // ── Rate limiting (in-memory, resets on cold start) ──
@@ -159,7 +173,7 @@ Absolute rules:
 - Quote the supplied live figures explicitly (price, % change, and the named headlines with their source).
 - Take a clear position: BUY / ACCUMULATE / HOLD / TRIM / SHORT / AVOID. No fence-sitting.
 - State conviction: LOW / MODERATE / HIGH / VERY HIGH / MAXIMUM.
-- Give risk-first structure: an invalidation level (where the thesis is wrong), and a target. Express position size as a percentage of the reader's RISK BUDGET, and state the assumption behind it — never as an absolute cash amount, because you do not know their circumstances.
+- Give risk-first structure: an invalidation level (where the thesis is wrong), and a target. Size the position according to the INVESTOR PROFILE block below: with a profile, give a concrete cash amount and show the arithmetic; without one, give a percentage of risk budget and state the assumption.
 - Separate what the DATA says from what you INFER. Label inference as inference.
 - Address the bear case honestly. If the setup is genuinely unattractive, say AVOID and explain why — a good desk says no more often than yes.
 - No filler, no disclaimers-by-paragraph, no "consult a financial advisor" boilerplate.
@@ -169,7 +183,7 @@ Return ONLY valid JSON, no code fences, exactly:
   "call": "BUY|ACCUMULATE|HOLD|TRIM|SHORT|AVOID",
   "conviction": "LOW|MODERATE|HIGH|VERY HIGH|MAXIMUM",
   "horizon": "e.g. 3-6 months",
-  "sizing": "position size as % of risk budget, with the assumption stated",
+  "sizing": "position size — a concrete amount in the reader's currency when a profile was supplied, otherwise a % of risk budget with the assumption stated",
   "invalidation": "the level or condition that proves the thesis wrong",
   "target": "the level or outcome being played for",
   "thesis": "2-4 sentences citing the live numbers supplied",
@@ -177,6 +191,27 @@ Return ONLY valid JSON, no code fences, exactly:
   "catalysts": ["near-term catalyst 1", "catalyst 2"],
   "news_read": "what the supplied headlines actually signal, or 'No material news in the window.'"
 }`;
+
+// When the reader has told us their circumstances, Felicity Bot may size in
+// real money — the capital figure is THEIR number, not an invented one.
+function buildProfileBlock(p) {
+  if (!p || !p.capital || !isFinite(p.capital)) {
+    return `INVESTOR PROFILE: not provided.
+Because you do not know this reader's circumstances, express position size ONLY as a percentage of their risk budget and state the assumption behind it. Do NOT give an absolute cash amount.`;
+  }
+  const cap = Number(p.capital);
+  const cur = String(p.currency || 'USD').slice(0, 5);
+  const maxLoss = Number(p.maxLossPct) || 10;
+  return `INVESTOR PROFILE (supplied by the reader — these are THEIR stated figures, so you may compute real amounts from them):
+- Investable capital: ${cur} ${cap.toLocaleString('en-US')}
+- Risk tolerance: ${p.risk || 'balanced'}
+- Time horizon: ${p.horizon || 'medium'}
+- Experience: ${p.experience || 'intermediate'}
+- Maximum acceptable loss on a single position: ${maxLoss}% of that position
+${p.notes ? `- Existing exposure / constraints: ${p.notes}` : ''}
+
+Because the reader supplied these figures, DO give a concrete ${cur} amount for the position, and show the arithmetic in one line (capital x allocation % = amount; and the ${cur} at risk if the invalidation level is hit). Respect their stated risk tolerance, horizon and constraints — if this instrument conflicts with them, say so plainly and recommend against it even if the setup looks good. Never exceed a sensible concentration for their stated tolerance.`;
+}
 
 async function handleAdvise(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -187,8 +222,8 @@ async function handleAdvise(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(200).json({ ok: false, error: 'ANTHROPIC_API_KEY not configured' });
 
-  const { symbol } = req.body || {};
-  const asset = findAsset(symbol);
+  const { symbol, profile } = req.body || {};
+  const asset = resolveAsset(symbol);
   if (!asset) return res.status(400).json({ ok: false, error: `Unknown symbol: ${symbol}` });
 
   const finnhubKey = process.env.FINNHUB_API_KEY;
@@ -227,6 +262,8 @@ ${quote.marketCap != null ? `- Market cap ${num(quote.marketCap, 0)} USD, 24h vo
 
 REAL NEWS, LAST 7 DAYS:
 ${newsBlock}
+
+${buildProfileBlock(profile)}
 
 Produce the analysis as specified JSON.`;
 
@@ -288,7 +325,7 @@ export default async function handler(req, res) {
   if (action === 'advise') return handleAdvise(req, res);
 
   const symbol = url.searchParams.get('symbol');
-  const asset = findAsset(symbol);
+  const asset = resolveAsset(symbol);
   if (!asset) return res.status(400).json({ ok: false, error: `Unknown symbol: ${symbol}` });
 
   const ip = req.headers['x-forwarded-for'] || 'unknown';
