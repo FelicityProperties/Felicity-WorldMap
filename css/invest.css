@@ -903,3 +903,114 @@
   .invest-sweepbar { flex-wrap: wrap; }
   .invest-sweepbar__run { flex: 1 1 100%; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TRADINGVIEW WIDGETS — tape, heatmaps, calendar
+   ═══════════════════════════════════════════════════════════ */
+
+.tv-tape {
+  height: 78px;
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-card);
+}
+
+.tv-tape .tradingview-widget-container__widget { height: 100%; width: 100%; }
+
+.tv-fail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 60px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+/* ── Market view launcher ── */
+.invest-views {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.invest-view-btn {
+  padding: var(--space-2) var(--space-4);
+  min-height: 36px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.invest-view-btn:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+
+.invest-view-btn.active {
+  color: var(--accent-primary);
+  border-color: var(--border-accent);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+/* ── Full-width view panel ── */
+.tv-view {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.tv-view__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tv-view__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.tv-view__sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; line-height: 1.6; }
+
+.tv-view__src {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tv-view__body { height: 620px; width: 100%; }
+.tv-view__body .tradingview-widget-container__widget { height: 100%; width: 100%; }
+
+@media (max-width: 767px) {
+  .tv-tape { height: 68px; }
+  .tv-view__body { height: 460px; }
+  .invest-views {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-1);
+    scrollbar-width: none;
+  }
+  .invest-views::-webkit-scrollbar { display: none; }
+  .invest-view-btn { flex-shrink: 0; }
+}

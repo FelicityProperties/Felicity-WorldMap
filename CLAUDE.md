@@ -92,6 +92,22 @@ analysing — never a guess. Output is framed as research with an explicit
 "not personalised financial advice" line, and position size is expressed as a
 percentage of a stated risk budget, never an absolute cash amount.
 
+### No simulated movement, anywhere
+
+An earlier build nudged macro values and ticker prices with `Math.random()`
+on a timer so the dashboard "looked live" between real refreshes. That is
+fabrication and has been removed. The rule generalises beyond Dubai:
+
+- **A number either comes from a live feed or it is a labelled assessment.**
+  Never interpolate, drift, or animate a value to imply movement.
+- `js/macro.js` fetches USD Strength (DXY) and Market Volatility (VIX) live
+  and marks them `live`. The other four cards are Felicity desk composites,
+  are not measurable market prices, and carry a `desk` marker.
+- If a live fetch fails, the previous real value stands and the marker shows
+  it is stale. Nothing is invented to fill the gap.
+- `Math.random()` in display code is a red flag. The only legitimate use in
+  this repo is the cache-buster in `js/news-live.js`.
+
 ---
 
 ## Project

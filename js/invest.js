@@ -12,6 +12,7 @@ import {
   getWatchlist, isWatched, toggleWatch, clearWatchlist,
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
+import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar } from './tv-widgets.js';
 
 let currentClass = 'all';
 let showWatchlist = false;
@@ -67,6 +68,7 @@ function renderShell() {
   }).join('');
 
   el.innerHTML = `
+    <div class="tv-tape" id="invest-tape"><div class="tradingview-widget-container__widget"></div></div>
     <div class="invest-topbar">
       <button class="invest-watch-toggle" id="invest-watch-toggle">
         <span class="invest-star">★</span> Watchlist
@@ -80,6 +82,11 @@ function renderShell() {
     <div class="invest-controls">
       <input type="search" class="dubai-search invest-search" id="invest-search" placeholder="Search 600+ assets — AAPL, Samsung, Bitcoin, Gold, EURUSD, KOSPI...">
       <div class="invest-classes" id="invest-classes">${tabs}</div>
+    </div>
+    <div class="invest-views" id="invest-views">
+      <button class="invest-view-btn" data-view="heatmap">S&amp;P 500 Heatmap</button>
+      <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
+      <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
     </div>
     <div class="invest-layout">
       <div class="invest-list" id="invest-list"></div>
@@ -115,6 +122,16 @@ function renderShell() {
     if (showWatchlist) document.querySelectorAll('.invest-class-btn').forEach(x => x.classList.remove('active'));
     else document.querySelector('.invest-class-btn[data-class="' + currentClass + '"]')?.classList.add('active');
     renderList();
+  });
+
+  mountTickerTape('invest-tape');
+
+  document.getElementById('invest-views').addEventListener('click', e => {
+    const b = e.target.closest('.invest-view-btn');
+    if (!b) return;
+    document.querySelectorAll('.invest-view-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    showMarketView(b.dataset.view);
   });
 
   document.getElementById('invest-profile-chip').addEventListener('click', () => {
@@ -203,6 +220,50 @@ function renderList() {
       renderList();
     });
   });
+}
+
+// ── Full-width market views: heatmaps and the economic calendar ──
+const MARKET_VIEWS = {
+  heatmap: {
+    title: 'S&P 500 Heatmap',
+    sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move.',
+    mount: host => mountHeatmap(host, 'SPX500'),
+  },
+  crypto: {
+    title: 'Crypto Heatmap',
+    sub: 'The crypto universe sized by market cap, coloured by 24-hour move.',
+    mount: host => mountCryptoHeatmap(host),
+  },
+  calendar: {
+    title: 'Economic Calendar',
+    sub: 'Real scheduled macro releases across the US, eurozone, UK, Japan, China, Germany, UAE, India and Korea.',
+    mount: host => mountEconomicCalendar(host),
+  },
+};
+
+function showMarketView(view) {
+  const meta = MARKET_VIEWS[view];
+  const el = document.getElementById('invest-detail');
+  if (!meta || !el) return;
+
+  selected = null;
+  document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
+
+  el.innerHTML = `
+    <div class="tv-view">
+      <div class="tv-view__head">
+        <div>
+          <div class="tv-view__title">${esc(meta.title)}</div>
+          <div class="tv-view__sub">${esc(meta.sub)}</div>
+        </div>
+        <span class="tv-view__src">TradingView</span>
+      </div>
+      <div class="tv-view__body tradingview-widget-container" id="tv-view-host">
+        <div class="tradingview-widget-container__widget"></div>
+      </div>
+    </div>`;
+
+  meta.mount('tv-view-host');
 }
 
 // ── Daily news across the whole watchlist, in one consolidated feed ──
@@ -365,6 +426,7 @@ async function selectAsset(symbol) {
 
   document.querySelectorAll('.invest-row').forEach(r =>
     r.classList.toggle('is-active', r.dataset.symbol === symbol));
+  document.querySelectorAll('.invest-view-btn').forEach(x => x.classList.remove('active'));
 
   const el = document.getElementById('invest-detail');
   el.innerHTML = `

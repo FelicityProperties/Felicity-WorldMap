@@ -139,3 +139,26 @@
     display: none;
   }
 }
+
+/* ── Provenance markers: live feed vs desk composite ── */
+.macro-src {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
+  padding: 0 3px;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.macro-src--live {
+  color: var(--semantic-green);
+  border-color: rgba(34, 197, 94, 0.35);
+  background: var(--semantic-green-glow);
+}

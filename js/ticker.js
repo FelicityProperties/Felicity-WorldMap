@@ -25,8 +25,7 @@ export function buildTicker() {
   track.innerHTML = items;
 }
 
-export function updateMarketData() {
-  markets.forEach(m => {
-    m.chg = Math.round((m.chg + (Math.random() - 0.5) * 0.2) * 100) / 100;
-  });
-}
+// NOTE: an earlier updateMarketData() nudged every price with Math.random()
+// on a timer, fabricating movement between real refreshes. It was unused and
+// has been removed. The ticker is fed only by markets-live.js, which pulls
+// real prices from Yahoo Finance and CoinGecko via /api/markets.

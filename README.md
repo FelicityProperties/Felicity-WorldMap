@@ -53,7 +53,11 @@ A 145-instrument multi-asset research desk: 105 S&P 500 stocks, 10 indices,
   (indices/FX/futures), CoinGecko (crypto). All server-side, no CORS proxies.
 - **Daily news per instrument** — Finnhub company-news for equities, filtered
   category news for everything else, last 7 days.
-- **TradingView chart** for every instrument.
+- **TradingView chart** for every instrument, plus a live **ticker tape**
+  across the top and three full-width market views: **S&P 500 heatmap**
+  (sector-grouped, market-cap sized), **crypto heatmap**, and a real
+  **economic calendar** covering the US, eurozone, UK, Japan, China,
+  Germany, UAE, India and Korea.
 - **Watchlist** — star any instrument (stored in your browser). Two batch
   actions: **Sweep** runs Felicity Bot across every holding with live
   progress, and **Daily news** pulls the last 7 days for every holding into
