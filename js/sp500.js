@@ -229,6 +229,15 @@ async function selectStock(ticker) {
         <div class="sp500-detail__change sp500-detail__change--${cls}">${sign}$${dayChg} (${sign}${dayPct}%)</div>
       </div>
     </div>
+    <div class="sp500-chart">
+      <div class="sp500-chart__head">
+        <span class="sp500-chart__label">Price Chart</span>
+        <span class="sp500-chart__src">TradingView</span>
+      </div>
+      <div class="tradingview-widget-container" id="tv-chart">
+        <div class="tradingview-widget-container__widget"></div>
+      </div>
+    </div>
     ${metricsHtml}
     ${upcomingHtml}
     ${earningsHtml}
@@ -242,6 +251,8 @@ async function selectStock(ticker) {
     </div>
   `;
 
+  mountTradingViewChart(ticker);
+
   document.getElementById('sp500-ai-btn')?.addEventListener('click', () => {
     generateAIBrief(ticker, company, q, m, e, rec, pt, nextEarning);
   });
@@ -249,6 +260,45 @@ async function selectStock(ticker) {
   document.getElementById('sp500-pdf-btn')?.addEventListener('click', () => {
     exportPDF(ticker, company, q, m, e, rec, pt, nextEarning);
   });
+}
+
+// ── TradingView Advanced Chart ──
+// Official free embeddable widget. Scripts inserted via innerHTML never
+// execute, so the widget script is created and appended programmatically
+// after the detail pane is rendered.
+function mountTradingViewChart(ticker) {
+  const host = document.getElementById('tv-chart');
+  if (!host || !ticker) return;
+
+  host.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.textContent = JSON.stringify({
+    autosize: true,
+    symbol: ticker,
+    interval: 'D',
+    timezone: 'Asia/Dubai',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    backgroundColor: 'rgba(13, 17, 23, 1)',
+    gridColor: 'rgba(255, 255, 255, 0.06)',
+    hide_side_toolbar: true,
+    allow_symbol_change: false,
+    save_image: false,
+    calendar: false,
+    support_host: 'https://www.tradingview.com',
+  });
+
+  // If TradingView is unreachable, leave an honest message rather than a blank box
+  script.onerror = () => {
+    host.innerHTML = '<div class="sp500-chart__fail">Chart unavailable — TradingView could not be reached.</div>';
+  };
+
+  host.appendChild(script);
 }
 
 function renderMetrics(q, m) {

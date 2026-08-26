@@ -790,3 +790,61 @@
     height: 22px;
   }
 }
+
+/* ── TradingView chart embed ── */
+.sp500-chart {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+}
+
+.sp500-chart__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sp500-chart__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.sp500-chart__src {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+#tv-chart {
+  height: 360px;
+  width: 100%;
+}
+
+#tv-chart .tradingview-widget-container__widget {
+  height: 100%;
+  width: 100%;
+}
+
+.sp500-chart__fail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 767px) {
+  #tv-chart { height: 260px; }
+}
