@@ -13,6 +13,7 @@ import {
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
 import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar } from './tv-widgets.js';
+import { escapeHtml, safeUrl } from './safe.js';
 
 let currentClass = 'all';
 let showWatchlist = false;
@@ -45,11 +46,8 @@ export function onInvestShown() {
   });
 }
 
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s == null ? '' : s);
-  return d.innerHTML;
-}
+// Escapes quotes too, so it is safe inside a quoted attribute.
+const esc = escapeHtml;
 
 function fmtPrice(v, cls) {
   if (v == null || isNaN(v)) return '—';
@@ -366,7 +364,7 @@ async function runWatchlistNews() {
           const when = n.datetime
             ? new Date(n.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             : '';
-          return `<a class="wnews__item" href="${esc(n.url)}" target="_blank" rel="noopener">
+          return `<a class="wnews__item" href="${safeUrl(n.url)}" target="_blank" rel="noopener">
             <div class="wnews__item-meta">
               <span class="wnews__item-src">${esc(n.source)}</span>
               <span class="wnews__item-date">${esc(when)}</span>
@@ -433,7 +431,7 @@ async function runSweep() {
           <div class="sweep__item-size"><strong>Size:</strong> ${esc(a.sizing)}</div>
           ${(d.news || []).length ? `<div class="sweep__item-news">
             <span class="sweep__item-news-label">Evidence read</span>
-            ${d.news.map(n => `<a class="sweep__item-news-item" href="${esc(n.url)}" target="_blank" rel="noopener">
+            ${d.news.map(n => `<a class="sweep__item-news-item" href="${safeUrl(n.url)}" target="_blank" rel="noopener">
               <span class="sweep__item-news-src">${esc(n.source)}</span> ${esc(n.headline)}
             </a>`).join('')}
           </div>` : ''}`;
@@ -598,7 +596,7 @@ async function loadNews(asset) {
     list.innerHTML = d.items.map(n => {
       const when = n.datetime ? new Date(n.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
       return `
-        <a class="invest-news__item" href="${esc(n.url)}" target="_blank" rel="noopener">
+        <a class="invest-news__item" href="${safeUrl(n.url)}" target="_blank" rel="noopener">
           <div class="invest-news__item-head">
             <span class="invest-news__item-src">${esc(n.source)}</span>
             <span class="invest-news__item-date">${esc(when)}</span>

@@ -108,6 +108,19 @@ fabrication and has been removed. The rule generalises beyond Dubai:
 - `Math.random()` in display code is a red flag. The only legitimate use in
   this repo is the cache-buster in `js/news-live.js`.
 
+### Rendering untrusted data
+
+`js/safe.js` is the only correct escaper. Use it everywhere external data
+reaches markup — news headlines and URLs from Finnhub or RSS, and anything
+from `/api/data`.
+
+- `escapeHtml()` escapes `& < > " '`. The old textContent→innerHTML trick
+  left **quotes unescaped**, which is safe in a text node and unsafe inside
+  `href="…"`. Never reintroduce it.
+- `safeUrl()` must wrap every URL placed in an `href`, and `isSafeUrl()`
+  every URL handed to `window.open()`. Both reject anything that is not
+  http/https, so a `javascript:` link cannot execute.
+
 ---
 
 ## Project

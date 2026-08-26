@@ -17,6 +17,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { macroSignals } from './data.js';
+import { escapeHtml } from './safe.js';
 
 // Signals that map to a real, quotable instrument
 const LIVE_SIGNALS = {
@@ -31,11 +32,7 @@ export function initMacro() {
   refreshLiveSignals();
 }
 
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s == null ? '' : s);
-  return d.innerHTML;
-}
+const esc = escapeHtml;
 
 function renderMacroCards() {
   const grid = document.getElementById('macro-grid');

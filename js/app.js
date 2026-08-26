@@ -19,6 +19,7 @@ import { initInvest, onInvestShown } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
 import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
+import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 
 // ── State ──
 let activeTab = 'overview';
@@ -265,7 +266,7 @@ function renderSignalCards(grid) {
     const copy = signalCopy(s);
     const arrow = s.direction === 1 ? '\u25B2' : s.direction === -1 ? '\u25BC' : '\u25CF';
     return `
-      <div class="signal-list-card signal-list-card--${meta.tone}" style="animation-delay:${i * 40}ms">
+      <div class="signal-list-card signal-list-card--${escapeHtml(meta.tone)}" style="animation-delay:${i * 40}ms">
         <div class="signal-list-card__header">
           <div class="signal-list-card__trigger">${escapeHtml(s.entity)}</div>
           <span class="signal-list-card__time">${signalAge(s.detectedOn)}</span>
@@ -281,19 +282,15 @@ function renderSignalCards(grid) {
         <div class="signal-list-card__magnitude">${escapeHtml(copy.detail)}</div>
         <div class="signal-evidence">
           <span class="signal-evidence__badge">DLD</span>
-          <span>Detected ${s.detectedOn}</span>
-          <a href="${signalUrl(s)}" target="_blank" rel="noopener" title="View on PropertyIndex">↗</a>
+          <span>Detected ${escapeHtml(s.detectedOn)}</span>
+          <a href="${safeUrl(signalUrl(s))}" target="_blank" rel="noopener" title="View on PropertyIndex">↗</a>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function escapeHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = String(str == null ? '' : str);
-  return d.innerHTML;
-}
+const escapeHtml = safeEscape;
 
 // ── Ask Felicity ──
 function initDesk() {

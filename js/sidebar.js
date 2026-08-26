@@ -4,6 +4,7 @@
 
 import { news, markets, flights, ships } from './data.js';
 import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
+import { escapeHtml as safeEscape, isSafeUrl } from './safe.js';
 import { formatPrice } from './utils.js';
 import { fetchLiveNews } from './news-live.js';
 import { fetchLiveMarkets } from './markets-live.js';
@@ -110,7 +111,8 @@ export function initSidebar() {
     const idx = parseInt(card.dataset.newsIdx);
     const n = news[idx];
     if (!n) return;
-    if (n.url) {
+    // RSS feeds are external — never hand window.open a javascript: URL
+    if (n.url && isSafeUrl(n.url)) {
       window.open(n.url, '_blank', 'noopener,noreferrer');
     } else if (window.__openModal) {
       window.__openModal(n.title, `${n.lbl} \u00b7 ${n.region} \u00b7 ${n.time} ago`);
@@ -147,11 +149,7 @@ export function refreshCurrentTab() {
 }
 
 // ── News ──
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = String(str || '');
-  return div.innerHTML;
-}
+const escapeHtml = safeEscape;
 
 function reSignalClass(signal) {
   if (!signal) return 'neutral';
@@ -189,7 +187,7 @@ function renderNews() {
         </div>` : '';
     return `
       <div class="card-item${hasUrl}" data-news-idx="${i}">
-        <div class="news-card__category news-card__category--${n.cat}">${escapeHtml(n.lbl)} \u00b7 ${escapeHtml(n.region)}</div>
+        <div class="news-card__category news-card__category--${escapeHtml(n.cat)}">${escapeHtml(n.lbl)} \u00b7 ${escapeHtml(n.region)}</div>
         <div class="news-card__title">${escapeHtml(n.title)}</div>${reHtml}
         <div class="news-card__meta">${escapeHtml(n.time)} ago${src}</div>
       </div>
@@ -220,15 +218,15 @@ function renderMarkets() {
     const dirClass = reSignalClass(m.reDirection);
     const reHtml = m.reCorrelation ? `
         <div class="market-row__re">
-          <span class="re-signal-badge re-signal-badge--${dirClass}">${m.reDirection || 'NEUTRAL'}</span>
-          <span class="market-row__re-text">${m.reCorrelation}</span>
+          <span class="re-signal-badge re-signal-badge--${dirClass}">${escapeHtml(m.reDirection || 'NEUTRAL')}</span>
+          <span class="market-row__re-text">${escapeHtml(m.reCorrelation)}</span>
         </div>` : '';
     return `
       <div class="card-item">
         <div class="market-row">
           <div>
-            <div class="market-row__name">${m.sym}</div>
-            <div class="market-row__sub">${m.name}</div>
+            <div class="market-row__name">${escapeHtml(m.sym)}</div>
+            <div class="market-row__sub">${escapeHtml(m.name)}</div>
           </div>
           <div style="text-align:right">
             <div class="market-row__price">$${val}</div>
@@ -262,11 +260,11 @@ function renderFlights() {
       <div class="track-card">
         <div>
           <div class="track-card__callsign">
-            ${f.call}
+            ${escapeHtml(f.call)}
             <span class="badge badge--${f.type === 'mil' ? 'mil' : 'com'}">${f.type === 'mil' ? 'MIL' : 'COM'}</span>
           </div>
-          <div class="track-card__route">${f.from} \u2192 ${f.to}</div>
-          <div class="track-card__detail">${f.alt}</div>
+          <div class="track-card__route">${escapeHtml(f.from)} \u2192 ${escapeHtml(f.to)}</div>
+          <div class="track-card__detail">${escapeHtml(f.alt)}</div>
         </div>
         <div class="track-card__coords">
           <div>${f.lat.toFixed(1)}\u00b0N</div>
@@ -302,11 +300,11 @@ function renderShips() {
         <div class="track-card">
           <div>
             <div class="track-card__callsign">
-              ${s.name}
-              <span class="badge badge--${badgeCls}">${s.type.toUpperCase()}</span>
+              ${escapeHtml(s.name)}
+              <span class="badge badge--${badgeCls}">${escapeHtml(String(s.type).toUpperCase())}</span>
             </div>
-            <div class="track-card__route">${s.dest}</div>
-            <div class="track-card__detail">${s.speed}</div>
+            <div class="track-card__route">${escapeHtml(s.dest)}</div>
+            <div class="track-card__detail">${escapeHtml(s.speed)}</div>
           </div>
           <div class="track-card__coords">
             <div>${s.lat.toFixed(1)}\u00b0N</div>
