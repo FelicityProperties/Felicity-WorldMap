@@ -15,7 +15,7 @@ import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { initSP500 } from './sp500.js';
-import { initInvest } from './invest.js';
+import { initInvest, onInvestShown } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
 import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
@@ -70,7 +70,7 @@ async function boot() {
   });
 
   // Macro data fluctuation (slower)
-  setInterval(updateMacroData, 8000);
+  setInterval(updateMacroData, 60000);
 
   // Nav tab routing
   initTabRouting();
@@ -127,6 +127,9 @@ function switchTab(tabId) {
 
   const targetPanel = document.getElementById('tab-' + tabId);
   if (targetPanel) targetPanel.classList.add('is-active');
+
+  // Mount the ticker tape the first time the Invest tab is actually visible
+  if (tabId === 'invest') onInvestShown();
 
   // Lazy-init the map on first visit to World Map tab
   if (tabId === 'worldmap' && !mapInitialized) {

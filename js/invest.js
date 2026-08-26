@@ -22,9 +22,27 @@ let quoteCache = {};
 
 const QUOTE_TTL = 45000;
 
+let tapeMounted = false;
+
 export function initInvest() {
   renderShell();
   renderList();
+}
+
+// The Invest panel is display:none at boot. A TradingView widget mounted into
+// a hidden container measures 0x0 and stays blank even once shown, so the
+// ticker tape is mounted the first time the tab is actually revealed.
+export function onInvestShown() {
+  if (tapeMounted) return;
+  // switchTab flips the panel class in the same tick, so wait a frame for
+  // layout to flush before measuring whether the host is really visible.
+  requestAnimationFrame(() => {
+    if (tapeMounted) return;
+    const host = document.getElementById('invest-tape');
+    if (!host || !host.offsetParent) return;  // genuinely still hidden
+    mountTickerTape('invest-tape');
+    tapeMounted = true;
+  });
 }
 
 function esc(s) {
@@ -68,7 +86,7 @@ function renderShell() {
   }).join('');
 
   el.innerHTML = `
-    <div class="tv-tape" id="invest-tape"><div class="tradingview-widget-container__widget"></div></div>
+    <div class="tv-tape tradingview-widget-container" id="invest-tape"><div class="tradingview-widget-container__widget"></div></div>
     <div class="invest-topbar">
       <button class="invest-watch-toggle" id="invest-watch-toggle">
         <span class="invest-star">★</span> Watchlist
@@ -123,8 +141,6 @@ function renderShell() {
     else document.querySelector('.invest-class-btn[data-class="' + currentClass + '"]')?.classList.add('active');
     renderList();
   });
-
-  mountTickerTape('invest-tape');
 
   document.getElementById('invest-views').addEventListener('click', e => {
     const b = e.target.closest('.invest-view-btn');

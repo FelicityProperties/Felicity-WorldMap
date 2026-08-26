@@ -172,12 +172,16 @@ export function openProfileModal(onSaved) {
 
   document.body.appendChild(overlay);
 
-  const close = () => overlay.remove();
+  // Close tears down its own key listener, so closing via the X or the
+  // overlay does not leak one handler per open.
+  function onEsc(e) { if (e.key === 'Escape') close(); }
+  function close() {
+    document.removeEventListener('keydown', onEsc);
+    overlay.remove();
+  }
   overlay.querySelector('#profile-close').addEventListener('click', close);
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', function onEsc(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
-  });
+  document.addEventListener('keydown', onEsc);
 
   overlay.querySelector('#profile-clear').addEventListener('click', () => {
     clearProfile();

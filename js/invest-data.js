@@ -37,6 +37,8 @@ const INDICES = [
     drivers: 'US small caps — domestic demand, credit conditions and refinancing costs hit hardest here.' },
   { symbol: 'VIX',    name: 'CBOE Volatility',    yahoo: '^VIX',     tv: 'TVC:VIX',
     drivers: 'Implied 30-day S&P volatility. Mean-reverting; spikes on liquidity and event shocks.' },
+  { symbol: 'DXY',    name: 'US Dollar Index',    yahoo: 'DX-Y.NYB', tv: 'TVC:DXY',
+    drivers: 'Dollar against a basket of six majors — Fed policy relative to peers, and global risk appetite.' },
   { symbol: 'FTSE',   name: 'FTSE 100',           yahoo: '^FTSE',    tv: 'TVC:UKX',
     drivers: 'Heavy energy, mining and banks; earns largely in USD so weak sterling flatters it.' },
   { symbol: 'DAX',    name: 'DAX 40',             yahoo: '^GDAXI',   tv: 'XETR:DAX',

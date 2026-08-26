@@ -217,7 +217,14 @@ async function handleAdvise(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const ip = req.headers['x-forwarded-for'] || 'unknown';
-  if (!checkRateLimit(ip, 12)) return res.status(429).json({ error: 'Rate limit exceeded. Max 12 analyses per minute.' });
+  // A watchlist sweep issues one analysis per holding back to back, so this
+  // has to comfortably exceed a realistic watchlist size.
+  if (!checkRateLimit(ip, 30)) {
+    return res.status(429).json({
+      ok: false,
+      error: 'Too many analyses in the last minute (limit 30). Wait a moment and continue the sweep.',
+    });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(200).json({ ok: false, error: 'ANTHROPIC_API_KEY not configured' });
