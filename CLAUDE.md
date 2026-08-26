@@ -108,6 +108,31 @@ fabrication and has been removed. The rule generalises beyond Dubai:
 - `Math.random()` in display code is a red flag. The only legitimate use in
   this repo is the cache-buster in `js/news-live.js`.
 
+### Felicity Bot is reachable everywhere
+
+`js/felicity-bot.js` mounts a floating launcher beside the WhatsApp button on
+every tab, opening a conversation against `/api/desk/ask` — the same desk brain
+as the Overview panel, which now sits directly under the hero.
+
+The endpoint accepts a `history` array so the thread has memory. That history
+comes from the client, so it is **untrusted**: roles are whitelisted to
+user/assistant, content is coerced to a string and truncated, the turn count is
+capped, and the sequence is repaired to alternate and end on the new question.
+Never pass client turns to the Messages API unchecked.
+
+The transcript lives in `sessionStorage` only and is never persisted server-side.
+
+### The S&P 500 tab is gone — its data lives in the cockpit
+
+It duplicated the cockpit's price, chart, news and AI analysis. What was
+genuinely unique — Finnhub fundamentals, earnings against consensus, the
+analyst range, and the printable brief — moved to `js/equity-fundamentals.js`
+and renders inside the Invest detail pane for US-listed equities. Finnhub's
+free tier does not cover Europe/Korea/Japan listings, so the section is not
+offered there rather than being shown empty.
+
+`css/sp500.css` stays: `js/invest.js` still uses its `.sp500-chart` classes.
+
 ### Rendering untrusted data
 
 `js/safe.js` is the only correct escaper. Use it everywhere external data

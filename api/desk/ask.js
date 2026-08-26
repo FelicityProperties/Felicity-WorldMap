@@ -52,10 +52,36 @@ export default async function handler(req, res) {
     return res.status(200).json({ response: 'Desk intelligence requires ANTHROPIC_API_KEY. Set it in Vercel environment variables.', conviction: null });
   }
 
-  const { question } = req.body || {};
+  const { question, history } = req.body || {};
   if (!question) {
     return res.status(400).json({ response: 'Missing question.', conviction: null });
   }
+
+  // The floating desk is a conversation, not a series of unrelated questions —
+  // "what about Marina?" has to know what was just discussed. Prior turns are
+  // accepted from the client, so they are treated as untrusted: roles are
+  // whitelisted, content is coerced to a string and truncated, and the number
+  // of turns is capped so nobody can push an unbounded payload upstream.
+  const priorTurns = [];
+  if (Array.isArray(history)) {
+    for (const turn of history.slice(-8)) {
+      if (!turn || (turn.role !== 'user' && turn.role !== 'assistant')) continue;
+      const content = String(turn.content ?? '').slice(0, 4000);
+      if (!content.trim()) continue;
+      priorTurns.push({ role: turn.role, content });
+    }
+  }
+
+  // The Messages API requires the turns to alternate and to start with a user
+  // turn, so drop anything that would break that rather than 400-ing upstream.
+  while (priorTurns.length && priorTurns[0].role !== 'user') priorTurns.shift();
+  const messages = [];
+  for (const turn of priorTurns) {
+    if (messages.length && messages[messages.length - 1].role === turn.role) continue;
+    messages.push(turn);
+  }
+  if (messages.length && messages[messages.length - 1].role === 'user') messages.pop();
+  messages.push({ role: 'user', content: String(question).slice(0, 4000) });
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -69,7 +95,7 @@ export default async function handler(req, res) {
         model: 'claude-opus-4-8',
         max_tokens: 1000,
         system: HEDGE_FUND_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: question }]
+        messages
       })
     });
 

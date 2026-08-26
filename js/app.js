@@ -14,7 +14,7 @@ import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
-import { initSP500 } from './sp500.js';
+import { initFelicityBot } from './felicity-bot.js';
 import { initInvest, onInvestShown } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
@@ -45,10 +45,10 @@ async function boot() {
   initMacro();
   initBroadcasts();
   initDubaiIntel();
-  initSP500();
   initInvest();
   initSignals();
   initDesk();
+  initFelicityBot();   // floating desk, reachable from every tab
   initDeskCalls();
   initPlaybook();
 

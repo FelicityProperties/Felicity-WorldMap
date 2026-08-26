@@ -1,0 +1,310 @@
+/* ═══════════════════════════════════════════════════════════
+   FELICITY BOT — floating launcher + conversation panel
+   ═══════════════════════════════════════════════════════════
+   Sits directly above the WhatsApp button, which is fixed at
+   bottom: 52px / right: 20px and is 56px tall.
+   ═══════════════════════════════════════════════════════════ */
+
+.fbot-launcher {
+  position: fixed;
+  bottom: 120px;
+  right: 20px;
+  z-index: var(--z-panel);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 56px;
+  padding: 0 var(--space-4) 0 10px;
+  background: linear-gradient(135deg, #0b2a3a, #103d55);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 18px rgba(0, 212, 255, 0.28);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.fbot-launcher:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0, 212, 255, 0.4); }
+.fbot-launcher.is-open { opacity: 0; pointer-events: none; }
+
+.fbot-launcher__mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  color: #04121c;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.fbot-launcher__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  white-space: nowrap;
+}
+
+/* ── Panel ── */
+.fbot {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: var(--z-modal, 900);
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  height: 620px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-section, var(--surface-card));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px) scale(0.98);
+  transform-origin: bottom right;
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out),
+              visibility var(--duration-fast) var(--ease-out);
+}
+
+.fbot.is-open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+
+.fbot__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.fbot__id { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+
+.fbot__mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  color: #04121c;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}
+
+.fbot__title {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.fbot__sub { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); }
+
+.fbot__head-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.fbot__reset {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.fbot__reset:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+
+.fbot__close {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.fbot__close:hover { color: var(--text-primary); }
+
+/* ── Thread ── */
+.fbot__thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fbot__intro p {
+  font-size: var(--text-xs);
+  line-height: 1.75;
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.fbot__openers { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.fbot__opener {
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px var(--space-3);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+
+.fbot__opener:hover { color: var(--accent-primary); border-color: var(--border-accent); }
+
+.fbot__msg { display: flex; flex-direction: column; gap: 4px; max-width: 88%; }
+.fbot__msg--me { align-self: flex-end; align-items: flex-end; }
+.fbot__msg--bot { align-self: flex-start; }
+
+.fbot__conviction {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+}
+
+.fbot__bubble {
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fbot__msg--me .fbot__bubble {
+  color: var(--text-primary);
+  background: rgba(0, 212, 255, 0.09);
+  border-color: var(--border-accent);
+}
+
+.fbot__bubble--wait { display: flex; gap: 5px; align-items: center; padding: var(--space-4); }
+
+.fbot__bubble--wait span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  animation: fbot-blink 1.2s infinite ease-in-out;
+}
+
+.fbot__bubble--wait span:nth-child(2) { animation-delay: 0.18s; }
+.fbot__bubble--wait span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes fbot-blink {
+  0%, 60%, 100% { opacity: 0.25; }
+  30%           { opacity: 1; }
+}
+
+/* ── Composer ── */
+.fbot__composer {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.fbot__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.fbot__input:focus { outline: none; border-color: var(--border-accent); }
+
+.fbot__send {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  font-size: var(--text-md);
+  color: #04121c;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.fbot__send:hover:not(:disabled) { opacity: 0.85; }
+.fbot__send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.fbot__foot {
+  padding: 0 var(--space-4) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Mobile: a full-height sheet, and the launcher loses its label ── */
+@media (max-width: 767px) {
+  .fbot-launcher {
+    bottom: 118px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .fbot-launcher__label { display: none; }
+  .fbot-launcher__mark { width: 34px; height: 34px; }
+
+  .fbot {
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    transform: translateY(100%);
+  }
+
+  .fbot.is-open { transform: translateY(0); }
+
+  /* The sheet covers the viewport, so the page behind it must not scroll */
+  body.fbot-open { overflow: hidden; }
+
+  .fbot__msg { max-width: 92%; }
+  .fbot__composer { padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
+}

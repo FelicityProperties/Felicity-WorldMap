@@ -13,6 +13,7 @@ import {
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
 import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar } from './tv-widgets.js';
+import { hasFundamentals, loadFundamentals, exportBrief } from './equity-fundamentals.js';
 import { escapeHtml, safeUrl } from './safe.js';
 
 let currentClass = 'all';
@@ -20,6 +21,7 @@ let showWatchlist = false;
 let search = '';
 let selected = null;
 let quoteCache = {};
+let fundamentalsFor = null;
 
 const QUOTE_TTL = 45000;
 
@@ -28,6 +30,7 @@ let tapeMounted = false;
 export function initInvest() {
   renderShell();
   renderList();
+  bindFullscreenEscape();
 }
 
 // The Invest panel is display:none at boot. A TradingView widget mounted into
@@ -272,13 +275,21 @@ const MARKET_VIEWS = {
   },
 };
 
+// A treemap of 500 constituents squeezed into the detail column beside a
+// 400px instrument list is unreadable — the blocks collapse to slivers and
+// the labels vanish. A market view therefore takes the FULL width of the
+// panel (the list is hidden while one is open) and can go fullscreen.
+let currentMarketView = null;
+
 function showMarketView(view) {
   const meta = MARKET_VIEWS[view];
   const el = document.getElementById('invest-detail');
   if (!meta || !el) return;
 
   selected = null;
+  currentMarketView = view;
   document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
+  document.querySelector('.invest-layout')?.classList.add('is-market-view');
 
   el.innerHTML = `
     <div class="tv-view">
@@ -287,7 +298,11 @@ function showMarketView(view) {
           <div class="tv-view__title">${esc(meta.title)}</div>
           <div class="tv-view__sub">${esc(meta.sub)}</div>
         </div>
-        <span class="tv-view__src">TradingView</span>
+        <div class="tv-view__actions">
+          <button class="tv-view__expand" id="tv-expand">Fullscreen</button>
+          <button class="tv-view__back" id="tv-back">Back to list</button>
+          <span class="tv-view__src">TradingView</span>
+        </div>
       </div>
       <div class="tv-view__body tradingview-widget-container" id="tv-view-host">
         <div class="tradingview-widget-container__widget"></div>
@@ -296,6 +311,70 @@ function showMarketView(view) {
 
   meta.mount('tv-view-host');
   revealDetail();
+
+  document.getElementById('tv-expand').addEventListener('click', toggleMarketFullscreen);
+  document.getElementById('tv-back').addEventListener('click', closeMarketView);
+}
+
+// Any panel that replaces a market view has to give the instrument list its
+// column back, and must not leave a fullscreen overlay stranded on screen.
+function leaveMarketView() {
+  exitMarketFullscreen();
+  currentMarketView = null;
+  document.querySelector('.invest-layout')?.classList.remove('is-market-view');
+}
+
+function closeMarketView() {
+  exitMarketFullscreen();
+  currentMarketView = null;
+  document.querySelector('.invest-layout')?.classList.remove('is-market-view');
+  document.querySelectorAll('.invest-view-btn').forEach(x => x.classList.remove('active'));
+  const el = document.getElementById('invest-detail');
+  if (el) {
+    el.innerHTML = `
+      <div class="invest-detail__empty">
+        <div class="invest-detail__empty-icon">◆</div>
+        <h3>Select an instrument</h3>
+        <p>Live price, the last 7 days of real news, and a positioned call from Felicity Bot — grounded only in that evidence.</p>
+      </div>`;
+  }
+}
+
+function toggleMarketFullscreen() {
+  const view = document.querySelector('.tv-view');
+  if (!view) return;
+  const on = !view.classList.contains('is-fullscreen');
+  view.classList.toggle('is-fullscreen', on);
+  document.body.classList.toggle('tv-fullscreen-open', on);
+  document.getElementById('tv-expand').textContent = on ? 'Exit fullscreen' : 'Fullscreen';
+
+  // The TradingView iframe sizes itself when it loads, so growing the box
+  // around it leaves the old dimensions baked in. Re-mount at the new size.
+  const meta = MARKET_VIEWS[currentMarketView];
+  if (meta) requestAnimationFrame(() => meta.mount('tv-view-host'));
+}
+
+function exitMarketFullscreen() {
+  const view = document.querySelector('.tv-view.is-fullscreen');
+  if (!view) return;
+  view.classList.remove('is-fullscreen');
+  document.body.classList.remove('tv-fullscreen-open');
+}
+
+// Esc leaves fullscreen — a panel that covers the viewport needs a way out
+// that does not depend on finding a small button. Bound in initInvest, not at
+// module scope: a module that touches `document` on import cannot be loaded
+// outside a browser, and the API endpoints share this folder.
+function bindFullscreenEscape() {
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!document.querySelector('.tv-view.is-fullscreen')) return;
+    exitMarketFullscreen();
+    const btn = document.getElementById('tv-expand');
+    if (btn) btn.textContent = 'Fullscreen';
+    const meta = MARKET_VIEWS[currentMarketView];
+    if (meta) requestAnimationFrame(() => meta.mount('tv-view-host'));
+  });
 }
 
 // ── Daily news across the whole watchlist, in one consolidated feed ──
@@ -458,6 +537,7 @@ async function selectAsset(symbol) {
   if (!asset) return;
   selected = symbol;
 
+  leaveMarketView();
   document.querySelectorAll('.invest-row').forEach(r =>
     r.classList.toggle('is-active', r.dataset.symbol === symbol));
   document.querySelectorAll('.invest-view-btn').forEach(x => x.classList.remove('active'));
@@ -484,6 +564,21 @@ async function selectAsset(symbol) {
       <span class="invest-drivers__label">What moves it</span>
       ${esc(asset.drivers)}
     </div>
+
+    ${hasFundamentals(asset) ? `
+    <div class="fund">
+      <div class="fund__head">
+        <div>
+          <div class="fund__title">Fundamentals</div>
+          <div class="fund__sub">Reported financials, earnings against consensus and the analyst range — live from Finnhub.</div>
+        </div>
+        <button class="fund__print" id="invest-print-btn" title="Open a print-ready brief">Print brief</button>
+      </div>
+      <div class="fund__body" id="invest-fund">
+        <div class="skeleton skeleton--text"></div>
+        <div class="skeleton skeleton--text"></div>
+      </div>
+    </div>` : ''}
 
     <div class="sp500-chart">
       <div class="sp500-chart__head">
@@ -522,6 +617,25 @@ async function selectAsset(symbol) {
   loadQuote(asset);
   loadNews(asset);
   revealDetail();
+
+  // Fundamentals for US-listed equities — the capability the S&P 500 tab used
+  // to hold, now living beside the price it belongs to.
+  if (hasFundamentals(asset)) {
+    fundamentalsFor = null;
+    loadFundamentals(asset, 'invest-fund').then(d => {
+      if (selected === asset.symbol) fundamentalsFor = { symbol: asset.symbol, data: d };
+    });
+
+    document.getElementById('invest-print-btn').addEventListener('click', () => {
+      const data = fundamentalsFor?.symbol === asset.symbol ? fundamentalsFor.data : null;
+      const q = quoteCache[asset.symbol]?.data || null;
+      // Carry the Felicity Bot analysis into the brief when one has been run
+      const brief = document.getElementById('invest-thesis-text')?.textContent || '';
+      if (!exportBrief(asset, data, q, brief)) {
+        alert('The brief opens in a new tab — allow pop-ups for this site and try again.');
+      }
+    });
+  }
 
   document.getElementById('invest-advise-btn').addEventListener('click', () => runAdvisor(asset));
 
@@ -678,6 +792,7 @@ function renderScreener() {
   const el = document.getElementById('invest-detail');
   if (!el) return;
   selected = null;
+  leaveMarketView();
   document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
 
   const { list: universe, total } = screenUniverse();
@@ -848,6 +963,7 @@ function renderBacktester() {
   if (!el) return;
   const symbol = selected || getWatchlist()[0] || 'SPY';
   selected = null;
+  leaveMarketView();
   document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
 
   const strat = STRATS[btStrategy];
@@ -1086,7 +1202,7 @@ async function runAdvisor(asset) {
         <span class="invest-call__horizon">${esc(a.horizon || '')}</span>
       </div>
 
-      <div class="invest-thesis">${esc(a.thesis)}</div>
+      <div class="invest-thesis" id="invest-thesis-text">${esc(a.thesis)}</div>
 
       <div class="invest-grid">
         <div class="invest-grid__cell">
