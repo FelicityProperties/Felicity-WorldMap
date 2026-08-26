@@ -54,6 +54,15 @@ A 145-instrument multi-asset research desk: 105 S&P 500 stocks, 10 indices,
 - **Daily news per instrument** — Finnhub company-news for equities, filtered
   category news for everything else, last 7 days.
 - **TradingView chart** for every instrument.
+- **Watchlist** — star any instrument (stored in your browser). Two batch
+  actions: **Sweep** runs Felicity Bot across every holding with live
+  progress, and **Daily news** pulls the last 7 days for every holding into
+  one consolidated feed, ordered so the busiest names surface first.
+- **Investor profile** — optional. Capital, currency, risk tolerance,
+  horizon, experience, max acceptable loss and existing constraints. With it
+  set, Felicity Bot sizes positions in real money and shows the arithmetic;
+  without it, sizing stays a percentage of risk budget. Stored in the
+  browser's localStorage only — never persisted or logged server-side.
 - **Felicity Bot** (`POST /api/invest/advise`) fetches the live quote and real
   headlines first, then produces a positioned call: direction, conviction,
   horizon, position size as % of risk budget, invalidation level, target,

@@ -160,7 +160,8 @@ function renderList() {
 
   const sweepBar = showWatchlist ? `
     <div class="invest-sweepbar">
-      <button class="invest-sweepbar__run" id="invest-sweep-run">Run sweep on ${list.length} ${list.length === 1 ? 'name' : 'names'} →</button>
+      <button class="invest-sweepbar__run" id="invest-sweep-run">Sweep ${list.length} →</button>
+      <button class="invest-sweepbar__news" id="invest-sweep-news">Daily news</button>
       <button class="invest-sweepbar__clear" id="invest-sweep-clear">Clear</button>
     </div>` : '';
 
@@ -187,6 +188,7 @@ function renderList() {
   });
 
   document.getElementById('invest-sweep-run')?.addEventListener('click', runSweep);
+  document.getElementById('invest-sweep-news')?.addEventListener('click', runWatchlistNews);
   document.getElementById('invest-sweep-clear')?.addEventListener('click', () => {
     clearWatchlist();
     refreshWatchCount();
@@ -201,6 +203,89 @@ function renderList() {
       renderList();
     });
   });
+}
+
+// ── Daily news across the whole watchlist, in one consolidated feed ──
+async function runWatchlistNews() {
+  const list = getWatchlist().map(s => findAsset(s)).filter(Boolean);
+  const el = document.getElementById('invest-detail');
+  if (!list.length) return;
+
+  el.innerHTML = `
+    <div class="sweep">
+      <div class="sweep__head">
+        <div>
+          <div class="sweep__title">Watchlist News</div>
+          <div class="sweep__sub">Last 7 days across ${list.length} ${list.length === 1 ? 'holding' : 'holdings'}, newest first.</div>
+        </div>
+        <div class="sweep__progress" id="wnews-progress">0 / ${list.length}</div>
+      </div>
+      <div class="wnews" id="wnews-body"></div>
+    </div>`;
+
+  const body = document.getElementById('wnews-body');
+  const prog = document.getElementById('wnews-progress');
+  let done = 0;
+  const results = [];
+
+  // Fetch in small batches so we stay well inside the endpoint rate limit
+  for (let i = 0; i < list.length; i += 4) {
+    const batch = list.slice(i, i + 4);
+    const settled = await Promise.allSettled(batch.map(async asset => {
+      const r = await fetch(`/api/invest/news?symbol=${encodeURIComponent(asset.symbol)}`);
+      const d = await r.json();
+      return { asset, items: d.items || [], error: d.error };
+    }));
+
+    settled.forEach((s, idx) => {
+      results.push(s.status === 'fulfilled'
+        ? s.value
+        : { asset: batch[idx], items: [], error: s.reason?.message || 'unavailable' });
+      done++;
+    });
+
+    prog.textContent = `${done} / ${list.length}`;
+    render();
+  }
+
+  prog.textContent = `${done} / ${list.length} complete`;
+
+  function render() {
+    // Newest story first, so the busiest names surface at the top
+    const sorted = [...results].sort((a, b) => {
+      const at = a.items[0]?.datetime || 0;
+      const bt = b.items[0]?.datetime || 0;
+      return bt - at;
+    });
+
+    body.innerHTML = sorted.map(({ asset, items, error }) => {
+      if (!items.length) {
+        return `<div class="wnews__group wnews__group--empty">
+          <div class="wnews__sym">${esc(asset.symbol)}</div>
+          <div class="wnews__none">No news in the last 7 days${error ? ` — ${esc(error)}` : ''}.</div>
+        </div>`;
+      }
+      return `<div class="wnews__group">
+        <div class="wnews__group-head">
+          <span class="wnews__sym">${esc(asset.symbol)}</span>
+          <span class="wnews__name">${esc(asset.name)}</span>
+          <span class="wnews__count">${items.length}</span>
+        </div>
+        ${items.slice(0, 5).map(n => {
+          const when = n.datetime
+            ? new Date(n.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : '';
+          return `<a class="wnews__item" href="${esc(n.url)}" target="_blank" rel="noopener">
+            <div class="wnews__item-meta">
+              <span class="wnews__item-src">${esc(n.source)}</span>
+              <span class="wnews__item-date">${esc(when)}</span>
+            </div>
+            <div class="wnews__item-title">${esc(n.headline)}</div>
+          </a>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }
 }
 
 // ── Watchlist sweep: analyse every held name in one pass ──
@@ -253,7 +338,13 @@ async function runSweep() {
             <span class="sweep__item-price">${fmtPrice(d.quote.price, d.assetClass)} <span class="${d.quote.changePct >= 0 ? 'up' : 'dn'}">${fmtPct(d.quote.changePct)}</span></span>
           </div>
           <div class="sweep__item-thesis">${esc(a.thesis)}</div>
-          <div class="sweep__item-size"><strong>Size:</strong> ${esc(a.sizing)}</div>`;
+          <div class="sweep__item-size"><strong>Size:</strong> ${esc(a.sizing)}</div>
+          ${(d.news || []).length ? `<div class="sweep__item-news">
+            <span class="sweep__item-news-label">Evidence read</span>
+            ${d.news.map(n => `<a class="sweep__item-news-item" href="${esc(n.url)}" target="_blank" rel="noopener">
+              <span class="sweep__item-news-src">${esc(n.source)}</span> ${esc(n.headline)}
+            </a>`).join('')}
+          </div>` : ''}`;
       }
     } catch (e) {
       card.querySelector('.sweep__item-body').innerHTML = `<span class="sweep__fail">${esc(e.message)}</span>`;

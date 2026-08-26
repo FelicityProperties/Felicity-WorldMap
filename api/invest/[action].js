@@ -302,6 +302,10 @@ Produce the analysis as specified JSON.`;
       assetClass: asset.class,
       quote,
       newsCount: news.length,
+      // the exact headlines the model was shown, so the UI can display its evidence
+      news: news.slice(0, 3).map(n => ({
+        headline: n.headline, source: n.source, url: n.url, datetime: n.datetime,
+      })),
       analysis: parsed,
       generatedAt: new Date().toISOString(),
     });
