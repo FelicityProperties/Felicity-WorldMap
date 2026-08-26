@@ -155,6 +155,10 @@ scan look complete.
 Vanilla HTML/CSS/JS SPA (no build step), ES modules, deployed on Vercel from
 `main`. Live: https://felicity-world-map.vercel.app
 
+- **Always merge finished work to `main`.** Standing instruction from the
+  owner. Feature branches are a staging step, never the destination — work
+  that stops on a branch is not deployed, because Vercel builds from `main`.
+  Verify, merge, push `main`.
 - **Vercel Hobby caps serverless functions at 12.** Currently 11 in `api/`.
   Consolidate with `[action].js` dynamic routes rather than adding files.
 - Claude model: `claude-opus-4-8` for desk-grade output.
