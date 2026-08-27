@@ -407,6 +407,9 @@ function initNewsletter() {
     const email = emailInput.value.trim();
     if (!email) return;
 
+    const prevError = document.getElementById('newsletter-error');
+    if (prevError) prevError.style.display = 'none';
+
     btn.textContent = 'Subscribing...';
     btn.disabled = true;
 
@@ -418,14 +421,30 @@ function initNewsletter() {
       });
       const data = await res.json();
       if (data.success) {
+        const box = document.getElementById('newsletter-success');
+        // The subscription can succeed while the welcome email bounces — say
+        // which happened rather than implying an email is on its way.
+        if (data.message) box.textContent = data.message;
         form.style.display = 'none';
-        document.getElementById('newsletter-success').style.display = 'block';
+        box.style.display = 'block';
       } else {
-        btn.textContent = data.error || 'Error — try again';
-        btn.disabled = false;
+        showError(data.error || 'Something went wrong — please try again.');
       }
     } catch {
-      btn.textContent = 'Error — try again';
+      showError('Could not reach the server — please try again.');
+    }
+
+    function showError(msg) {
+      let el = document.getElementById('newsletter-error');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'newsletter-error';
+        el.className = 'newsletter-box__error';
+        form.parentNode.insertBefore(el, form.nextSibling);
+      }
+      el.textContent = msg;      // textContent: server text is never markup
+      el.style.display = 'block';
+      btn.textContent = 'Subscribe';
       btn.disabled = false;
     }
   });
@@ -471,9 +490,25 @@ function initConsultation() {
     if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
   });
 
+  function showConsultError(msg) {
+    let el = document.getElementById('consult-error');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'consult-error';
+      el.className = 'consult-form__error';
+      form.appendChild(el);
+    }
+    el.textContent = msg;          // textContent: server text is never markup
+    el.style.display = 'block';
+    const b = form.querySelector('.consult-form__submit');
+    if (b) { b.disabled = false; b.textContent = 'Request Consultation'; }
+  }
+
   // Form submit
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    const prevErr = document.getElementById('consult-error');
+    if (prevErr) prevErr.style.display = 'none';
     const submitBtn = form.querySelector('.consult-form__submit');
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -496,9 +531,17 @@ function initConsultation() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      await res.json();
+      const data = await res.json();
+      // The endpoint now reports whether the lead actually reached the desk.
+      // Showing "we'll contact you within 24 hours" for a request that never
+      // arrived is the one outcome worse than an error message.
+      if (data && data.success === false) {
+        showConsultError(data.error || 'We could not submit your request. Please message us on WhatsApp at +971 56 352 0611.');
+        return;
+      }
     } catch (err) {
-      // Silently continue — show success regardless (lead logged server-side)
+      showConsultError('We could not reach the server. Please message us on WhatsApp at +971 56 352 0611.');
+      return;
     }
 
     form.style.display = 'none';

@@ -136,6 +136,29 @@ went. The five live ones (the chart frame) moved into `css/invest.css` as
 `.invest-chart*`. `js/sp500-data.js` stays: it supplies the S&P constituents
 to the instrument universe.
 
+### Forms must never claim success they did not achieve
+
+`/api/subscribe` used to return `{success:true}` unconditionally — no API key,
+a rejected send, an unresolvable audience, all produced "Subscribed! Check your
+inbox" and no email. `/api/leads` did the same, promising a callback for a lead
+that reached nobody. That is the same sin as printing a market number we never
+fetched.
+
+Both endpoints now check every Resend response and report what actually
+happened. A subscription that stores but whose welcome email bounces returns
+`success:true, welcomeSent:false` and says so. A lead whose owner notification
+fails returns `success:false` and points the visitor at WhatsApp. The
+front-end honours both — no more "silently continue, show success regardless".
+
+**`GET /api/subscribe?diagnose=1`** answers "why is the newsletter not
+working?" — it checks the keys, asks Resend which domains are verified,
+resolves the audience and counts the stored subscribers. It never echoes a
+secret. Run it first whenever email misbehaves.
+
+The usual answer is `FROM_EMAIL`: without it, mail goes out from Resend's
+`onboarding@resend.dev`, which **only delivers to the Resend account owner**.
+Everyone else silently gets nothing.
+
 ### Rendering untrusted data
 
 `js/safe.js` is the only correct escaper. Use it everywhere external data

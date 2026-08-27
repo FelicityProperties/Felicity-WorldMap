@@ -658,3 +658,29 @@
     font-size: 24px;
   }
 }
+
+/* Signup failures must be visible. The old code wrote the error into the
+   button label, where a real sentence was truncated to nothing. */
+.newsletter-box__error {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--semantic-red);
+}
+
+/* A consultation request that never reached the desk must say so — the form
+   used to show "we'll contact you within 24 hours" regardless. */
+.consult-form__error {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--semantic-red);
+}

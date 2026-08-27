@@ -17,7 +17,18 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const { name, email, phone, budget, area, message, website } = req.body || {};
+  // Everything is coerced to a trimmed string and length-capped. A client
+  // sending a JSON number for `phone` used to reach phone.replace() and throw,
+  // crashing the request — losing the lead entirely.
+  const body = req.body || {};
+  const str = (v, max = 500) => String(v ?? '').trim().slice(0, max);
+  const name = str(body.name, 120);
+  const email = str(body.email, 254);
+  const phone = str(body.phone, 40);
+  const budget = str(body.budget, 40);
+  const area = str(body.area, 120);
+  const message = str(body.message, 2000);
+  const website = str(body.website, 200);
 
   // Honeypot: the hidden 'website' field is invisible to humans — a filled
   // value means a bot. Pretend success so it doesn't retry.
@@ -41,6 +52,9 @@ export default async function handler(req, res) {
   const ownerEmail = process.env.OWNER_EMAIL || 'mouhannad@felicitypro.com';
   const fromEmail = process.env.FROM_EMAIL;
 
+  let ownerNotified = false;
+  let notifyError = resendKey ? null : 'RESEND_API_KEY not configured';
+
   if (resendKey) {
     const budgetLabels = {
       'under-1m': 'Under AED 1M',
@@ -52,7 +66,7 @@ export default async function handler(req, res) {
 
     // Email YOU (owner) about the new lead
     try {
-      await fetch('https://api.resend.com/emails', {
+      const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${resendKey}`,
@@ -90,8 +104,15 @@ export default async function handler(req, res) {
 </body></html>`
         }),
       });
-      console.log('[LEAD] Owner notified at', ownerEmail);
+      if (r.ok) {
+        ownerNotified = true;
+        console.log('[LEAD] Owner notified at', ownerEmail);
+      } else {
+        notifyError = `Resend ${r.status}: ${(await r.text()).slice(0, 200)}`;
+        console.error('[LEAD] Owner email rejected:', notifyError);
+      }
     } catch (e) {
+      notifyError = e.message;
       console.error('[LEAD] Owner email failed:', e.message);
     }
 
@@ -133,6 +154,18 @@ export default async function handler(req, res) {
     } catch (e) {
       console.error('[LEAD] Confirmation email failed:', e.message);
     }
+  }
+
+  // If the notification never left, the lead exists only in a log line nobody
+  // reads. Promising a callback would be a lie, so point them at WhatsApp —
+  // a channel that demonstrably works — instead.
+  if (!ownerNotified) {
+    console.error('[LEAD] NOT DELIVERED — lead only in logs:', JSON.stringify(lead));
+    return res.status(200).json({
+      success: false,
+      error: 'We could not submit your request. Please message us on WhatsApp at +971 56 352 0611 and we will respond straight away.',
+      detail: notifyError,
+    });
   }
 
   res.json({ success: true, message: 'Thank you! Our team will contact you within 24 hours.' });

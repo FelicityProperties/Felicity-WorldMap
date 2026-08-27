@@ -84,6 +84,13 @@ A Vercel Cron (`vercel.json`) hits `/api/brief` every **Monday & Thursday
 with per-contact unsubscribe links. Preview without emailing the list:
 `GET /api/brief?test=1` (sends only to `OWNER_EMAIL`).
 
+**Newsletter not arriving?** Open `/api/subscribe?diagnose=1` on the deployed
+site. It reports which keys are set, which sender domains Resend has verified,
+whether the audience resolves, and how many subscribers are stored — without
+exposing any secret. The most common cause is an unset `FROM_EMAIL`: mail then
+goes out from Resend's test address, which only delivers to the Resend account
+owner, so every other subscriber silently receives nothing.
+
 ## Features
 
 - **Interactive World Map** — Leaflet.js choropleth showing Country Instability Index (CII) scores for 100+ countries
