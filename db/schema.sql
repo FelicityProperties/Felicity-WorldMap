@@ -74,3 +74,15 @@ CREATE TABLE IF NOT EXISTS dubai_signals (
   sentiment VARCHAR(10) NOT NULL CHECK (sentiment IN ('bullish', 'bearish')),
   time_ago VARCHAR(20)
 );
+
+-- Newsletter subscribers.
+-- The list used to live only in a Resend Audience, which a send-only API key
+-- cannot write to — so every signup was silently lost. It lives here now, and
+-- lib/subscribers.js creates this table on demand if the schema was not run.
+CREATE TABLE IF NOT EXISTS subscribers (
+  id            SERIAL PRIMARY KEY,
+  email         VARCHAR(254) UNIQUE NOT NULL,
+  subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  unsubscribed  BOOLEAN NOT NULL DEFAULT FALSE,
+  source        VARCHAR(40) DEFAULT 'site'
+);

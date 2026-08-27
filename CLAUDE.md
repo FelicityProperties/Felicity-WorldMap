@@ -150,6 +150,22 @@ happened. A subscription that stores but whose welcome email bounces returns
 fails returns `success:false` and points the visitor at WhatsApp. The
 front-end honours both — no more "silently continue, show success regardless".
 
+**The subscriber list does not live in Resend.** It lives in Postgres
+(`subscribers` table, created on demand by `lib/subscribers.js`) and is
+mirrored into the Resend Audience when the key allows it. Either store alone
+is enough. A Resend key created with **"Sending access"** cannot call the
+Audiences or Broadcasts API at all — that is what silently lost every signup
+— so `DATABASE_URL` is the reliable store, and `/api/brief` sends one message
+per subscriber (permitted by a send-only key) whenever the list comes from
+Postgres, falling back to a Resend broadcast only when the audience resolves.
+
+Individual sends carry a **signed unsubscribe link** (`unsubUrl`, HMAC-keyed)
+handled by `GET /api/subscribe?unsubscribe=…&t=…`. A broadcast uses Resend's
+own placeholder. Every message must carry one of the two — never neither.
+
+`lib/` exists because anything under `api/` becomes a serverless function and
+Hobby allows twelve. Shared server code goes in `lib/`, never `api/`.
+
 **`GET /api/subscribe?diagnose=1`** answers "why is the newsletter not
 working?" — it checks the keys, asks Resend which domains are verified,
 resolves the audience and counts the stored subscribers. It never echoes a

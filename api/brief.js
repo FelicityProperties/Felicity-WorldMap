@@ -13,6 +13,7 @@
 
 import { buildDeskContext } from '../js/pix-data.js';
 import { buildSignalContext } from '../js/pix-signals.js';
+import { dbRecipients, resolveAudience, sendIndividually, unsubUrl, fromAddress } from '../lib/subscribers.js';
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
@@ -70,7 +71,7 @@ async function generateBrief(apiKey) {
   };
 }
 
-function renderEmail(brief, { forBroadcast }) {
+function renderEmail(brief, { forBroadcast, unsubscribeUrl } = {}) {
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   const sectionsHtml = brief.sections.map(s => `
   <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:24px;margin-bottom:16px;">
@@ -78,9 +79,12 @@ function renderEmail(brief, { forBroadcast }) {
     <div style="color:#c3ccd6;font-size:14px;line-height:1.75;">${s.html}</div>
   </div>`).join('');
 
-  // Resend replaces this placeholder with a per-contact unsubscribe link.
-  const unsubscribe = forBroadcast
-    ? `<p style="color:#4a5568;font-size:11px;margin:8px 0 0;"><a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#4a5568;">Unsubscribe</a></p>`
+  // A broadcast gets Resend's own placeholder, which it replaces per contact.
+  // An individual send gets a signed link built for that one address. Every
+  // message must carry one of the two — never neither.
+  const unsubHref = forBroadcast ? '{{{RESEND_UNSUBSCRIBE_URL}}}' : unsubscribeUrl;
+  const unsubscribe = unsubHref
+    ? `<p style="color:#4a5568;font-size:11px;margin:8px 0 0;"><a href="${unsubHref}" style="color:#4a5568;">Unsubscribe</a></p>`
     : '';
 
   return `
@@ -109,16 +113,6 @@ function renderEmail(brief, { forBroadcast }) {
 </html>`;
 }
 
-async function findAudienceId(resendKey) {
-  if (process.env.RESEND_AUDIENCE_ID) return process.env.RESEND_AUDIENCE_ID;
-  const res = await fetch('https://api.resend.com/audiences', {
-    headers: { 'Authorization': `Bearer ${resendKey}` },
-  });
-  if (!res.ok) return null;
-  const list = await res.json();
-  const match = (list.data || []).find(a => a.name === AUDIENCE_NAME) || (list.data || [])[0];
-  return match ? match.id : null;
-}
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -141,7 +135,7 @@ export default async function handler(req, res) {
   if (!resendKey) return res.status(200).json({ ok: false, error: 'RESEND_API_KEY not configured' });
   if (!anthropicKey) return res.status(200).json({ ok: false, error: 'ANTHROPIC_API_KEY not configured' });
 
-  const fromEmail = process.env.FROM_EMAIL || 'Felicity Intelligence <onboarding@resend.dev>';
+  const fromEmail = fromAddress();
 
   try {
     const brief = await generateBrief(anthropicKey);
@@ -163,10 +157,47 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: sendRes.ok, mode: 'test', to: ownerEmail, subject: brief.subject, resend: sendData });
     }
 
-    // Real run: broadcast to the audience.
-    const audienceId = await findAudienceId(resendKey);
+    // Real run. Two ways to reach the list, and the right one depends on what
+    // the API key is allowed to do:
+    //
+    //   Postgres list  → one message per subscriber via POST /emails, which a
+    //                    key with "Sending access" is permitted to do.
+    //   Resend audience → a broadcast, which needs a full-access key.
+    //
+    // The database is tried first because it works in both cases.
+    const recipients = await dbRecipients();
+
+    if (recipients && recipients.length) {
+      const result = await sendIndividually(resendKey, {
+        from: fromEmail,
+        subject: brief.subject,
+        // Each message carries its own signed unsubscribe link — a broadcast
+        // gets Resend's, an individual send would otherwise get none at all.
+        htmlFor: to => renderEmail(brief, { unsubscribeUrl: unsubUrl(to) }),
+        recipients,
+      });
+      console.log(`[brief] Sent "${brief.subject}" to ${result.sent}/${recipients.length}`);
+      return res.status(200).json({
+        ok: result.sent > 0,
+        mode: 'individual',
+        subject: brief.subject,
+        recipients: recipients.length,
+        sent: result.sent,
+        failed: result.failed,
+        ...(result.sent === 0
+          ? { error: 'No message was accepted by Resend. Check FROM_EMAIL is a verified sender.' }
+          : {}),
+      });
+    }
+
+    const { id: audienceId, error: audienceError, restricted } = await resolveAudience(resendKey);
     if (!audienceId) {
-      return res.status(200).json({ ok: false, error: 'No audience found — no one has subscribed yet.' });
+      return res.status(200).json({
+        ok: false,
+        error: restricted
+          ? 'No subscribers are stored. The Resend API key is restricted to sending, so the audience cannot be read — set DATABASE_URL so the list lives in Postgres, or create a Full Access key in Resend.'
+          : (recipients ? 'No subscribers yet.' : (audienceError || 'No audience found.')),
+      });
     }
 
     const createRes = await fetch('https://api.resend.com/broadcasts', {
@@ -183,12 +214,12 @@ export default async function handler(req, res) {
     if (!createRes.ok) throw new Error(`Broadcast create failed: ${(await createRes.text()).slice(0, 300)}`);
     const broadcast = await createRes.json();
 
-    const sendRes = await fetch(`https://api.resend.com/broadcasts/${broadcast.id}/send`, {
+    const sendRes2 = await fetch(`https://api.resend.com/broadcasts/${broadcast.id}/send`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     });
-    if (!sendRes.ok) throw new Error(`Broadcast send failed: ${(await sendRes.text()).slice(0, 300)}`);
+    if (!sendRes2.ok) throw new Error(`Broadcast send failed: ${(await sendRes2.text()).slice(0, 300)}`);
 
     console.log(`[brief] Broadcast sent: "${brief.subject}" to audience ${audienceId}`);
     res.status(200).json({ ok: true, mode: 'broadcast', subject: brief.subject, broadcastId: broadcast.id });

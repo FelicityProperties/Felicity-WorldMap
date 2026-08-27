@@ -3,16 +3,21 @@
 //   POST /api/subscribe            { email }  → store contact, send welcome
 //   GET  /api/subscribe?diagnose=1            → why is the newsletter not working?
 //
-// This endpoint used to return { success: true } no matter what happened. If
-// RESEND_API_KEY was missing, if the audience could not be resolved, if Resend
-// rejected the send — the visitor still saw "Subscribed! Check your inbox" and
-// no email ever arrived. Silent success is the worst possible failure mode for
-// a signup form, and it is the same sin as printing a market number we did not
-// actually fetch. Every Resend call is now checked and the real reason is
-// reported back.
+// This endpoint used to return { success: true } no matter what happened, and
+// stored the subscriber only in a Resend Audience. Both were wrong. A Resend
+// key created with "Sending access" cannot touch the Audiences API, so every
+// signup 401'd and was dropped while the visitor was told "Subscribed! Check
+// your inbox". Silent success is the worst possible failure mode for a signup
+// form — it is the same sin as printing a market number we never fetched.
+//
+// Now the list is written to our own Postgres when DATABASE_URL is set, and
+// mirrored into the Resend Audience when the key allows it. Either one counts
+// as subscribed; if neither works, the visitor is told plainly.
 
-const AUDIENCE_NAME = 'Felicity Intelligence Brief';
-const RESEND_TEST_SENDER = 'onboarding@resend.dev';
+import {
+  RESEND_TEST_SENDER, resendHeaders, fromAddress, isRestrictedKeyError,
+  dbAvailable, dbStore, dbUnsubscribe, audienceStore, resolveAudience, unsubValid,
+} from '../lib/subscribers.js';
 
 // In-memory rate limit (resets on cold start): 5 signups/min/IP
 const rateLimit = {};
@@ -34,32 +39,6 @@ function validEmail(value) {
   if (s.length < 6 || s.length > 254) return null;
   if (!/^[^\s@<>"']+@[^\s@<>"']+\.[A-Za-z]{2,}$/.test(s)) return null;
   return s.toLowerCase();
-}
-
-function resendHeaders(key) {
-  return { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
-}
-
-// Resolve the audience to store contacts in: env override → existing → create.
-async function getAudienceId(resendKey) {
-  if (process.env.RESEND_AUDIENCE_ID) return { id: process.env.RESEND_AUDIENCE_ID };
-
-  const headers = resendHeaders(resendKey);
-
-  const listRes = await fetch('https://api.resend.com/audiences', { headers });
-  if (listRes.ok) {
-    const list = await listRes.json();
-    const existing = (list.data || []).find(a => a.name === AUDIENCE_NAME) || (list.data || [])[0];
-    if (existing) return { id: existing.id };
-  } else {
-    return { id: null, error: `Resend audiences ${listRes.status}: ${(await listRes.text()).slice(0, 200)}` };
-  }
-
-  const createRes = await fetch('https://api.resend.com/audiences', {
-    method: 'POST', headers, body: JSON.stringify({ name: AUDIENCE_NAME }),
-  });
-  if (createRes.ok) return { id: (await createRes.json()).id };
-  return { id: null, error: `Could not create audience: ${(await createRes.text()).slice(0, 200)}` };
 }
 
 // Turn Resend's raw rejection into something the site owner can act on.
@@ -121,6 +100,39 @@ function welcomeHtml() {
 </html>`;
 }
 
+// ── Unsubscribe ──
+// Lives on this route rather than its own file: anything under api/ becomes a
+// serverless function and the Hobby plan allows twelve.
+async function handleUnsubscribe(res, email, token) {
+  const page = (title, body) => `<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
+<body style="margin:0;background:#090c10;color:#c3ccd6;font-family:Arial,sans-serif;">
+<div style="max-width:520px;margin:0 auto;padding:80px 24px;text-align:center;">
+  <div style="font-size:22px;font-weight:700;color:#f0f4f8;">Felicity Intelligence</div>
+  <p style="line-height:1.7;margin:24px 0;">${body}</p>
+  <a href="https://felicity-world-map.vercel.app" style="color:#00d4ff;">Back to the platform</a>
+</div></body></html>`;
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+
+  const clean = validEmail(email);
+  if (!clean || !unsubValid(clean, token)) {
+    return res.status(400).send(page('Invalid link',
+      'That unsubscribe link is not valid. Reply to any brief and we will remove you by hand.'));
+  }
+
+  const result = await dbUnsubscribe(clean);
+  if (!result.ok) {
+    console.error('[unsubscribe] failed:', result.error);
+    return res.status(200).send(page('Could not unsubscribe',
+      'We could not process that right now. Reply to any brief and we will remove you by hand.'));
+  }
+
+  console.log('[unsubscribe]', clean);
+  return res.status(200).send(page('Unsubscribed',
+    `<strong style="color:#f0f4f8;">${escapeHtml(clean)}</strong> has been removed. You will not receive the Monday and Thursday brief again.`));
+}
+
 // ── Diagnostics ──
 // Answers "why is the newsletter not working?" without exposing any secret.
 // It reports only whether things are configured and what Resend says back.
@@ -151,12 +163,18 @@ async function handleDiagnose(res) {
   }
 
   // Verified sending domains
+  let restrictedKey = false;
   try {
     const r = await fetch('https://api.resend.com/domains', { headers: resendHeaders(resendKey) });
+    const body = r.ok ? null : await r.text();
     if (!r.ok) {
-      add('Resend API key valid', false, `GET /domains returned ${r.status}`);
+      restrictedKey = isRestrictedKeyError(body);
+      add('Resend key can read domains', false,
+          restrictedKey
+            ? 'This key was created with "Sending access" only. It can send email but cannot read domains, audiences or broadcasts.'
+            : `GET /domains returned ${r.status}: ${String(body).slice(0, 160)}`);
     } else {
-      add('Resend API key valid', true, 'authenticated');
+      add('Resend key can read domains', true, 'authenticated');
       const domains = (await r.json()).data || [];
       const verified = domains.filter(d => d.status === 'verified').map(d => d.name);
       const sender = (fromEmail.match(/<([^>]+)>/)?.[1] || fromEmail).split('@')[1] || '';
@@ -167,31 +185,62 @@ async function handleDiagnose(res) {
             : 'no domains added in Resend → Domains yet');
     }
   } catch (e) {
-    add('Resend API key valid', false, e.message);
+    add('Resend key can read domains', false, e.message);
   }
 
-  // Audience + subscriber count
+  // Where the list lives. Either store is sufficient.
+  const db = await dbAvailable();
+  add('Postgres subscriber store', db.ok,
+      db.ok
+        ? `${db.count} subscriber${db.count === 1 ? '' : 's'} stored in DATABASE_URL`
+        : `unavailable — ${db.error}`);
+
+  let audienceOk = false;
   try {
-    const { id, error } = await getAudienceId(resendKey);
-    if (!id) {
-      add('Newsletter audience', false, error || 'could not resolve or create the audience');
-    } else {
+    const { id, error, restricted } = await resolveAudience(resendKey);
+    if (id) {
+      audienceOk = true;
       const c = await fetch(`https://api.resend.com/audiences/${id}/contacts`, { headers: resendHeaders(resendKey) });
       const contacts = c.ok ? ((await c.json()).data || []) : null;
-      add('Newsletter audience', true,
+      add('Resend audience store', true,
           contacts === null
             ? `audience ${id}, but the contact list could not be read (${c.status})`
-            : `audience ${id} — ${contacts.length} subscriber${contacts.length === 1 ? '' : 's'} stored`);
+            : `audience ${id} — ${contacts.length} contact${contacts.length === 1 ? '' : 's'}`);
+    } else {
+      restrictedKey = restrictedKey || Boolean(restricted);
+      add('Resend audience store', false,
+          restricted ? 'blocked: the API key is restricted to sending only' : (error || 'could not resolve'));
     }
   } catch (e) {
-    add('Newsletter audience', false, e.message);
+    add('Resend audience store', false, e.message);
   }
 
+  // A list needs somewhere to live; either store on its own is fine.
+  add('Subscribers can be stored', db.ok || audienceOk,
+      db.ok || audienceOk
+        ? 'at least one store is writable'
+        : 'NEITHER store is writable — signups cannot be recorded. Set DATABASE_URL, or create a Full Access key in Resend.');
+
   add('Mon/Thu schedule', true, 'vercel.json cron "0 4 * * 1,4" — 04:00 UTC, 08:00 Dubai');
-  report.ok = report.checks.every(c => c.pass);
+  report.restrictedApiKey = restrictedKey;
+  // Only these two actually stop mail reaching subscribers. The rest is detail.
+  const canStore = report.checks.find(c => c.name === 'Subscribers can be stored')?.pass;
+  const canSend = Boolean(process.env.FROM_EMAIL);
+  report.ok = Boolean(canStore && canSend);
+
+  const blockers = [];
+  if (!canStore) {
+    blockers.push(restrictedKey
+      ? 'The RESEND_API_KEY has "Sending access" only, so the Resend audience is unreachable, and DATABASE_URL is not set either — so there is nowhere to record a subscriber. Fix EITHER: set DATABASE_URL in Vercel, or create a Full Access key in Resend → API Keys.'
+      : 'No writable subscriber store. Set DATABASE_URL in Vercel, or create a Full Access key in Resend → API Keys.');
+  }
+  if (!canSend) {
+    blockers.push(`FROM_EMAIL is not set, so mail goes out from ${RESEND_TEST_SENDER}, which Resend delivers ONLY to the account owner. Verify your domain in Resend → Domains, then set FROM_EMAIL in Vercel. No code change can work around this.`);
+  }
+  report.blockers = blockers;
   report.summary = report.ok
-    ? 'Everything needed to deliver the newsletter is configured.'
-    : 'Fix the checks marked pass:false — the first failing one is the blocker.';
+    ? 'Subscribers can be stored and mail can reach them. The newsletter is ready.'
+    : blockers.join(' ');
   res.status(200).json(report);
 }
 
@@ -206,6 +255,10 @@ export default async function handler(req, res) {
     return handleDiagnose(res);
   }
 
+  if (req.method === 'GET' && url.searchParams.get('unsubscribe')) {
+    return handleUnsubscribe(res, url.searchParams.get('unsubscribe'), url.searchParams.get('t'));
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'POST only' });
 
   const email = validEmail((req.body || {}).email);
@@ -217,7 +270,7 @@ export default async function handler(req, res) {
   }
 
   const resendKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.FROM_EMAIL || `Felicity Intelligence <${RESEND_TEST_SENDER}>`;
+  const fromEmail = fromAddress();
 
   if (!resendKey) {
     console.error('[subscribe] RESEND_API_KEY missing — cannot store or send');
@@ -228,40 +281,25 @@ export default async function handler(req, res) {
     });
   }
 
-  // 1) Store the subscriber. This is what the Monday/Thursday broadcast sends
-  //    to, so a failure here means they are not subscribed — say so.
-  let stored = false;
-  let storeError = null;
-  try {
-    const { id: audienceId, error } = await getAudienceId(resendKey);
-    if (!audienceId) {
-      storeError = error || 'Could not resolve the newsletter audience';
-    } else {
-      const r = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
-        method: 'POST',
-        headers: resendHeaders(resendKey),
-        body: JSON.stringify({ email, unsubscribed: false }),
-      });
-      if (r.ok) {
-        stored = true;
-      } else {
-        const body = await r.text();
-        // Resend returns 409 when the address is already on the list, which is
-        // not a failure from the visitor's point of view.
-        if (r.status === 409 || /already exists/i.test(body)) stored = true;
-        else storeError = `Resend contacts ${r.status}: ${body.slice(0, 200)}`;
-      }
-    }
-  } catch (e) {
-    storeError = e.message;
-  }
+  // 1) Store the subscriber. Two independent stores — our own Postgres and
+  //    the Resend audience — and either one is enough. The audience alone used
+  //    to be the single point of failure that lost every signup.
+  const [dbRes, audRes] = await Promise.all([
+    dbStore(email),
+    audienceStore(resendKey, email).catch(e => ({ stored: false, error: e.message })),
+  ]);
 
+  const stored = dbRes.stored || audRes.stored;
   if (!stored) {
-    console.error('[subscribe] Could not store contact:', storeError);
+    const detail = [
+      dbRes.error ? `postgres: ${dbRes.error}` : null,
+      audRes.error ? `resend audience: ${audRes.error}` : null,
+    ].filter(Boolean).join(' | ');
+    console.error('[subscribe] No store accepted the contact:', detail);
     return res.status(200).json({
       success: false,
       error: 'We could not add you to the list. Please try again, or message us on WhatsApp.',
-      detail: storeError,
+      detail,
     });
   }
 
@@ -310,6 +348,7 @@ export default async function handler(req, res) {
   res.status(200).json({
     success: true,
     stored: true,
+    storedIn: [dbRes.stored ? 'postgres' : null, audRes.stored ? 'resend-audience' : null].filter(Boolean),
     welcomeSent,
     message: welcomeSent
       ? 'Subscribed. Check your inbox for the welcome email.'

@@ -17,7 +17,9 @@ A real-time global intelligence dashboard built to track macro events, market sh
 | `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook verification |
 | `CRON_SECRET` | No | If set, `/api/brief` only accepts scheduled runs from Vercel Cron |
 | `RESEND_AUDIENCE_ID` | No | Pin the newsletter audience; otherwise auto-resolved by name |
-| `DATABASE_URL` | No | Neon Postgres for `/api/data`; hardcoded fallback used if absent |
+| `DATABASE_URL` | **Recommended** | Neon Postgres. Backs `/api/data`, and stores the newsletter list — without it the list can only live in a Resend Audience, which a send-only API key cannot write to |
+| `UNSUB_SECRET` | No | HMAC key for unsubscribe links; falls back to `RESEND_API_KEY` |
+| `SITE_URL` | No | Absolute origin used in unsubscribe links (default the Vercel URL) |
 
 ## Dubai Market Data (PIX / PropertyIndex)
 
