@@ -9,8 +9,7 @@ a,
 .nav-btn,
 .stab,
 .layer-btn,
-.card-item,
-.sp500-row {
+.card-item {
   touch-action: manipulation;           /* kills 300ms tap delay + double-tap zoom */
   -webkit-tap-highlight-color: transparent;
 }
@@ -77,7 +76,6 @@ iframe {
   .country-panel,
   .rd__body,
   .modal,
-  .sp500-ai-brief__text,
   .macro-card,
   .dubai-card {
     overflow-wrap: anywhere;
@@ -142,24 +140,8 @@ iframe {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* ── Filter/chip rows: horizontal swipe instead of wrapping into
-        a wall of buttons ── */
-  .sp500-filters {
-    display: flex;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--space-1);
-    scrollbar-width: none;
-  }
 
-  .sp500-filters::-webkit-scrollbar {
-    display: none;
-  }
 
-  .sp500-filters > * {
-    flex-shrink: 0;
-  }
 
   .desk-ask__suggestions {
     overflow-x: auto;
@@ -179,9 +161,6 @@ iframe {
   }
 
   /* Stock list: taller scroll area on phones so browsing is usable */
-  .sp500-list__rows {
-    max-height: 45vh;
-  }
 
   /* Region drawer: full-screen sheet */
   .region-drawer {
@@ -203,9 +182,6 @@ iframe {
     grid-template-columns: 1fr;
   }
 
-  .sp500-row {
-    padding: var(--space-3);
-  }
 
   .section {
     padding-left: var(--space-2);
@@ -289,7 +265,7 @@ iframe {
   /* ── TradingView widgets ── */
   .tv-tape { height: 76px; }
   .tv-view__body { height: 68vh; min-height: 380px; }
-  #invest-tv, #tv-chart { height: 260px; }
+  #invest-tv { height: 260px; }
 
   /* ── Advisor output ── */
   .invest-advisor__head { gap: var(--space-3); }

@@ -74,7 +74,7 @@ export function earningsResult(e) {
 }
 
 // ── Renderers ──
-function metricsHtml(m, q) {
+function metricsHtml(m) {
   const cells = [
     ['EPS (TTM)', fmt(m.epsBasicExclExtraItemsTTM)],
     ['P/E', fmt(m.peTTM)],
@@ -83,7 +83,7 @@ function metricsHtml(m, q) {
     ['Div yield', m.dividendYieldIndicatedAnnual != null ? `${fmt(m.dividendYieldIndicatedAnnual)}%` : '—'],
     ['52w high', m['52WeekHigh'] != null ? `$${fmt(m['52WeekHigh'])}` : '—'],
     ['52w low', m['52WeekLow'] != null ? `$${fmt(m['52WeekLow'])}` : '—'],
-    ['Volume', fmtB(q?.v)],
+    ['Avg vol (10d)', fmtB(m['10DayAverageTradingVolume'] != null ? m['10DayAverageTradingVolume'] * 1e6 : null)],
   ];
   return `<div class="fund__metrics">${cells.map(([l, v]) =>
     `<div class="fund__metric"><span>${esc(l)}</span><strong>${esc(v)}</strong></div>`).join('')}</div>`;
@@ -166,7 +166,6 @@ export async function loadFundamentals(asset, hostId) {
     ]);
     data = {
       metric: metric?.metric || null,
-      quote: metric?.quote || null,
       earnings: Array.isArray(earnings) ? earnings : [],
       target: target || null,
       rec: Array.isArray(rec) ? rec[0] : (rec || null),
@@ -174,13 +173,15 @@ export async function loadFundamentals(asset, hostId) {
     cache[sym] = data;
   }
 
-  // Re-check the host: the user may have selected something else while the
-  // four calls were in flight.
+  // Every instrument renders into the same host id, so a slow response for a
+  // stock the user has already navigated away from would otherwise paint its
+  // numbers under the new stock's name. The host is stamped with the symbol it
+  // was created for; if it no longer matches, drop the result on the floor.
   const stillThere = document.getElementById(hostId);
-  if (!stillThere) return data;
+  if (!stillThere || stillThere.dataset.symbol !== sym) return data;
 
   const body = [
-    data.metric ? metricsHtml(data.metric, data.quote) : '',
+    data.metric ? metricsHtml(data.metric) : '',
     earningsHtml(data.earnings),
     ratingsHtml(data.rec, data.target),
   ].filter(Boolean).join('');
@@ -285,7 +286,7 @@ export function exportBrief(asset, data, quote, briefText = '') {
   <div class="metric"><div class="metric-label">Div yield</div><div class="metric-value">${esc(fmt(m.dividendYieldIndicatedAnnual))}%</div></div>
   <div class="metric"><div class="metric-label">52w high</div><div class="metric-value">$${esc(fmt(m['52WeekHigh']))}</div></div>
   <div class="metric"><div class="metric-label">52w low</div><div class="metric-value">$${esc(fmt(m['52WeekLow']))}</div></div>
-  <div class="metric"><div class="metric-label">Volume</div><div class="metric-value">${esc(fmtB(data?.quote?.v))}</div></div>
+  <div class="metric"><div class="metric-label">Avg vol (10d)</div><div class="metric-value">${esc(fmtB(m['10DayAverageTradingVolume'] != null ? m['10DayAverageTradingVolume'] * 1e6 : null))}</div></div>
 </div>
 
 ${earningsRows ? `<h2>Earnings history</h2>

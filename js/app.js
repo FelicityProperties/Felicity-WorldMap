@@ -15,7 +15,7 @@ import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { initFelicityBot } from './felicity-bot.js';
-import { initInvest, onInvestShown } from './invest.js';
+import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
 import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
@@ -115,8 +115,17 @@ function initTabRouting() {
 }
 
 function switchTab(tabId) {
+  // An unknown id used to clear is-active from every panel and then find no
+  // panel to set, leaving the whole content area blank. Bail before touching
+  // anything so a stale link cannot white-screen the app.
+  const targetPanel = document.getElementById('tab-' + tabId);
+  if (!targetPanel) return;
+
   const prevTab = activeTab;
   activeTab = tabId;
+
+  // Leaving Invest must not strand a fullscreen market view's body lock
+  if (prevTab === 'invest' && tabId !== 'invest') onInvestHidden();
 
   // Update nav buttons
   const navBtns = document.querySelectorAll('.nav-btn[data-tab]');
@@ -126,8 +135,7 @@ function switchTab(tabId) {
   const panels = document.querySelectorAll('.tab-panel');
   panels.forEach(p => p.classList.remove('is-active'));
 
-  const targetPanel = document.getElementById('tab-' + tabId);
-  if (targetPanel) targetPanel.classList.add('is-active');
+  targetPanel.classList.add('is-active');
 
   // Mount the ticker tape the first time the Invest tab is actually visible
   if (tabId === 'invest') onInvestShown();

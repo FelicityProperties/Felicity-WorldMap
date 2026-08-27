@@ -33,6 +33,15 @@ export function initInvest() {
   bindFullscreenEscape();
 }
 
+// Leaving the Invest tab while a market view is fullscreen used to strand
+// body.tv-fullscreen-open, which sets overflow:hidden — the overlay itself is
+// hidden along with its panel, but the whole page stayed unscrollable.
+export function onInvestHidden() {
+  exitMarketFullscreen();
+  const btn = document.getElementById('tv-expand');
+  if (btn) btn.textContent = 'Fullscreen';
+}
+
 // The Invest panel is display:none at boot. A TradingView widget mounted into
 // a hidden container measures 0x0 and stays blank even once shown, so the
 // ticker tape is mounted the first time the tab is actually revealed.
@@ -574,16 +583,16 @@ async function selectAsset(symbol) {
         </div>
         <button class="fund__print" id="invest-print-btn" title="Open a print-ready brief">Print brief</button>
       </div>
-      <div class="fund__body" id="invest-fund">
+      <div class="fund__body" id="invest-fund" data-symbol="${esc(asset.symbol)}">
         <div class="skeleton skeleton--text"></div>
         <div class="skeleton skeleton--text"></div>
       </div>
     </div>` : ''}
 
-    <div class="sp500-chart">
-      <div class="sp500-chart__head">
-        <span class="sp500-chart__label">Price Chart</span>
-        <span class="sp500-chart__src">TradingView</span>
+    <div class="invest-chart">
+      <div class="invest-chart__head">
+        <span class="invest-chart__label">Price Chart</span>
+        <span class="invest-chart__src">TradingView</span>
       </div>
       <div class="tradingview-widget-container" id="invest-tv"><div class="tradingview-widget-container__widget"></div></div>
     </div>
@@ -628,6 +637,12 @@ async function selectAsset(symbol) {
 
     document.getElementById('invest-print-btn').addEventListener('click', () => {
       const data = fundamentalsFor?.symbol === asset.symbol ? fundamentalsFor.data : null;
+      // Printing before the four calls land would silently produce a brief of
+      // N/As that looks like the data was checked and found missing.
+      if (!data) {
+        alert('The fundamentals are still loading — give it a moment and try again.');
+        return;
+      }
       const q = quoteCache[asset.symbol]?.data || null;
       // Carry the Felicity Bot analysis into the brief when one has been run
       const brief = document.getElementById('invest-thesis-text')?.textContent || '';
@@ -670,7 +685,7 @@ function mountChart(asset) {
     calendar: false,
     support_host: 'https://www.tradingview.com',
   });
-  s.onerror = () => { host.innerHTML = '<div class="sp500-chart__fail">Chart unavailable — TradingView could not be reached.</div>'; };
+  s.onerror = () => { host.innerHTML = '<div class="invest-chart__fail">Chart unavailable — TradingView could not be reached.</div>'; };
   host.appendChild(s);
 }
 

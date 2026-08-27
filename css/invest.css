@@ -963,6 +963,56 @@
   background: rgba(0, 212, 255, 0.08);
 }
 
+/* ── Instrument price chart ──
+   Salvaged from the retired css/sp500.css, renamed off the legacy prefix.
+   #invest-tv previously had NO desktop height — only mobile.css set one — so
+   the autosizing TradingView iframe had nothing to fill and collapsed. */
+.invest-chart {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+}
+
+.invest-chart__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.invest-chart__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.invest-chart__src {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.invest-chart__fail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+#invest-tv { height: 420px; width: 100%; }
+#invest-tv .tradingview-widget-container__widget { height: 100%; width: 100%; }
+
 /* ── Full-width view panel ── */
 .tv-view {
   background: var(--surface-card);

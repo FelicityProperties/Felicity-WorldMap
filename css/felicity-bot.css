@@ -277,8 +277,11 @@
 
 /* ── Mobile: a full-height sheet, and the launcher loses its label ── */
 @media (max-width: 767px) {
+  /* The WhatsApp button sits at calc(44px + safe-area) and is 56px tall, so
+     its top edge rises with the inset on a notched phone. Track the same
+     inset or the two controls overlap. */
   .fbot-launcher {
-    bottom: 118px;
+    bottom: calc(112px + env(safe-area-inset-bottom, 0px));
     right: 16px;
     width: 52px;
     height: 52px;

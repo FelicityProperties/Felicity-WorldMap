@@ -119,16 +119,6 @@ function toggle() {
   panel.classList.contains('is-open') ? close() : open();
 }
 
-export function openFelicityBot(prefill) {
-  if (!panel) return;
-  open();
-  if (prefill) {
-    const input = panel.querySelector('#fbot-input');
-    input.value = prefill;
-    input.focus();
-  }
-}
-
 function open() {
   panel.classList.add('is-open');
   document.getElementById('fbot-launcher')?.classList.add('is-open');

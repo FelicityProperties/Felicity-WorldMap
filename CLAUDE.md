@@ -131,7 +131,10 @@ and renders inside the Invest detail pane for US-listed equities. Finnhub's
 free tier does not cover Europe/Korea/Japan listings, so the section is not
 offered there rather than being shown empty.
 
-`css/sp500.css` stays: `js/invest.js` still uses its `.sp500-chart` classes.
+`css/sp500.css` is gone too — 84 of its 89 selectors were dead once the tab
+went. The five live ones (the chart frame) moved into `css/invest.css` as
+`.invest-chart*`. `js/sp500-data.js` stays: it supplies the S&P constituents
+to the instrument universe.
 
 ### Rendering untrusted data
 
