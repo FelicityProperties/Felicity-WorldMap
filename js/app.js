@@ -602,6 +602,12 @@ function initPricing() {
     if (window.__openModal) {
       window.__openModal('Subscription Active!', `Welcome to Felicity Intelligence ${plan.charAt(0).toUpperCase() + plan.slice(1)}. All features are now unlocked.`);
     }
+  } else if (params.get('subscription') === 'cancelled') {
+    // Stripe sends an abandoned checkout back to /?subscription=cancelled.
+    // Only the success branch cleaned the URL, so this parameter lingered in
+    // history and the address bar kept autocompleting to it. Nothing was
+    // charged — strip it and show the normal page.
+    window.history.replaceState({}, '', window.location.pathname);
   }
 }
 
