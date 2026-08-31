@@ -74,7 +74,14 @@ async function timedFetch(url, ms = 8000, headers = {}) {
 
 // ── Quote routing by asset class ──
 async function quoteFinnhub(symbol, key) {
-  const r = await timedFetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${key}`);
+  const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${key}`;
+  let r;
+  try {
+    r = await timedFetch(url, 6000);
+  } catch (e) {
+    // One retry on a hung connection before falling through to Yahoo
+    r = await timedFetch(url, 6000);
+  }
   if (!r.ok) throw new Error(`Finnhub ${r.status}`);
   const d = await r.json();
   if (d.c == null || d.c === 0) throw new Error('No quote data');
@@ -123,13 +130,31 @@ async function quoteCoinGecko(id) {
   };
 }
 
+// Returns { quote, source } so the caller can say where the number really
+// came from. US equities fall back Finnhub → Yahoo: both carry live US stock
+// quotes, and "the primary feed timed out" is not a reason to show a visitor
+// nothing when a second real feed answers. The fallback is labelled — the
+// source in the response is the feed that actually supplied the number.
 async function getQuote(asset, finnhubKey) {
   if (asset.source === 'finnhub') {
-    if (!finnhubKey) throw new Error('FINNHUB_API_KEY not configured');
-    return quoteFinnhub(asset.symbol, finnhubKey);
+    if (finnhubKey) {
+      try {
+        return { quote: await quoteFinnhub(asset.symbol, finnhubKey), source: 'finnhub' };
+      } catch (e) {
+        console.error(`[quote] Finnhub failed for ${asset.symbol} (${e.message}) — trying Yahoo`);
+      }
+    }
+    // Plain US tickers resolve on Yahoo as-is
+    try {
+      return { quote: await quoteYahoo(asset.yahoo || asset.symbol), source: 'yahoo' };
+    } catch (e) {
+      throw new Error(finnhubKey
+        ? `Both feeds failed — Finnhub and Yahoo (${e.message})`
+        : `FINNHUB_API_KEY not configured and Yahoo failed (${e.message})`);
+    }
   }
-  if (asset.source === 'coingecko') return quoteCoinGecko(asset.cg);
-  return quoteYahoo(asset.yahoo);
+  if (asset.source === 'coingecko') return { quote: await quoteCoinGecko(asset.cg), source: 'coingecko' };
+  return { quote: await quoteYahoo(asset.yahoo), source: 'yahoo' };
 }
 
 // ── News ──
@@ -155,8 +180,11 @@ async function getNews(asset, finnhubKey, days = 7) {
     // For non-equities, keep only headlines that actually mention the instrument
     if (asset.class !== 'stocks') {
       const terms = [asset.name, asset.symbol].filter(Boolean).map(t => t.toLowerCase());
+      const bondTerms = ['treasury', 'yield', 'bond', 'fed', 'fomc'];
       const extra = { XAU: ['gold'], XAG: ['silver'], WTI: ['oil', 'crude'], BRENT: ['oil', 'crude'],
-                      NG: ['natural gas'], HG: ['copper'], BTC: ['bitcoin'], ETH: ['ethereum'] }[asset.symbol] || [];
+                      NG: ['natural gas'], HG: ['copper'], BTC: ['bitcoin'], ETH: ['ethereum'],
+                      US3M: bondTerms, US2Y: bondTerms, US5Y: bondTerms,
+                      US10Y: bondTerms, US30Y: bondTerms }[asset.symbol] || [];
       const all = [...terms, ...extra];
       const hits = raw.filter(n => {
         const hay = `${n.headline || ''} ${n.summary || ''}`.toLowerCase();
@@ -262,7 +290,8 @@ async function handleAdvise(req, res) {
     getNews(asset, finnhubKey),
   ]);
 
-  const quote = qRes.status === 'fulfilled' ? qRes.value : null;
+  const quote = qRes.status === 'fulfilled' ? qRes.value.quote : null;
+  const quoteSource = qRes.status === 'fulfilled' ? qRes.value.source : asset.source;
   const news = nRes.status === 'fulfilled' ? nRes.value.items : [];
 
   if (!quote) {
@@ -282,7 +311,7 @@ async function handleAdvise(req, res) {
   const userPrompt = `INSTRUMENT: ${asset.name} (${asset.symbol}) — ${asset.class}
 What fundamentally drives it: ${asset.drivers}
 
-LIVE PRICE (fetched seconds ago from ${asset.source}):
+LIVE PRICE (fetched seconds ago from ${quoteSource}):
 - Price: ${num(quote.price, asset.class === 'forex' ? 4 : 2)}
 - Change: ${num(quote.change, asset.class === 'forex' ? 4 : 2)} (${num(quote.changePct)}%)
 ${quote.high != null ? `- Session high ${num(quote.high)} / low ${num(quote.low)}` : ''}
@@ -736,8 +765,8 @@ export default async function handler(req, res) {
   try {
     if (action === 'quote') {
       res.setHeader('Cache-Control', 's-maxage=30');
-      const quote = await getQuote(asset, finnhubKey);
-      return res.status(200).json({ ok: true, symbol: asset.symbol, assetClass: asset.class, source: asset.source, quote });
+      const { quote, source } = await getQuote(asset, finnhubKey);
+      return res.status(200).json({ ok: true, symbol: asset.symbol, assetClass: asset.class, kind: asset.kind || 'price', source, quote });
     }
 
     if (action === 'news') {

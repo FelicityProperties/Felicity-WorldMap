@@ -60,6 +60,7 @@ export function mountTickerTape(host) {
       { proName: 'COINBASE:ETHUSD',   title: 'Ethereum' },
       { proName: 'FX:EURUSD',         title: 'EUR/USD' },
       { proName: 'FX:USDJPY',         title: 'USD/JPY' },
+      { proName: 'TVC:US10Y',         title: 'US 10Y' },
       { proName: 'TVC:VIX',           title: 'VIX' },
       { proName: 'TVC:UKX',           title: 'FTSE 100' },
       { proName: 'TVC:NI225',         title: 'Nikkei 225' },
@@ -111,5 +112,66 @@ export function mountEconomicCalendar(host) {
     height: '100%',
     importanceFilter: '0,1',
     countryFilter: 'us,eu,gb,jp,cn,de,ae,in,kr',
+  });
+}
+
+// ── Bond desk: government yields across the US and Asia ──
+// Asian sovereign yields have no free live quote API we could serve honestly
+// from our own endpoints, so this entire view is TradingView's market-quotes
+// widget: every yield and daily change streams live inside the iframe from
+// their feed, updated continuously — never stored or restated by us.
+export function mountBondDesk(host) {
+  mountWidget(host, 'market-quotes', {
+    ...THEME,
+    width: '100%',
+    height: '100%',
+    showSymbolLogo: true,
+    symbolsGroups: [
+      {
+        name: 'US Treasuries',
+        symbols: [
+          { name: 'TVC:US02Y', displayName: 'US 2Y' },
+          { name: 'TVC:US05Y', displayName: 'US 5Y' },
+          { name: 'TVC:US10Y', displayName: 'US 10Y' },
+          { name: 'TVC:US30Y', displayName: 'US 30Y' },
+        ],
+      },
+      {
+        name: 'Japan',
+        symbols: [
+          { name: 'TVC:JP02Y', displayName: 'Japan 2Y' },
+          { name: 'TVC:JP05Y', displayName: 'Japan 5Y' },
+          { name: 'TVC:JP10Y', displayName: 'Japan 10Y' },
+          { name: 'TVC:JP30Y', displayName: 'Japan 30Y' },
+        ],
+      },
+      {
+        name: 'China',
+        symbols: [
+          { name: 'TVC:CN02Y', displayName: 'China 2Y' },
+          { name: 'TVC:CN05Y', displayName: 'China 5Y' },
+          { name: 'TVC:CN10Y', displayName: 'China 10Y' },
+          { name: 'TVC:CN30Y', displayName: 'China 30Y' },
+        ],
+      },
+      {
+        name: 'Korea & India',
+        symbols: [
+          { name: 'TVC:KR02Y', displayName: 'Korea 2Y' },
+          { name: 'TVC:KR10Y', displayName: 'Korea 10Y' },
+          { name: 'TVC:IN02Y', displayName: 'India 2Y' },
+          { name: 'TVC:IN10Y', displayName: 'India 10Y' },
+        ],
+      },
+      {
+        name: 'Asia-Pacific',
+        symbols: [
+          { name: 'TVC:SG10Y', displayName: 'Singapore 10Y' },
+          { name: 'TVC:ID10Y', displayName: 'Indonesia 10Y' },
+          { name: 'TVC:AU10Y', displayName: 'Australia 10Y' },
+          { name: 'TVC:HK10Y', displayName: 'Hong Kong 10Y' },
+        ],
+      },
+    ],
   });
 }

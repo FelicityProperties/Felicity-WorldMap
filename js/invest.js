@@ -12,7 +12,7 @@ import {
   getWatchlist, isWatched, toggleWatch, clearWatchlist,
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
-import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar } from './tv-widgets.js';
+import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk } from './tv-widgets.js';
 import { hasFundamentals, loadFundamentals, exportBrief } from './equity-fundamentals.js';
 import { escapeHtml, safeUrl } from './safe.js';
 
@@ -69,6 +69,20 @@ function fmtPrice(v, cls) {
   return Number(v).toFixed(2);
 }
 
+// Bond yield instruments: value is a rate, daily move is basis points.
+function isYield(a) { return a && a.class === 'bonds' && a.kind === 'yield'; }
+
+function fmtYield(v) {
+  if (v == null || isNaN(v)) return '\u2014';
+  return `${Number(v).toFixed(2)}%`;
+}
+
+function fmtBp(change) {
+  if (change == null || isNaN(change)) return '\u2014';
+  const bp = change * 100;
+  return `${bp >= 0 ? '+' : ''}${bp.toFixed(1)} bp`;
+}
+
 function fmtPct(v) {
   if (v == null || isNaN(v)) return '—';
   return `${v >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`;
@@ -114,6 +128,7 @@ function renderShell() {
     <div class="invest-views" id="invest-views">
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
+      <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
       <button class="invest-view-btn" data-view="heatmap">S&amp;P 500 Heatmap</button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
@@ -235,8 +250,8 @@ function renderList() {
         <div class="invest-row__sym">${esc(a.symbol)}</div>
         <div class="invest-row__name">${esc(a.name)}</div>
         <div class="invest-row__class"><span class="invest-tag invest-tag--${a.class}">${ASSET_CLASSES[a.class].label}</span></div>
-        <div class="invest-row__price">${q ? fmtPrice(q.price, a.class) : '<span class="invest-row__dim">·</span>'}</div>
-        <div class="invest-row__chg ${cls}">${q ? fmtPct(q.changePct) : ''}</div>
+        <div class="invest-row__price">${q ? (isYield(a) ? fmtYield(q.price) : fmtPrice(q.price, a.class)) : '<span class="invest-row__dim">·</span>'}</div>
+        <div class="invest-row__chg ${cls}">${q ? (isYield(a) ? fmtBp(q.change) : fmtPct(q.changePct)) : ''}</div>
       </div>`;
   }).join('');
 
@@ -276,6 +291,11 @@ const MARKET_VIEWS = {
     title: 'Crypto Heatmap',
     sub: 'The crypto universe sized by market cap, coloured by 24-hour move.',
     mount: host => mountCryptoHeatmap(host),
+  },
+  bonds: {
+    title: 'Bond Desk',
+    sub: 'Government yields with daily change across the curve \u2014 US Treasuries plus Japan, China, Korea, India and Asia-Pacific. Streamed live by TradingView.',
+    mount: host => mountBondDesk(host),
   },
   calendar: {
     title: 'Economic Calendar',
@@ -698,13 +718,16 @@ async function loadQuote(asset) {
 
     quoteCache[asset.symbol] = { data: d.quote, ts: Date.now() };
     const q = d.quote;
-    const cls = q.changePct >= 0 ? 'up' : 'dn';
+    const cls = (isYield(asset) ? q.change : q.changePct) >= 0 ? 'up' : 'dn';
 
     if (!block) return;
+    // A yield IS the number — 4.25% with the day's move in basis points.
+    // The source label is what the SERVER says answered, not what we hoped
+    // would: a Finnhub outage that fell back to Yahoo is labelled yahoo.
     block.innerHTML = `
-      <div class="invest-detail__price">${fmtPrice(q.price, asset.class)}</div>
-      <div class="invest-detail__chg invest-detail__chg--${cls}">${fmtPct(q.changePct)}</div>
-      <div class="invest-detail__src">live · ${esc(asset.source)}</div>
+      <div class="invest-detail__price">${isYield(asset) ? fmtYield(q.price) : fmtPrice(q.price, asset.class)}</div>
+      <div class="invest-detail__chg invest-detail__chg--${cls}">${isYield(asset) ? fmtBp(q.change) : fmtPct(q.changePct)}</div>
+      <div class="invest-detail__src">live · ${esc(d.source || asset.source)}</div>
       ${q.marketCap != null ? `<div class="invest-detail__extra">Mkt cap ${fmtBig(q.marketCap)}</div>` : ''}
     `;
     renderList();

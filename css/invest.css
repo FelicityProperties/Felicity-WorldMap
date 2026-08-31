@@ -136,6 +136,7 @@
 .invest-tag--crypto      { color: #f7931a; border-color: rgba(247,147,26,0.3); }
 .invest-tag--forex       { color: #22c55e; border-color: rgba(34,197,94,0.3); }
 .invest-tag--commodities { color: var(--accent-gold); border-color: rgba(212,168,83,0.3); }
+.invest-tag--bonds       { color: #b48ef0; border-color: rgba(180,142,240,0.3); }
 
 /* ── Detail head ── */
 .invest-detail__empty {
@@ -194,7 +195,18 @@
 .invest-detail__chg--dn { color: var(--semantic-red); }
 .invest-detail__src,
 .invest-detail__extra { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
-.invest-detail__fail { font-family: var(--font-mono); font-size: 11px; color: var(--semantic-red); }
+/* A failure message is a sentence — it must wrap inside the panel, not run
+   off the right edge as one clipped red line. */
+.invest-detail__fail {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--semantic-red);
+  max-width: 320px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: right;
+}
 
 .invest-drivers {
   padding: var(--space-3) var(--space-5);

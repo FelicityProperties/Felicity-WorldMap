@@ -23,6 +23,7 @@ export const ASSET_CLASSES = {
   crypto:      { label: 'Crypto',      icon: '◈' },
   forex:       { label: 'Forex',       icon: '⇄' },
   commodities: { label: 'Commodities', icon: '⛏' },
+  bonds:       { label: 'Bonds',       icon: '▬' },
 };
 
 // ── Indices ──
@@ -137,7 +138,42 @@ const STOCKS = sp500Companies.map(c => ({
 
 // Merge every source, de-duplicating by symbol. Earlier entries win, so the
 // curated core (richer metadata) takes precedence over the extended list.
+// ── Bonds ──
+// Two kinds, and the UI renders them differently:
+//   kind:'yield' — the number IS the interest rate. Yahoo's CBOE yield
+//   indices (^IRX/^FVX/^TNX/^TYX) and the CME micro yield future (2YY=F)
+//   quote directly in percent, so 4.25 means 4.25% and the daily change is
+//   shown in basis points, the unit bond desks actually speak.
+//   kind:'price' — tradeable Treasury ETFs, quoted in dollars like any stock.
+//
+// Asian sovereign yields (JGBs, CGBs, KTBs, G-secs) have no free live quote
+// API, so they are NOT listed here — a listed instrument must have a real
+// feed behind it. They live in the Bond Desk market view instead, streamed
+// inside TradingView's own widget, which is live data rather than ours.
+const BONDS = [
+  { symbol: 'US3M',  name: 'US 3-Month T-Bill Yield', yahoo: '^IRX',  tv: 'TVC:US03MY', kind: 'yield', tenor: 'Short',
+    drivers: 'Tracks the Fed funds corridor almost one-for-one — the market\'s live read on current policy.' },
+  { symbol: 'US2Y',  name: 'US 2-Year Yield',         yahoo: '2YY=F', tv: 'TVC:US02Y',  kind: 'yield', tenor: 'Short',
+    drivers: 'The policy-expectations tenor: prices the Fed path over the next eight meetings. Quoted via the CME micro yield future.' },
+  { symbol: 'US5Y',  name: 'US 5-Year Yield',         yahoo: '^FVX',  tv: 'TVC:US05Y',  kind: 'yield', tenor: 'Medium',
+    drivers: 'The belly of the curve — most sensitive to shifts in the medium-term inflation and growth mix.' },
+  { symbol: 'US10Y', name: 'US 10-Year Yield',        yahoo: '^TNX',  tv: 'TVC:US10Y',  kind: 'yield', tenor: 'Medium',
+    drivers: 'The world\'s benchmark discount rate. Sets US mortgages, equity multiples and EM funding costs — and the rate Dubai property competes against for global capital.' },
+  { symbol: 'US30Y', name: 'US 30-Year Yield',        yahoo: '^TYX',  tv: 'TVC:US30Y',  kind: 'yield', tenor: 'Long',
+    drivers: 'Term premium and long-run fiscal credibility. Duration-heavy portfolios live and die here.' },
+
+  { symbol: 'BIL', name: 'SPDR 1-3 Month T-Bill ETF',    tv: 'AMEX:BIL',    kind: 'price', tenor: 'Short',  etf: true,
+    drivers: 'Cash proxy — collects the front of the curve with near-zero duration risk.' },
+  { symbol: 'SHY', name: 'iShares 1-3 Year Treasury ETF', tv: 'NASDAQ:SHY', kind: 'price', tenor: 'Short',  etf: true,
+    drivers: 'Short-duration Treasuries; rises when the Fed cuts, barely moves otherwise.' },
+  { symbol: 'IEF', name: 'iShares 7-10 Year Treasury ETF', tv: 'NASDAQ:IEF', kind: 'price', tenor: 'Medium', etf: true,
+    drivers: 'The core duration building block — inverse to the 10-year yield.' },
+  { symbol: 'TLT', name: 'iShares 20+ Year Treasury ETF',  tv: 'NASDAQ:TLT', kind: 'price', tenor: 'Long',   etf: true,
+    drivers: 'Maximum duration: roughly 16 years, so a 1pp fall in long yields is ~+16% — and the reverse.' },
+].map(a => ({ ...a, class: 'bonds', source: a.etf ? 'finnhub' : 'yahoo' }));
+
 function dedupe(lists) {
+
   const seen = new Set();
   const out = [];
   for (const a of lists.flat()) {
@@ -150,7 +186,7 @@ function dedupe(lists) {
 }
 
 export const investUniverse = dedupe([
-  INDICES, extendedIndices, CRYPTO, FOREX, COMMODITIES, STOCKS, extendedEquities,
+  INDICES, extendedIndices, CRYPTO, FOREX, COMMODITIES, BONDS, STOCKS, extendedEquities,
 ]);
 
 export const REGIONS = ['US', 'Europe', 'Korea', 'Japan'];
