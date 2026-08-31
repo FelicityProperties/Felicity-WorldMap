@@ -311,9 +311,13 @@ async function handleAdvise(req, res) {
   const userPrompt = `INSTRUMENT: ${asset.name} (${asset.symbol}) — ${asset.class}
 What fundamentally drives it: ${asset.drivers}
 
-LIVE PRICE (fetched seconds ago from ${quoteSource}):
+${asset.kind === 'yield'
+  ? `LIVE YIELD (fetched seconds ago from ${quoteSource}) — this instrument IS an interest rate, quoted in percent; it is not a tradeable price. To act on a view here, position through Treasury futures or duration ETFs (BIL/SHY/IEF/TLT):
+- Yield: ${num(quote.price)}%
+- Change today: ${num(quote.change * 100, 1)} basis points`
+  : `LIVE PRICE (fetched seconds ago from ${quoteSource}):
 - Price: ${num(quote.price, asset.class === 'forex' ? 4 : 2)}
-- Change: ${num(quote.change, asset.class === 'forex' ? 4 : 2)} (${num(quote.changePct)}%)
+- Change: ${num(quote.change, asset.class === 'forex' ? 4 : 2)} (${num(quote.changePct)}%)`}
 ${quote.high != null ? `- Session high ${num(quote.high)} / low ${num(quote.low)}` : ''}
 ${quote.marketCap != null ? `- Market cap ${num(quote.marketCap, 0)} USD, 24h volume ${num(quote.volume24h, 0)} USD` : ''}
 
@@ -357,6 +361,8 @@ Produce the analysis as specified JSON.`;
       symbol: asset.symbol,
       name: asset.name,
       assetClass: asset.class,
+      kind: asset.kind || 'price',
+      source: quoteSource,
       quote,
       newsCount: news.length,
       // the exact headlines the model was shown, so the UI can display its evidence

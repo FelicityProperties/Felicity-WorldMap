@@ -14,7 +14,12 @@
 const TV_BASE = 'https://s3.tradingview.com/external-embedding/embed-widget-';
 
 const THEME = {
+  // Different TradingView embeds read different keys: the advanced chart
+  // wants `theme`, everything mounted here (tape, heatmaps, calendar, bond
+  // desk) wants `colorTheme`. Only `theme` was being sent, so every one of
+  // these widgets silently fell back to LIGHT mode on a dark site.
   theme: 'dark',
+  colorTheme: 'dark',
   locale: 'en',
   backgroundColor: 'rgba(13, 17, 23, 1)',
   gridColor: 'rgba(255, 255, 255, 0.06)',

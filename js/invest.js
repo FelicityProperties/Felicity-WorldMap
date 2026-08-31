@@ -538,7 +538,7 @@ async function runSweep() {
           <div class="sweep__item-head">
             <span class="invest-call__badge invest-call__badge--${tone}">${esc(a.call)}</span>
             <span class="sweep__item-conv">${esc(a.conviction)}</span>
-            <span class="sweep__item-price">${fmtPrice(d.quote.price, d.assetClass)} <span class="${d.quote.changePct >= 0 ? 'up' : 'dn'}">${fmtPct(d.quote.changePct)}</span></span>
+            <span class="sweep__item-price">${d.kind === 'yield' ? fmtYield(d.quote.price) : fmtPrice(d.quote.price, d.assetClass)} <span class="${(d.kind === 'yield' ? d.quote.change : d.quote.changePct) >= 0 ? 'up' : 'dn'}">${d.kind === 'yield' ? fmtBp(d.quote.change) : fmtPct(d.quote.changePct)}</span></span>
           </div>
           <div class="sweep__item-thesis">${esc(a.thesis)}</div>
           <div class="sweep__item-size"><strong>Size:</strong> ${esc(a.sizing)}</div>
@@ -1263,7 +1263,7 @@ async function runAdvisor(asset) {
 
       <div class="invest-advisor__foot">
         Generated ${new Date(d.generatedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
-        from the live ${esc(asset.source)} price and ${d.newsCount} real ${d.newsCount === 1 ? 'story' : 'stories'}.
+        from the live ${esc(d.source || asset.source)} price and ${d.newsCount} real ${d.newsCount === 1 ? 'story' : 'stories'}.
         <strong>This is research, not personalised financial advice</strong> — it cannot know your circumstances, and markets can move against any position.
       </div>
     `;
