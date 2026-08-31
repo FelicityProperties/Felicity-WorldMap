@@ -136,7 +136,7 @@ async function handleUnsubscribe(res, email, token) {
 // ── Diagnostics ──
 // Answers "why is the newsletter not working?" without exposing any secret.
 // It reports only whether things are configured and what Resend says back.
-async function handleDiagnose(res) {
+async function handleDiagnose(res, probe = false) {
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.FROM_EMAIL || `Felicity Intelligence <${RESEND_TEST_SENDER}>`;
 
@@ -162,8 +162,19 @@ async function handleDiagnose(res) {
     return;
   }
 
-  // Verified sending domains
+  // Can the sender domain actually send?
+  //
+  // This check used to be `Boolean(process.env.FROM_EMAIL)` — it confirmed the
+  // variable was SET, never that the domain behind it was VERIFIED, and then
+  // reported "the newsletter is ready" while every send was being rejected
+  // with a 403. Claiming a green light we had not measured is exactly what
+  // this project forbids everywhere else, so it is measured now: read the
+  // verified domain list where the key permits it, and where it does not,
+  // say so plainly instead of assuming.
   let restrictedKey = false;
+  let senderVerified = null;   // null = genuinely unknown, not "fine"
+  const senderDomain = (fromEmail.match(/<([^>]+)>/)?.[1] || fromEmail).split('@')[1] || '';
+
   try {
     const r = await fetch('https://api.resend.com/domains', { headers: resendHeaders(resendKey) });
     const body = r.ok ? null : await r.text();
@@ -177,15 +188,47 @@ async function handleDiagnose(res) {
       add('Resend key can read domains', true, 'authenticated');
       const domains = (await r.json()).data || [];
       const verified = domains.filter(d => d.status === 'verified').map(d => d.name);
-      const sender = (fromEmail.match(/<([^>]+)>/)?.[1] || fromEmail).split('@')[1] || '';
-      add('Sender domain verified',
-          Boolean(sender) && verified.includes(sender),
+      senderVerified = Boolean(senderDomain) && verified.includes(senderDomain);
+      add('Sender domain verified', senderVerified,
           domains.length
-            ? `sender domain "${sender}" — verified domains on this account: ${verified.join(', ') || 'none'}`
+            ? `sender domain "${senderDomain}" — verified on this account: ${verified.join(', ') || 'none'}`
             : 'no domains added in Resend → Domains yet');
     }
   } catch (e) {
     add('Resend key can read domains', false, e.message);
+  }
+
+  // A send-only key cannot read the domain list, so the only way to KNOW is to
+  // send. `?diagnose=1&probe=1` does exactly that — one real message to the
+  // owner — and reports what Resend actually said. Opt-in, because a
+  // diagnostic that emails on every call is its own kind of bug.
+  if (senderVerified === null) {
+    if (probe) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: resendHeaders(resendKey),
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [process.env.OWNER_EMAIL || 'mouhannad@felicitypro.com'],
+            subject: 'Felicity Intelligence — sender check',
+            text: 'If this arrived, the sender domain is verified and the newsletter can reach subscribers.',
+          }),
+        });
+        const body = await r.text();
+        senderVerified = r.ok;
+        add('Sender domain verified', r.ok,
+            r.ok
+              ? 'PROBE SENT — Resend accepted a real message. Check the owner inbox to confirm delivery.'
+              : `PROBE REJECTED — ${String(body).slice(0, 200)}`);
+      } catch (e) {
+        senderVerified = false;
+        add('Sender domain verified', false, `probe failed: ${e.message}`);
+      }
+    } else {
+      add('Sender domain verified', false,
+          `UNKNOWN — the send-only key cannot read the domain list, so this cannot be confirmed from here. Add &probe=1 to this URL to send one real test message and find out. Until then, treat "${senderDomain}" as unverified.`);
+    }
   }
 
   // Where the list lives. Either store is sufficient.
@@ -225,7 +268,7 @@ async function handleDiagnose(res) {
   report.restrictedApiKey = restrictedKey;
   // Only these two actually stop mail reaching subscribers. The rest is detail.
   const canStore = report.checks.find(c => c.name === 'Subscribers can be stored')?.pass;
-  const canSend = Boolean(process.env.FROM_EMAIL);
+  const canSend = senderVerified === true;
   report.ok = Boolean(canStore && canSend);
 
   const blockers = [];
@@ -235,7 +278,13 @@ async function handleDiagnose(res) {
       : 'No writable subscriber store. Set DATABASE_URL in Vercel, or create a Full Access key in Resend → API Keys.');
   }
   if (!canSend) {
-    blockers.push(`FROM_EMAIL is not set, so mail goes out from ${RESEND_TEST_SENDER}, which Resend delivers ONLY to the account owner. Verify your domain in Resend → Domains, then set FROM_EMAIL in Vercel. No code change can work around this.`);
+    if (!process.env.FROM_EMAIL) {
+      blockers.push(`FROM_EMAIL is not set, so mail goes out from ${RESEND_TEST_SENDER}, which Resend delivers ONLY to the account owner. Verify your domain in Resend → Domains, then set FROM_EMAIL in Vercel.`);
+    } else if (senderVerified === false) {
+      blockers.push(`The domain "${senderDomain}" is not verified in Resend, so every send is rejected with a 403. Add it at https://resend.com/domains, publish the DNS records it gives you, and wait for the status to read Verified. No code change can work around this.`);
+    } else {
+      blockers.push(`Cannot confirm that "${senderDomain}" is a verified sender, because this API key cannot read the domain list. Re-run this URL with &probe=1 to test with a real message.`);
+    }
   }
   report.blockers = blockers;
   report.summary = report.ok
@@ -252,7 +301,7 @@ export default async function handler(req, res) {
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && url.searchParams.get('diagnose') === '1') {
-    return handleDiagnose(res);
+    return handleDiagnose(res, url.searchParams.get('probe') === '1');
   }
 
   if (req.method === 'GET' && url.searchParams.get('unsubscribe')) {

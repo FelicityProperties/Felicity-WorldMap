@@ -89,7 +89,7 @@ with per-contact unsubscribe links. Preview without emailing the list:
 **Newsletter not arriving?** Open `/api/subscribe?diagnose=1` on the deployed
 site. It reports which keys are set, which sender domains Resend has verified,
 whether the audience resolves, and how many subscribers are stored — without
-exposing any secret. The most common cause is an unset `FROM_EMAIL`: mail then
+exposing any secret. Add `&probe=1` to send one real test message to `OWNER_EMAIL` — with a send-only API key that is the only way to confirm the sender domain is verified. The most common cause is an unset or unverified `FROM_EMAIL`: mail then
 goes out from Resend's test address, which only delivers to the Resend account
 owner, so every other subscriber silently receives nothing.
 

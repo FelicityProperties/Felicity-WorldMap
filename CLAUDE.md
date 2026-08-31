@@ -171,6 +171,13 @@ working?" — it checks the keys, asks Resend which domains are verified,
 resolves the audience and counts the stored subscribers. It never echoes a
 secret. Run it first whenever email misbehaves.
 
+The diagnostic must **measure**, never assume. It once checked that
+`FROM_EMAIL` was set and reported "the newsletter is ready" while every send
+was being rejected 403 for an unverified domain — the same sin as printing an
+unfetched market number. A send-only key cannot read `/domains`, so in that
+case it reports the sender as **unknown** and offers `&probe=1`, which sends
+one real message to the owner and reports what Resend actually said.
+
 The usual answer is `FROM_EMAIL`: without it, mail goes out from Resend's
 `onboarding@resend.dev`, which **only delivers to the Resend account owner**.
 Everyone else silently gets nothing.
