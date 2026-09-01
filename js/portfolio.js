@@ -119,8 +119,11 @@ export function computeTotals(rows) {
 // ── Formatting (self-contained: this module must not import invest.js) ──
 function money(v, d = 2) {
   if (v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  // A sub-dollar unit price needs more precision or it rounds to a lie
+  const digits = abs > 0 && abs < 1 ? 4 : d;
   const sign = v < 0 ? '-' : '';
-  return `${sign}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+  return `${sign}$${abs.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
 function signedMoney(v) {
@@ -168,8 +171,11 @@ async function fetchQuotes(symbols) {
 // ── Renderer ──
 // Mounts into the host the cockpit hands it. `onSelect(symbol)` opens the
 // instrument detail so a row click drills into chart, news and the bot.
+let renderSeq = 0;
+
 export async function renderPortfolio(host, onSelect) {
   if (!host) return;
+  const seq = ++renderSeq;
   const holdings = getHoldings();
 
   host.innerHTML = `
@@ -218,8 +224,10 @@ export async function renderPortfolio(host, onSelect) {
 
   const quotes = await fetchQuotes(holdings.map(h => h.symbol));
 
-  // The user may have navigated away while quotes were in flight
-  if (!host.querySelector('#pf-out')) return;
+  // The user may have navigated away, or a newer render (an added or
+  // removed position) may have superseded this one while quotes were in
+  // flight — a stale continuation must never paint over fresher state.
+  if (seq !== renderSeq || !host.querySelector('#pf-out')) return;
 
   const rows = holdings.map(h => computeRow(h, quotes[h.symbol]));
   const t = computeTotals(rows);
