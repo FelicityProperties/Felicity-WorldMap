@@ -224,6 +224,37 @@ function filtered() {
   return list.slice(0, 160);
 }
 
+// Auto-price small lists (the bonds class is 8 rows) so they show live
+// numbers on sight instead of dots-until-clicked. Large lists still price
+// lazily — 160 parallel quotes would just burn the rate limit.
+const AUTOQUOTE_MAX = 12;
+let autoquoteRun = 0;
+
+async function autoquote(list) {
+  const run = ++autoquoteRun;
+  const need = list.filter(a => {
+    const c = quoteCache[a.symbol];
+    return !c || Date.now() - c.ts >= QUOTE_TTL;
+  });
+  for (let i = 0; i < need.length; i += 4) {
+    if (run !== autoquoteRun) return;   // list changed under us
+    const batch = need.slice(i, i + 4);
+    await Promise.allSettled(batch.map(async a => {
+      try {
+        const r = await fetch(`/api/invest/quote?symbol=${encodeURIComponent(a.symbol)}`);
+        const d = await r.json();
+        // A failure is cached as null for one TTL — without this, the
+        // re-render after each pass would re-trigger autoquote and a dead
+        // feed would be hammered in a loop.
+        quoteCache[a.symbol] = { data: d.ok && d.quote ? d.quote : null, ts: Date.now() };
+      } catch {
+        quoteCache[a.symbol] = { data: null, ts: Date.now() };
+      }
+    }));
+  }
+  if (run === autoquoteRun) renderList();
+}
+
 function renderList() {
   const el = document.getElementById('invest-list');
   if (!el) return;
@@ -264,6 +295,11 @@ function renderList() {
       selectAsset(r.dataset.symbol);
     });
   });
+
+  if (list.length <= AUTOQUOTE_MAX && list.some(a => {
+    const c = quoteCache[a.symbol];
+    return !c || Date.now() - c.ts >= QUOTE_TTL;
+  })) autoquote(list);
 
   document.getElementById('invest-sweep-run')?.addEventListener('click', runSweep);
   document.getElementById('invest-sweep-news')?.addEventListener('click', runWatchlistNews);

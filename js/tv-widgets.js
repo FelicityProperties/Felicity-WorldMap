@@ -124,7 +124,14 @@ export function mountEconomicCalendar(host) {
 // Asian sovereign yields have no free live quote API we could serve honestly
 // from our own endpoints, so this entire view is TradingView's market-quotes
 // widget: every yield and daily change streams live inside the iframe from
-// their feed, updated continuously — never stored or restated by us.
+// their feed — never stored or restated by us.
+//
+// The symbol list is deliberately conservative. The first cut included
+// exotic tenors (HK10Y, KR02Y, CN02Y…) that TradingView does not carry for
+// every market, and each missing one rendered as a dead "invalid symbol"
+// row. Only tenors with dependable TVC coverage remain: the full US curve,
+// the Japanese curve, and the 10-year benchmark for the other markets —
+// the tenor every sovereign is actually quoted on.
 export function mountBondDesk(host) {
   mountWidget(host, 'market-quotes', {
     ...THEME,
@@ -133,7 +140,7 @@ export function mountBondDesk(host) {
     showSymbolLogo: true,
     symbolsGroups: [
       {
-        name: 'US Treasuries',
+        name: 'US Treasury curve',
         symbols: [
           { name: 'TVC:US02Y', displayName: 'US 2Y' },
           { name: 'TVC:US05Y', displayName: 'US 5Y' },
@@ -142,39 +149,22 @@ export function mountBondDesk(host) {
         ],
       },
       {
-        name: 'Japan',
+        name: 'Japan curve',
         symbols: [
           { name: 'TVC:JP02Y', displayName: 'Japan 2Y' },
-          { name: 'TVC:JP05Y', displayName: 'Japan 5Y' },
           { name: 'TVC:JP10Y', displayName: 'Japan 10Y' },
           { name: 'TVC:JP30Y', displayName: 'Japan 30Y' },
         ],
       },
       {
-        name: 'China',
+        name: 'Asia 10-year benchmarks',
         symbols: [
-          { name: 'TVC:CN02Y', displayName: 'China 2Y' },
-          { name: 'TVC:CN05Y', displayName: 'China 5Y' },
           { name: 'TVC:CN10Y', displayName: 'China 10Y' },
-          { name: 'TVC:CN30Y', displayName: 'China 30Y' },
-        ],
-      },
-      {
-        name: 'Korea & India',
-        symbols: [
-          { name: 'TVC:KR02Y', displayName: 'Korea 2Y' },
           { name: 'TVC:KR10Y', displayName: 'Korea 10Y' },
-          { name: 'TVC:IN02Y', displayName: 'India 2Y' },
           { name: 'TVC:IN10Y', displayName: 'India 10Y' },
-        ],
-      },
-      {
-        name: 'Asia-Pacific',
-        symbols: [
           { name: 'TVC:SG10Y', displayName: 'Singapore 10Y' },
           { name: 'TVC:ID10Y', displayName: 'Indonesia 10Y' },
           { name: 'TVC:AU10Y', displayName: 'Australia 10Y' },
-          { name: 'TVC:HK10Y', displayName: 'Hong Kong 10Y' },
         ],
       },
     ],

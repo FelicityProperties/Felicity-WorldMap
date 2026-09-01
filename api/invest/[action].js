@@ -183,7 +183,7 @@ async function getNews(asset, finnhubKey, days = 7) {
       const bondTerms = ['treasury', 'yield', 'bond', 'fed', 'fomc'];
       const extra = { XAU: ['gold'], XAG: ['silver'], WTI: ['oil', 'crude'], BRENT: ['oil', 'crude'],
                       NG: ['natural gas'], HG: ['copper'], BTC: ['bitcoin'], ETH: ['ethereum'],
-                      US3M: bondTerms, US2Y: bondTerms, US5Y: bondTerms,
+                      US3M: bondTerms, US5Y: bondTerms,
                       US10Y: bondTerms, US30Y: bondTerms }[asset.symbol] || [];
       const all = [...terms, ...extra];
       const hits = raw.filter(n => {

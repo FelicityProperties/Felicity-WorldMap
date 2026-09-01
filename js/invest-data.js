@@ -141,9 +141,12 @@ const STOCKS = sp500Companies.map(c => ({
 // ── Bonds ──
 // Two kinds, and the UI renders them differently:
 //   kind:'yield' — the number IS the interest rate. Yahoo's CBOE yield
-//   indices (^IRX/^FVX/^TNX/^TYX) and the CME micro yield future (2YY=F)
-//   quote directly in percent, so 4.25 means 4.25% and the daily change is
-//   shown in basis points, the unit bond desks actually speak.
+//   indices (^IRX/^FVX/^TNX/^TYX) quote directly in percent, so 4.25 means
+//   4.25% and the daily change is shown in basis points, the unit bond
+//   desks actually speak. The 2-year has NO free live cash-yield feed (the
+//   CME micro yield futures that once proxied it were delisted), so it is
+//   deliberately not listed here — the Bond Desk view carries the live 2Y
+//   from TradingView's own feed instead.
 //   kind:'price' — tradeable Treasury ETFs, quoted in dollars like any stock.
 //
 // Asian sovereign yields (JGBs, CGBs, KTBs, G-secs) have no free live quote
@@ -153,8 +156,6 @@ const STOCKS = sp500Companies.map(c => ({
 const BONDS = [
   { symbol: 'US3M',  name: 'US 3-Month T-Bill Yield', yahoo: '^IRX',  tv: 'TVC:US03MY', kind: 'yield', tenor: 'Short',
     drivers: 'Tracks the Fed funds corridor almost one-for-one — the market\'s live read on current policy.' },
-  { symbol: 'US2Y',  name: 'US 2-Year Yield',         yahoo: '2YY=F', tv: 'TVC:US02Y',  kind: 'yield', tenor: 'Short',
-    drivers: 'The policy-expectations tenor: prices the Fed path over the next eight meetings. Quoted via the CME micro yield future.' },
   { symbol: 'US5Y',  name: 'US 5-Year Yield',         yahoo: '^FVX',  tv: 'TVC:US05Y',  kind: 'yield', tenor: 'Medium',
     drivers: 'The belly of the curve — most sensitive to shifts in the medium-term inflation and growth mix.' },
   { symbol: 'US10Y', name: 'US 10-Year Yield',        yahoo: '^TNX',  tv: 'TVC:US10Y',  kind: 'yield', tenor: 'Medium',
