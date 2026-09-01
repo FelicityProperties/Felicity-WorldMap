@@ -333,7 +333,7 @@ const MARKET_VIEWS = {
   },
   bonds: {
     title: 'Bond Desk',
-    sub: 'Government yields with daily change across the curve \u2014 US Treasuries plus Japan, China, Korea, India and Asia-Pacific. Streamed live by TradingView.',
+    sub: 'US Treasury curve priced by our live feed; Japan and Asia-Pacific yields streamed by TradingView. TradingView does not license its US yield symbols for embedding, so those come from our own data.',
     mount: host => mountBondDesk(host),
   },
   calendar: {
@@ -648,13 +648,21 @@ async function selectAsset(symbol) {
       </div>
     </div>` : ''}
 
+    ${isYield(asset) ? `
+    <div class="invest-chart">
+      <div class="invest-chart__head">
+        <span class="invest-chart__label">Yield history — 1 year</span>
+        <span class="invest-chart__src">Yahoo Finance</span>
+      </div>
+      <div class="ychart" id="invest-ychart"><div class="tool__loading">Loading a year of daily closes…</div></div>
+    </div>` : `
     <div class="invest-chart">
       <div class="invest-chart__head">
         <span class="invest-chart__label">Price Chart</span>
         <span class="invest-chart__src">TradingView</span>
       </div>
       <div class="tradingview-widget-container" id="invest-tv"><div class="tradingview-widget-container__widget"></div></div>
-    </div>
+    </div>`}
 
     <div class="invest-advisor">
       <div class="invest-advisor__head">
@@ -681,7 +689,8 @@ async function selectAsset(symbol) {
     </div>
   `;
 
-  mountChart(asset);
+  if (isYield(asset)) loadYieldChart(asset);
+  else mountChart(asset);
   loadQuote(asset);
   loadNews(asset);
   revealDetail();
@@ -719,6 +728,40 @@ async function selectAsset(symbol) {
     refreshWatchCount();
     renderList();
   });
+}
+
+// TradingView's advanced-chart embed does not carry the US yield symbols
+// (same licensing gap as the desk widget), so yield instruments get a chart
+// drawn by us from a year of real Yahoo daily closes — nothing modelled.
+async function loadYieldChart(asset) {
+  try {
+    const r = await fetch(`/api/invest/candles?symbol=${encodeURIComponent(asset.symbol)}&range=1y`);
+    const d = await r.json();
+    if (!d.ok || !Array.isArray(d.c) || d.c.length < 2) throw new Error(d.error || 'no history returned');
+
+    const host = document.getElementById('invest-ychart');
+    if (!host || selected !== asset.symbol) return;   // navigated away mid-flight
+
+    const min = Math.min(...d.c), max = Math.max(...d.c);
+    const first = d.c[0], last = d.c[d.c.length - 1];
+    const bp1y = (last - first) * 100;
+    const W = 640, H = 160;
+    const dt = ms => new Date(ms).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+    host.innerHTML = `
+      <div class="ychart__meta">
+        <span>${esc(dt(d.t[0]))} – ${esc(dt(d.t[d.t.length - 1]))}</span>
+        <span>high ${max.toFixed(2)}% · low ${min.toFixed(2)}%</span>
+        <span class="${bp1y >= 0 ? 'up' : 'dn'}">${bp1y >= 0 ? '+' : ''}${bp1y.toFixed(0)} bp over the year</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="One year of daily ${esc(asset.symbol)} closes">
+        <path d="${pathFor(d.c, min, max, W, H)}" class="ychart__line" />
+      </svg>
+      <div class="ychart__src">${esc(d.source)} · ${d.points} daily closes · chart drawn from the data, not embedded</div>`;
+  } catch (e) {
+    const host = document.getElementById('invest-ychart');
+    if (host) host.innerHTML = `<div class="tool__fail">Yield history unavailable — ${esc(e.message)}</div>`;
+  }
 }
 
 function mountChart(asset) {

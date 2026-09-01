@@ -121,33 +121,81 @@ export function mountEconomicCalendar(host) {
 }
 
 // ── Bond desk: government yields across the US and Asia ──
-// Asian sovereign yields have no free live quote API we could serve honestly
-// from our own endpoints, so this entire view is TradingView's market-quotes
-// widget: every yield and daily change streams live inside the iframe from
-// their feed — never stored or restated by us.
 //
-// The symbol list is deliberately conservative. The first cut included
-// exotic tenors (HK10Y, KR02Y, CN02Y…) that TradingView does not carry for
-// every market, and each missing one rendered as a dead "invalid symbol"
-// row. Only tenors with dependable TVC coverage remain: the full US curve,
-// the Japanese curve, and the 10-year benchmark for the other markets —
-// the tenor every sovereign is actually quoted on.
+// Two feeds, each doing what it demonstrably can:
+//
+//   US curve — TradingView does NOT license its US yield symbols (US02Y,
+//   US10Y…) for embedding, so that group rendered as an empty header. The
+//   US tenors are therefore priced by OUR OWN live feed — the same Yahoo
+//   yield indices (^IRX/^FVX/^TNX/^TYX) the bonds list already quotes —
+//   and rendered as cards with the day's move in basis points.
+//
+//   Japan + Asia-Pacific — no free quote API covers JGBs/CGBs/KTBs, and
+//   TradingView's JP/CN/KR/IN/SG/ID/AU symbols DO embed (Japan rendered
+//   fine while US sat empty). Those stay in the market-quotes widget,
+//   streamed live inside the iframe.
+const US_CURVE = [
+  { symbol: 'US3M',  label: '3M'  },
+  { symbol: 'US5Y',  label: '5Y'  },
+  { symbol: 'US10Y', label: '10Y' },
+  { symbol: 'US30Y', label: '30Y' },
+];
+
 export function mountBondDesk(host) {
-  mountWidget(host, 'market-quotes', {
+  const el = typeof host === 'string' ? document.getElementById(host) : host;
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="bonddesk">
+      <div class="bonddesk__us">
+        <div class="bonddesk__head">
+          <span class="bonddesk__title">US Treasury curve</span>
+          <span class="bonddesk__src">live · our feed (Yahoo yield indices)</span>
+        </div>
+        <div class="bonddesk__cards">
+          ${US_CURVE.map(c => `
+            <div class="bonddesk__card" data-us="${c.symbol}">
+              <span class="bonddesk__tenor">${c.label}</span>
+              <span class="bonddesk__val">…</span>
+              <span class="bonddesk__chg"></span>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="bonddesk__head">
+        <span class="bonddesk__title">Japan &amp; Asia-Pacific</span>
+        <span class="bonddesk__src">streamed live by TradingView</span>
+      </div>
+      <div class="bonddesk__tv tradingview-widget-container" id="bonddesk-tv">
+        <div class="tradingview-widget-container__widget"></div>
+      </div>
+    </div>`;
+
+  // US cards from our own quote endpoint — real numbers or a plain failure
+  US_CURVE.forEach(async ({ symbol }) => {
+    const card = el.querySelector(`[data-us="${symbol}"]`);
+    try {
+      const r = await fetch(`/api/invest/quote?symbol=${symbol}`);
+      const d = await r.json();
+      if (!d.ok || !d.quote || d.quote.price == null) throw new Error(d.error || 'unavailable');
+      if (!card.isConnected) return;
+      const bp = (d.quote.change ?? 0) * 100;
+      card.querySelector('.bonddesk__val').textContent = `${Number(d.quote.price).toFixed(2)}%`;
+      const chg = card.querySelector('.bonddesk__chg');
+      chg.textContent = `${bp >= 0 ? '+' : ''}${bp.toFixed(1)} bp`;
+      chg.classList.add(bp >= 0 ? 'up' : 'dn');
+    } catch {
+      if (!card.isConnected) return;
+      card.querySelector('.bonddesk__val').textContent = '—';
+      card.querySelector('.bonddesk__chg').textContent = 'unavailable';
+    }
+  });
+
+  mountWidget('bonddesk-tv', 'market-quotes', {
     ...THEME,
     width: '100%',
     height: '100%',
     showSymbolLogo: true,
     symbolsGroups: [
-      {
-        name: 'US Treasury curve',
-        symbols: [
-          { name: 'TVC:US02Y', displayName: 'US 2Y' },
-          { name: 'TVC:US05Y', displayName: 'US 5Y' },
-          { name: 'TVC:US10Y', displayName: 'US 10Y' },
-          { name: 'TVC:US30Y', displayName: 'US 30Y' },
-        ],
-      },
       {
         name: 'Japan curve',
         symbols: [

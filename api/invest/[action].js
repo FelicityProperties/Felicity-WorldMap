@@ -775,6 +775,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, symbol: asset.symbol, assetClass: asset.class, kind: asset.kind || 'price', source, quote });
     }
 
+    if (action === 'candles') {
+      // Daily history for charts we render ourselves. Needed because
+      // TradingView does not license its US yield symbols (US10Y et al)
+      // for embedding — the advanced-chart iframe simply shows nothing —
+      // so yield instruments get a chart drawn from the same Yahoo daily
+      // data the backtester already uses.
+      res.setHeader('Cache-Control', 's-maxage=900');
+      const range = RANGES.has(url.searchParams.get('range')) ? url.searchParams.get('range') : '1y';
+      const k = await fetchCandles(asset, range, '1d');
+      // Thin to ~400 points so a 10y series does not ship 2,500 rows
+      const step = Math.max(1, Math.ceil(k.c.length / 400));
+      const t = [], c = [];
+      for (let i = 0; i < k.c.length; i += step) { t.push(k.t[i]); c.push(k.c[i]); }
+      if ((k.c.length - 1) % step !== 0) { t.push(k.t[k.t.length - 1]); c.push(k.c[k.c.length - 1]); }
+      return res.status(200).json({
+        ok: true, symbol: asset.symbol, kind: asset.kind || 'price',
+        range, points: c.length, t, c,
+        source: 'Yahoo Finance daily close',
+      });
+    }
+
     if (action === 'news') {
       res.setHeader('Cache-Control', 's-maxage=600');
       const { items, error } = await getNews(asset, finnhubKey);
