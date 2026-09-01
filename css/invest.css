@@ -1725,3 +1725,113 @@ body.tv-fullscreen-open { overflow: hidden; }
   .bt__trades-head,
   .bt__trade { grid-template-columns: 1.2fr 1.2fr 0.5fr 0.8fr; padding: var(--space-2) var(--space-3); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PORTFOLIO — holdings marked to the live market
+   ═══════════════════════════════════════════════════════════ */
+
+.pf-add {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr auto;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.pf-add__num { min-width: 0; }
+.pf-add__btn { min-height: 38px; padding: 0 var(--space-4); }
+
+.pf-error {
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--semantic-red);
+}
+
+.pf-table { border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); overflow: hidden; }
+
+.pf-table__head,
+.pf-table__row,
+.pf-table__total {
+  display: grid;
+  grid-template-columns: 1.7fr 0.8fr 1fr 1fr 1.1fr 1.2fr 1fr 30px;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.pf-table__head {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+}
+
+.pf-table__row {
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.pf-table__row:hover { background: var(--bg-secondary); }
+
+.pf-table__sym { display: flex; flex-direction: column; min-width: 0; font-weight: var(--weight-bold); color: var(--text-primary); }
+.pf-table__sym em {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: var(--weight-normal);
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-table__row span em,
+.pf-table__total span em {
+  display: block;
+  font-style: normal;
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.pf-na { font-style: normal; color: var(--semantic-amber); font-size: 10px; }
+
+.pf-table .up { color: var(--semantic-green); }
+.pf-table .dn { color: var(--semantic-red); }
+
+.pf-table__del {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.pf-table__del:hover { color: var(--semantic-red); }
+
+.pf-table__total {
+  border-top: 2px solid var(--border-strong);
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 767px) {
+  .pf-add { grid-template-columns: 1fr 1fr; }
+  .pf-add__sym { grid-column: span 2; }
+  .pf-add__btn { grid-column: span 2; width: 100%; }
+
+  /* Eight columns cannot fit a phone — scroll the table, hide nothing. */
+  .pf-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pf-table__head, .pf-table__row, .pf-table__total { min-width: 640px; }
+}

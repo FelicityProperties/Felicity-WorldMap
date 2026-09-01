@@ -559,3 +559,235 @@
   color: var(--text-muted);
   background: rgba(0, 212, 255, 0.03);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   COMPARE — two areas side by side on registry evidence
+   ═══════════════════════════════════════════════════════════ */
+
+.dcmp { margin-bottom: var(--space-6); }
+
+.dcmp__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.dcmp__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.dcmp__title em {
+  display: block;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dcmp__controls { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+.dcmp__select {
+  min-height: 38px;
+  padding: 8px var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  max-width: 220px;
+}
+
+.dcmp__vs { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+.dcmp__go {
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bg-primary);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.dcmp__go:hover { opacity: 0.85; }
+
+.dcmp__same {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Panel ── */
+.dcmp__panel {
+  margin-top: var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dcmp__heads,
+.dcmp__row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+}
+
+.dcmp__heads { background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle); }
+
+.dcmp__spacer { min-width: 0; }
+.dcmp__area { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+
+.dcmp__area-name {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+}
+
+.dcmp__area-link {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dcmp__area-link:hover { color: var(--accent-primary); }
+
+.dcmp__row { border-bottom: 1px solid var(--border-subtle); }
+.dcmp__row:last-of-type { border-bottom: none; }
+
+.dcmp__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.dcmp__label em {
+  display: block;
+  font-style: normal;
+  font-size: 8px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+  margin-top: 1px;
+}
+
+.dcmp__cohort { text-transform: none; letter-spacing: 0; }
+
+.dcmp__cell {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.dcmp__yield--strong { color: var(--semantic-green); }
+.dcmp__yield--mid    { color: var(--accent-gold); }
+.dcmp__yield--soft   { color: var(--text-secondary); }
+
+.dcmp__delta {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  margin-left: var(--space-1);
+  white-space: nowrap;
+}
+
+.dcmp__delta--lead  { color: var(--semantic-green); border: 1px solid rgba(34, 197, 94, 0.35); }
+.dcmp__delta--trail { color: var(--semantic-red);   border: 1px solid rgba(239, 68, 68, 0.35); }
+.dcmp__delta--even  { color: var(--text-muted);     border: 1px solid var(--border-subtle); }
+
+.dcmp__desk-mark {
+  font-style: normal;
+  color: var(--accent-gold);
+  font-size: 8px;
+}
+
+.dcmp__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dcmp__prov {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  max-width: 560px;
+}
+
+.dcmp__reg {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: var(--radius-xs);
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--semantic-green);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+}
+
+.dcmp__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: #22c55e;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dcmp__cta:hover { opacity: 0.88; }
+
+@media (max-width: 767px) {
+  .dcmp__bar { flex-direction: column; align-items: stretch; }
+  .dcmp__select { max-width: none; flex: 1; }
+  .dcmp__go { width: 100%; }
+
+  /* Three columns on a phone: keep them, shrink the chrome */
+  .dcmp__heads, .dcmp__row { grid-template-columns: 1fr 1fr 1fr; padding: var(--space-3); gap: var(--space-2); }
+  .dcmp__area { flex-direction: column; gap: 2px; }
+  .dcmp__area-name { font-size: var(--text-sm); }
+  .dcmp__cell { font-size: var(--text-xs); overflow-wrap: anywhere; }
+  .dcmp__label { font-size: 8px; }
+  .dcmp__foot { flex-direction: column; align-items: stretch; text-align: center; }
+}

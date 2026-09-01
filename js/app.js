@@ -15,6 +15,7 @@ import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
 import { initRegionDrawer } from './regions.js';
 import { initFelicityBot } from './felicity-bot.js';
+import { initDubaiCompare } from './dubai-compare.js';
 import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
 import { startLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh } from './markets-live.js';
@@ -45,6 +46,7 @@ async function boot() {
   initMacro();
   initBroadcasts();
   initDubaiIntel();
+  initDubaiCompare();  // side-by-side registry comparison above the area grid
   initInvest();
   initSignals();
   initDesk();

@@ -14,6 +14,7 @@ import {
 } from './invest-profile.js';
 import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk } from './tv-widgets.js';
 import { hasFundamentals, loadFundamentals, exportBrief } from './equity-fundamentals.js';
+import { renderPortfolio } from './portfolio.js';
 import { escapeHtml, safeUrl } from './safe.js';
 
 let currentClass = 'all';
@@ -126,6 +127,7 @@ function renderShell() {
       <div class="invest-classes" id="invest-classes">${tabs}</div>
     </div>
     <div class="invest-views" id="invest-views">
+      <button class="invest-view-btn" data-view="portfolio">Portfolio</button>
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
@@ -177,6 +179,7 @@ function renderShell() {
     const v = b.dataset.view;
     if (v === 'screener') renderScreener();
     else if (v === 'backtest') renderBacktester();
+    else if (v === 'portfolio') renderPortfolioView();
     else showMarketView(v);
   });
 
@@ -824,6 +827,16 @@ function screenUniverse() {
     ? getWatchlist().map(s => findAsset(s)).filter(Boolean)
     : filtered();
   return { list: pool.slice(0, SCAN_CAP), total: pool.length };
+}
+
+function renderPortfolioView() {
+  const el = document.getElementById('invest-detail');
+  if (!el) return;
+  selected = null;
+  leaveMarketView();
+  document.querySelectorAll('.invest-row').forEach(r => r.classList.remove('is-active'));
+  renderPortfolio(el, selectAsset);
+  revealDetail();
 }
 
 function renderScreener() {
