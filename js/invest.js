@@ -70,6 +70,16 @@ function fmtPrice(v, cls) {
   return Number(v).toFixed(2);
 }
 
+// TradingView's advanced-chart embed does not license index and commodity
+// feeds (SP:SPX, DJ:DJI, TVC:GOLD…) — the iframe simply stays blank, the
+// same gap that emptied the Bond Desk's US group. Anything on those feeds
+// gets a chart drawn by us from real Yahoo daily closes instead. Stocks,
+// crypto and the bond ETFs stay on TradingView, whose exchange/COINBASE
+// feeds embed fine.
+function usesOwnChart(a) {
+  return isYield(a) || a.class === 'indices' || a.class === 'commodities';
+}
+
 // Bond yield instruments: value is a rate, daily move is basis points.
 function isYield(a) { return a && a.class === 'bonds' && a.kind === 'yield'; }
 
@@ -648,13 +658,18 @@ async function selectAsset(symbol) {
       </div>
     </div>` : ''}
 
-    ${isYield(asset) ? `
+    ${usesOwnChart(asset) ? `
     <div class="invest-chart">
       <div class="invest-chart__head">
-        <span class="invest-chart__label">Yield history — 1 year</span>
+        <span class="invest-chart__label">${isYield(asset) ? 'Yield history' : 'Price history'}</span>
+        <div class="ychart__ranges" id="invest-ychart-ranges">
+          <button class="ychart__range" data-range="6mo">6M</button>
+          <button class="ychart__range is-on" data-range="1y">1Y</button>
+          <button class="ychart__range" data-range="5y">5Y</button>
+        </div>
         <span class="invest-chart__src">Yahoo Finance</span>
       </div>
-      <div class="ychart" id="invest-ychart"><div class="tool__loading">Loading a year of daily closes…</div></div>
+      <div class="ychart" id="invest-ychart"><div class="tool__loading">Loading daily closes…</div></div>
     </div>` : `
     <div class="invest-chart">
       <div class="invest-chart__head">
@@ -689,8 +704,17 @@ async function selectAsset(symbol) {
     </div>
   `;
 
-  if (isYield(asset)) loadYieldChart(asset);
-  else mountChart(asset);
+  if (usesOwnChart(asset)) {
+    loadHistoryChart(asset, '1y');
+    document.getElementById('invest-ychart-ranges').addEventListener('click', e => {
+      const b = e.target.closest('.ychart__range');
+      if (!b) return;
+      document.querySelectorAll('.ychart__range').forEach(x => x.classList.toggle('is-on', x === b));
+      loadHistoryChart(asset, b.dataset.range);
+    });
+  } else {
+    mountChart(asset);
+  }
   loadQuote(asset);
   loadNews(asset);
   revealDetail();
@@ -730,37 +754,51 @@ async function selectAsset(symbol) {
   });
 }
 
-// TradingView's advanced-chart embed does not carry the US yield symbols
-// (same licensing gap as the desk widget), so yield instruments get a chart
-// drawn by us from a year of real Yahoo daily closes — nothing modelled.
-async function loadYieldChart(asset) {
+// Chart drawn by us from real Yahoo daily closes — used wherever the
+// TradingView embed cannot legally show the feed. Nothing is modelled:
+// the series is the data, thinned server-side, and the caption says so.
+let chartSeq = 0;
+
+async function loadHistoryChart(asset, range = '1y') {
+  const seq = ++chartSeq;
+  const host0 = document.getElementById('invest-ychart');
+  if (host0) host0.innerHTML = '<div class="tool__loading">Loading daily closes…</div>';
+
   try {
-    const r = await fetch(`/api/invest/candles?symbol=${encodeURIComponent(asset.symbol)}&range=1y`);
+    const r = await fetch(`/api/invest/candles?symbol=${encodeURIComponent(asset.symbol)}&range=${encodeURIComponent(range)}`);
     const d = await r.json();
     if (!d.ok || !Array.isArray(d.c) || d.c.length < 2) throw new Error(d.error || 'no history returned');
 
     const host = document.getElementById('invest-ychart');
-    if (!host || selected !== asset.symbol) return;   // navigated away mid-flight
+    // Navigated away, or a newer range click superseded this fetch
+    if (!host || selected !== asset.symbol || seq !== chartSeq) return;
 
+    const yieldMode = isYield(asset);
     const min = Math.min(...d.c), max = Math.max(...d.c);
     const first = d.c[0], last = d.c[d.c.length - 1];
-    const bp1y = (last - first) * 100;
     const W = 640, H = 160;
     const dt = ms => new Date(ms).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+    const fmtV = v => yieldMode ? `${v.toFixed(2)}%` : fmtPrice(v, asset.class);
+    const move = yieldMode
+      ? `${(last - first) * 100 >= 0 ? '+' : ''}${((last - first) * 100).toFixed(0)} bp over the period`
+      : `${fmtPct(first ? ((last - first) / first) * 100 : null)} over the period`;
 
     host.innerHTML = `
       <div class="ychart__meta">
         <span>${esc(dt(d.t[0]))} – ${esc(dt(d.t[d.t.length - 1]))}</span>
-        <span>high ${max.toFixed(2)}% · low ${min.toFixed(2)}%</span>
-        <span class="${bp1y >= 0 ? 'up' : 'dn'}">${bp1y >= 0 ? '+' : ''}${bp1y.toFixed(0)} bp over the year</span>
+        <span>high ${esc(fmtV(max))} · low ${esc(fmtV(min))}</span>
+        <span class="${last >= first ? 'up' : 'dn'}">${esc(move)}</span>
       </div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="One year of daily ${esc(asset.symbol)} closes">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Daily ${esc(asset.symbol)} closes">
         <path d="${pathFor(d.c, min, max, W, H)}" class="ychart__line" />
       </svg>
       <div class="ychart__src">${esc(d.source)} · ${d.points} daily closes · chart drawn from the data, not embedded</div>`;
   } catch (e) {
     const host = document.getElementById('invest-ychart');
-    if (host) host.innerHTML = `<div class="tool__fail">Yield history unavailable — ${esc(e.message)}</div>`;
+    if (host && selected === asset.symbol && seq === chartSeq) {
+      host.innerHTML = `<div class="tool__fail">History unavailable — ${esc(e.message)}</div>`;
+    }
   }
 }
 

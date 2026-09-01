@@ -1909,6 +1909,25 @@ body.tv-fullscreen-open { overflow: hidden; }
 .bonddesk__tv { flex: 1; min-height: 0; }
 .bonddesk__tv .tradingview-widget-container__widget { height: 100%; width: 100%; }
 
+/* Range buttons on self-drawn charts */
+.ychart__ranges { display: flex; gap: var(--space-1); }
+
+.ychart__range {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.ychart__range:hover { color: var(--text-secondary); }
+.ychart__range.is-on { color: var(--accent-primary); border-color: var(--border-accent); }
+
 /* ── Yield history chart (drawn by us — TradingView cannot embed US yields) ── */
 .ychart { padding: var(--space-4); }
 
