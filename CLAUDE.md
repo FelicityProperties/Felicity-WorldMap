@@ -195,6 +195,23 @@ from `/api/data`.
   every URL handed to `window.open()`. Both reject anything that is not
   http/https, so a `javascript:` link cannot execute.
 
+### TradingView embeds — what they can and cannot show
+
+TradingView's **advanced-chart and market-quotes embeds do not license
+index, commodity or US-yield feeds** (`SP:SPX`, `DJ:DJI`, `TVC:GOLD`,
+`TVC:USOIL`, `TVC:US10Y`…). The iframe renders but those symbols are
+silently dropped — an empty chart or an empty group header, with no error.
+This cost three separate bug reports before the pattern was clear.
+
+The rule: **exchange-listed equities (`NASDAQ:TLT`, bare US tickers),
+COINBASE crypto pairs and FX pairs embed fine; anything on TVC/SP/DJ
+feeds must be drawn by us** from the `candles` action on
+`api/invest/[action].js` (real Yahoo daily closes). `usesOwnChart()` in
+`js/invest.js` decides; the Bond Desk's US strip and every index,
+commodity and yield chart already follow it. The ticker-tape widget is
+the one exception — it does show TVC symbols. Never add a TVC/SP/DJ
+symbol to an advanced-chart or market-quotes embed.
+
 ### Backtesting — the honesty rules
 
 `/api/invest/backtest` is a historical simulation, and a simulation is
