@@ -256,27 +256,15 @@ export function toggleLayer(name, btn) {
 }
 
 // ── Animate Trackers ──
-export function animateTrackers() {
-  flights.forEach((f, i) => {
-    if (!fMarkers[i] || !layerState.flights) return;
-    const r = f.hdg * Math.PI / 180;
-    f.lat += Math.cos(r) * 0.025;
-    f.lng += Math.sin(r) * 0.04;
-    if (f.lat > 82) f.lat = 5;
-    if (f.lat < -55) f.lat = 5;
-    if (f.lng > 180) f.lng = -180;
-    if (f.lng < -180) f.lng = 180;
-    fMarkers[i].setLatLng([f.lat, f.lng]);
-  });
-
-  ships.forEach((s, i) => {
-    if (!sMarkers[i] || !layerState.ships) return;
-    s.lng += 0.005;
-    if (s.lng > 180) s.lng = -180;
-    sMarkers[i].setLatLng([s.lat, s.lng]);
-  });
-}
-
+// Flight and ship markers are a FIXED reference set of major air and sea
+// corridors — see `flights`/`ships` in js/data.js. There is no live ADS-B or
+// AIS feed behind them.
+//
+// This function used to drift every marker across the map on a timer
+// (`f.lat += cos(hdg) * 0.025`), which made a static dataset look like live
+// tracking. That is the same fabrication as the Math.random() ticker drift
+// removed earlier — it survived that purge only because it used arithmetic
+// rather than randomness. Positions now stand where the data puts them.
 // ── Status Updates ──
 function updateCountryCount() {
   const el = document.getElementById('ctrycount');

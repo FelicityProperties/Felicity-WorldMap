@@ -2,7 +2,7 @@
 // APP — Main Orchestration, Tab Routing, Init
 // ═══════════════════════════════════════════════════════
 
-import { initMap, renderDynLayers, animateTrackers, toggleLayer, setCountryClickHandler, getMap } from './map.js';
+import { initMap, renderDynLayers, toggleLayer, setCountryClickHandler, getMap } from './map.js';
 import { initSidebar, refreshCurrentTab, getCurrentTab } from './sidebar.js';
 import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
@@ -17,8 +17,8 @@ import { initRegionDrawer } from './regions.js';
 import { initFelicityBot } from './felicity-bot.js';
 import { initDubaiCompare } from './dubai-compare.js';
 import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
-import { startLiveNewsRefresh } from './news-live.js';
-import { startLiveMarketRefresh } from './markets-live.js';
+import { startLiveNewsRefresh, stopLiveNewsRefresh } from './news-live.js';
+import { startLiveMarketRefresh, stopLiveMarketRefresh } from './markets-live.js';
 import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 
@@ -66,14 +66,8 @@ async function boot() {
   // Expose buildTicker globally so sidebar refresh button can update it
   window.__rebuildTicker = buildTicker;
 
-  // Live market data (CoinGecko + Yahoo Finance) — refreshes every 60s
-  startLiveMarketRefresh(() => {
-    buildTicker();
-    if (getCurrentTab() === 'markets') refreshCurrentTab();
-  });
-
-  // Macro data fluctuation (slower)
-  setInterval(updateMacroData, 60000);
+  startPolling();
+  bindVisibilityPolling();
 
   // Nav tab routing
   initTabRouting();
@@ -87,20 +81,52 @@ async function boot() {
   // Sidebar toggle
   initSidebarToggle();
 
-  // Start live news refresh (RSS feeds) — updates sidebar + hero alert
+  // A 1.2s interval used to re-render the flights/ships panel forever. It
+  // existed to keep pace with markers that were being animated; now that the
+  // corridor set is correctly static, it re-rendered identical HTML about
+  // 3,000 times an hour for no visible change. Removed.
+}
+
+// ── Polling, paused while the tab is hidden ──
+//
+// Markets (60s), news (3min) and the macro cards (60s) used to poll forever,
+// including in a background tab: roughly 200 upstream calls an hour from a
+// tab nobody is looking at, spending the free-tier quotas that serve real
+// visitors. They now stop when the page is hidden and refresh immediately on
+// return, so coming back shows fresh data rather than a stale value and a
+// wait. `startPolling` stops first, so it can never leave a timer orphaned.
+let macroTimer = null;
+
+function startPolling() {
+  stopPolling();
+
+  startLiveMarketRefresh(() => {
+    buildTicker();
+    if (getCurrentTab() === 'markets') refreshCurrentTab();
+  });
+
   startLiveNewsRefresh(() => {
     if (getCurrentTab() === 'news') refreshCurrentTab();
     refreshAlertBanner();
   });
 
-  // Animate trackers continuously + auto-refresh sidebar if viewing flights/ships
-  setInterval(() => {
-    animateTrackers();
-    const tab = getCurrentTab();
-    if (tab === 'flights' || tab === 'ships') {
-      refreshCurrentTab();
-    }
-  }, 1200);
+  updateMacroData();
+  macroTimer = setInterval(updateMacroData, 60000);
+}
+
+function stopPolling() {
+  stopLiveMarketRefresh();
+  stopLiveNewsRefresh();
+  if (macroTimer) { clearInterval(macroTimer); macroTimer = null; }
+}
+
+// Bound inside boot(), not at module scope: a module that touches `document`
+// on import cannot be loaded outside a browser.
+function bindVisibilityPolling() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopPolling();
+    else startPolling();
+  });
 }
 
 // ── Tab Routing ──

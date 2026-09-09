@@ -107,6 +107,28 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   it is stale. Nothing is invented to fill the gap.
 - `Math.random()` in display code is a red flag. The only legitimate use in
   this repo is the cache-buster in `js/news-live.js`.
+- **Randomness is not the only way to fabricate.** `animateTrackers()` in
+  `js/map.js` drifted every flight and ship marker across the globe on a
+  1.2s timer (`f.lat += cos(hdg) * 0.025`) over a hardcoded corridor set in
+  `js/data.js`. It survived the `Math.random()` purge purely because it used
+  arithmetic instead. Deterministic drift is the same lie. Removed.
+- Flights and ships are a **fixed reference set of major air and sea
+  corridors** — there is no ADS-B or AIS feed. Their panels carry a
+  `REFERENCE` badge saying so, never a live dot, no ticking clock, and no
+  Refresh button (refreshing static data is theatre). Do not re-add any of
+  those three.
+
+### Polling stops when nobody is looking
+
+Markets (60s), news (3min) and the macro cards (60s) once polled forever,
+including in a background tab — roughly 200 upstream calls an hour from a
+tab nobody is watching, spending the free-tier quotas that serve real
+visitors. `startPolling`/`stopPolling` in `js/app.js` are driven by
+`visibilitychange`: hidden stops every loop, visible restarts them with an
+immediate fetch so returning shows fresh data rather than a stale value and
+a wait. `startPolling` calls `stopPolling` first, so a timer can never be
+orphaned. Any new recurring fetch belongs in that pair, not in a bare
+`setInterval`.
 
 ### Felicity Bot is reachable everywhere
 

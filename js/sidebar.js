@@ -85,18 +85,8 @@ export function initSidebar() {
     }
 
     // Flights refresh button
-    const flightsRefresh = e.target.closest('#flights-refresh-btn');
-    if (flightsRefresh) {
-      content.innerHTML = renderFlights();
-      return;
-    }
 
     // Ships refresh button
-    const shipsRefresh = e.target.closest('#ships-refresh-btn');
-    if (shipsRefresh) {
-      content.innerHTML = renderShips();
-      return;
-    }
 
     // RE Signals refresh button
     const signalsRefresh = e.target.closest('#signals-refresh-btn');
@@ -241,17 +231,19 @@ function renderMarkets() {
 }
 
 // ── Flights ──
+// Flights and ships are a fixed reference set of major corridors, NOT a live
+// feed. The header used to carry a pulsing "TRACKING" dot, a ticking clock
+// and a Refresh button — three separate signals of live data over a hardcoded
+// list. It says what it is now.
 function renderFlights() {
-  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const mil = flights.filter(f => f.type === 'mil').length;
   const com = flights.length - mil;
 
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>TRACKING</span> ${com} commercial \u00b7 ${mil} military \u00b7 ${ts}
+        <span class="news-header__ref">REFERENCE</span> ${com} commercial \u00b7 ${mil} military \u2014 major air corridors, not a live ADS-B feed
       </div>
-      <button class="news-refresh-btn" id="flights-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
@@ -279,7 +271,6 @@ function renderFlights() {
 
 // ── Ships ──
 function renderShips() {
-  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const tankers = ships.filter(s => s.type === 'tanker').length;
   const dark = ships.filter(s => s.type === 'dark').length;
   const cargo = ships.length - tankers - dark;
@@ -287,9 +278,8 @@ function renderShips() {
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>TRACKING</span> ${cargo} cargo \u00b7 ${tankers} tanker${tankers !== 1 ? 's' : ''} \u00b7 ${dark} dark \u00b7 ${ts}
+        <span class="news-header__ref">REFERENCE</span> ${cargo} cargo \u00b7 ${tankers} tanker${tankers !== 1 ? 's' : ''} \u00b7 ${dark} dark \u2014 major sea lanes, not a live AIS feed
       </div>
-      <button class="news-refresh-btn" id="ships-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
