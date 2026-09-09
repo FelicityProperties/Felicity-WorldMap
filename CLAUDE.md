@@ -197,20 +197,33 @@ from `/api/data`.
 
 ### TradingView embeds — what they can and cannot show
 
-TradingView's **advanced-chart and market-quotes embeds do not license
-index, commodity or US-yield feeds** (`SP:SPX`, `DJ:DJI`, `TVC:GOLD`,
-`TVC:USOIL`, `TVC:US10Y`…). The iframe renders but those symbols are
-silently dropped — an empty chart or an empty group header, with no error.
-This cost three separate bug reports before the pattern was clear.
+TradingView's **advanced-chart and market-quotes embeds silently drop the
+US index, commodity and Treasury-yield feeds** — `SP:SPX`, `DJ:DJI`,
+`TVC:GOLD`, `TVC:USOIL`, `TVC:US02Y`, `TVC:US10Y` and friends. The iframe
+renders, the symbol is dropped, and there is no error: an empty chart, or a
+group header with nothing under it. This cost three separate bug reports
+before the pattern was clear.
 
-The rule: **exchange-listed equities (`NASDAQ:TLT`, bare US tickers),
-COINBASE crypto pairs and FX pairs embed fine; anything on TVC/SP/DJ
-feeds must be drawn by us** from the `candles` action on
-`api/invest/[action].js` (real Yahoo daily closes). `usesOwnChart()` in
-`js/invest.js` decides; the Bond Desk's US strip and every index,
-commodity and yield chart already follow it. The ticker-tape widget is
-the one exception — it does show TVC symbols. Never add a TVC/SP/DJ
-symbol to an advanced-chart or market-quotes embed.
+**The restriction is on the US market data, not on the `TVC:` prefix.** The
+same widget renders `TVC:JP10Y`, `TVC:CN10Y`, `TVC:KR10Y`, `TVC:IN10Y`,
+`TVC:SG10Y`, `TVC:ID10Y` and `TVC:AU10Y` perfectly — that was observed
+directly: the Bond Desk's Japan group streamed while its US group sat
+empty, in the same widget, in the same screenshot. Do not "fix" the Asian
+rows by removing them; they work.
+
+What this means in practice:
+
+- **Embeds fine:** exchange-listed equities (`NASDAQ:TLT`, bare US
+  tickers), COINBASE crypto pairs, FX pairs, and non-US sovereign yields.
+- **Must be drawn by us:** US indices, US commodities, US Treasury yields.
+  `usesOwnChart()` in `js/invest.js` is the gate, fed by the `candles`
+  action on `api/invest/[action].js` (real Yahoo daily closes). The Bond
+  Desk's US strip does the same through its own quote cards.
+- The **ticker-tape** widget is unaffected and does show US TVC symbols.
+
+Before adding any symbol to an advanced-chart or market-quotes embed, check
+it against this list — and if it is a US index, commodity or yield, route it
+through `usesOwnChart()` instead.
 
 ### Backtesting — the honesty rules
 
