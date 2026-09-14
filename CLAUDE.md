@@ -145,7 +145,9 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   corridors** — there is no ADS-B or AIS feed. Their panels carry a
   `REFERENCE` badge saying so, never a live dot, no ticking clock, and no
   Refresh button (refreshing static data is theatre). Do not re-add any of
-  those three.
+  those three. The sidebar's RE Signals tab follows the same rule: it is a
+  dated snapshot of `pix-signals.js`, so it carries a plain `DLD` badge
+  with the detection date — no pulse, no Refresh.
 
 ### Polling stops when nobody is looking
 

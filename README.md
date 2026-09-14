@@ -43,8 +43,9 @@ in the window (currently Jumeirah, DIFC, Dubai Islands).
 
 **Refreshing:** the snapshot is manual and dated. DLD data closes by calendar
 month, so monthly is the natural cadence — ask Claude to "refresh the PIX
-data" and it will re-query PropertyIndex and regenerate `js/pix-data.js`.
-Update `PIX_AS_OF` and `PIX_WINDOW` when you do.
+data" and it will re-query PropertyIndex and regenerate `js/pix-data.js`
+and `js/pix-signals.js`. Update `PIX_AS_OF`, `PIX_WINDOW` and
+`PIX_SIGNALS_AS_OF` when you do.
 
 ## Investing Cockpit (Invest tab)
 

@@ -88,13 +88,6 @@ export function initSidebar() {
 
     // Ships refresh button
 
-    // RE Signals refresh button
-    const signalsRefresh = e.target.closest('#signals-refresh-btn');
-    if (signalsRefresh) {
-      content.innerHTML = renderSignals();
-      return;
-    }
-
     // News card click
     const card = e.target.closest('[data-news-idx]');
     if (!card) return;
@@ -309,6 +302,8 @@ function renderShips() {
 }
 
 // ── Dubai RE Signals — real PIX signals from the DLD register ──
+// A dated snapshot refreshed weekly, not a streaming feed: no pulsing
+// live dot and no Refresh button, the same rule as flights and ships.
 function renderSignals() {
   const up = pixSignals.filter(s => s.direction === 1).length;
   const dn = pixSignals.filter(s => s.direction === -1).length;
@@ -316,9 +311,8 @@ function renderSignals() {
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>DLD</span> ${up} rising \u00b7 ${dn} falling \u00b7 to ${PIX_SIGNALS_AS_OF}
+        <span class="news-header__ref">DLD</span> ${up} rising \u00b7 ${dn} falling \u00b7 detected through ${PIX_SIGNALS_AS_OF}
       </div>
-      <button class="news-refresh-btn" id="signals-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
