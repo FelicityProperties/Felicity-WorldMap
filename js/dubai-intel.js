@@ -136,7 +136,7 @@ function pixEvidenceHtml(areaName) {
   return `
     <div class="pix-evidence">
       <span class="pix-evidence__badge">DLD L12M</span>
-      <span class="pix-evidence__stats">${fmtCount(p.sales)} sales · ${fmtAedBillions(p.valueAed)} · ${fmtCount(p.rentals)} rentals${scope}</span>
+      <span class="pix-evidence__stats">${fmtCount(p.sales)} ${p.cohort.toLowerCase()} sales · ${fmtAedBillions(p.valueAed)} · ${fmtCount(p.rentals)} rentals${scope}</span>
       <a class="pix-evidence__link" href="${safeUrl(p.url)}" target="_blank" rel="noopener" title="Registered activity ${PIX_WINDOW} — ${PIX_SOURCE}">↗</a>
     </div>${note}`;
 }

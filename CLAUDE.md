@@ -59,6 +59,35 @@ When the user says "refresh the PIX data":
 6. Rewrite `js/pix-data.js` and `js/pix-signals.js`, bump the AS_OF constants.
 7. Verify, commit, push to `main` (Vercel auto-deploys).
 
+Things the Sep 2026 refresh learned, so the next one does not relearn them:
+
+- **Sales are windowed on `sale_date`; rentals on `registration_date`.**
+  Using one for the other is rejected by the catalog.
+- **Re-pull the whole 13-month series.** PropertyIndex restates history
+  as late registrations land (Dec 2025 went from 223.2 to 219.2 between
+  refreshes). Never append the new month to the old series.
+- **Master-community boundaries move.** Expo City, Dubai Islands, MBR
+  City and Meydan were once sub-scopes of other communities; they are
+  now their own DLD communities. Confirm every `scope` label against the
+  `projects` entity (`location_kind eq community`) and use the canonical
+  `/dubai/<slug>` URLs it returns.
+- **DIFC has no DLD coverage** (it runs its own register). It is left
+  out of `pixAreas` on purpose so the card shows an `est` desk figure
+  instead of a registry number that does not exist.
+- **Jumeirah's apartment yield is not a yield.** Its apartment sales are
+  brand-new ultra-prime stock and its apartment tenancies are old
+  low-rise units, so the cohort-matched division yields ~1.6% and means
+  nothing. The villa cohort is shown instead, with a note saying why.
+- **The signal engine has more types than the four we started with.**
+  `momentum` (3-month sales velocity), `psf_move` and `below_trend` now
+  dominate the feed; `community_spotlight`, `daily_digest` and
+  `pix_print` are summaries, not events, and are not shown. Each type
+  has its own `value`/`baseline`/`magnitude` semantics — the header of
+  `pix-signals.js` spells them out; read it before adding a type.
+  Magnitudes arrive as fractions (0.3012) and are stored as percent.
+- **Momentum flags parent projects and their buildings separately.**
+  Keep the parent only, or the same registrations count twice.
+
 ### What is still a desk opinion (and must stay labeled)
 
 `dubaiAreas` in `js/data.js` carries `sentiment`, `priceDirection`,
