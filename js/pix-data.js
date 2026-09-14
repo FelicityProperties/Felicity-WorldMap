@@ -230,6 +230,18 @@ export function buildDeskContext() {
     })
     .join('\n');
 
+  // Rankings are computed here so "highest" and "lowest" are never a guess.
+  // A model reading nineteen rows once called Dubai South's 4.8% the highest
+  // villa yield in the register; JVC's 5.2% was two lines up.
+  const rank = pick => Object.entries(pixAreas)
+    .map(([name, p]) => [name, pick(p)])
+    .filter(([, y]) => y != null)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, y]) => `${name} ${y.toFixed(1)}%`)
+    .join(' > ');
+  const aptRank = rank(p => p.cohort === 'Apartment' ? p.yieldPct : null);
+  const villaRank = rank(p => p.villa ? p.villa.yieldPct : (p.cohort === 'Villa' ? p.yieldPct : null));
+
   return `LIVE MARKET EVIDENCE — PIX index + Dubai Land Department registry via PropertyIndex.
 Index as of ${PIX_AS_OF}; area medians from registered transactions ${PIX_WINDOW}. Anchor every call to these numbers and cite them.
 
@@ -242,8 +254,13 @@ MARKET STATE (base Jan 2012 = 100):
 AREA REGISTRY MEDIANS (apartment cohort unless noted; gross yield = registered rent PSF / registered sale PSF, excludes service charges and voids):
 ${rows}
 
+YIELD RANKINGS (use these before calling anything "highest" or "lowest" — do not rank by eye):
+- Apartments: ${aptRank}
+- Villas: ${villaRank}
+
 Rules for using this evidence:
 - The market is CORRECTING, not uniformly bullish. Never describe it as broadly rising.
+- Historical analogs: you may describe how a prior Dubai cycle behaved in words, but you may not attach a percentage, AED figure or date to it unless that figure appears in this evidence. The 13-month index path above is the only price history you have. Never write "last time X happened, Y fell Z%" with an invented Z.
 - Yields and prices above are registered medians, not projections for a specific unit. Say so when it matters.
 - Highest registry apartment yields sit in MBR City (6.5%), Meydan (6.3%), JVC (6.1%), Dubai Hills, DAMAC Hills (5.9%), JLT and Town Square (5.8%); the prime waterfront (Palm Jumeirah 3.4%, Emaar Beachfront/Dubai Harbour 4.3%, Expo City 4.3%) trades yield for capital value. Villa yields run 2.7% (Palm) to 5.2% (JVC).
 - Where yield is 'n/a' there were too few registered rentals in the window — do not invent one.

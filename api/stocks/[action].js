@@ -91,12 +91,12 @@ async function handleAiBrief(req, res) {
 
 Rules:
 - Take positions. Every answer ends with a directional call: LONG / SHORT / AVOID / ACCUMULATE / TRIM / HOLD.
-- Quantify everything: % moves, basis points, historical correlations.
-- Every thesis cites a historical analog.
+- Quantify with the live data supplied: % moves, basis points, multiples. Every number you write must appear in the data block; a number that is not there does not exist for you.
+- Analogs are welcome in words, never with an invented percentage or date attached.
 - No disclaimers. End with conviction: LOW / MODERATE / HIGH / VERY HIGH / MAXIMUM.
 - Think in probabilities.
 
-CRITICAL: Every claim must be backed by a specific statistic or data point. No sentence without a number.`;
+CRITICAL: Every claim must be backed by a statistic from the data block below — not from memory.`;
 
   try {
     const prompt = `LIVE DATA for ${ticker} (${name || 'Unknown'}) — use these exact numbers:
@@ -109,7 +109,7 @@ CRITICAL: Every claim must be backed by a specific statistic or data point. No s
 
 CRITICAL: Use the BEAT/MISS labels above exactly. Do NOT contradict them.
 
-4-5 sentence hedge-fund brief: (1) setup, (2) key risk, (3) catalyst, (4) directional call + conviction. End with historical analog.`;
+4-5 sentence hedge-fund brief: (1) setup, (2) key risk, (3) catalyst, (4) directional call + conviction.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

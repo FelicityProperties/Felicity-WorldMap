@@ -1,4 +1,13 @@
 // Vercel Serverless Function — AI country intelligence brief via Claude
+//
+// No country data feed exists here — no GDP, inflation, ratings or flows
+// are fetched — so the prompt must not demand "exact figures"; that only
+// produces confident numbers from memory. The country read is a labelled
+// desk assessment. The Dubai side, by contrast, is real: the PIX evidence
+// blocks are injected so any area figure comes from the register.
+
+import { buildDeskContext } from '../js/pix-data.js';
+import { buildSignalContext } from '../js/pix-signals.js';
 
 // ── Rate Limiting (in-memory, resets on cold start) ──
 const rateLimit = {};
@@ -31,29 +40,30 @@ export default async function handler(req, res) {
     return res.status(200).json({ intel: 'AI intelligence requires ANTHROPIC_API_KEY. Set it in Vercel environment variables.' });
   }
 
-  const { country, score, region } = req.body || {};
-  if (!country) return res.status(400).json({ intel: 'Missing country parameter.' });
+  const body = req.body || {};
+  if (!body.country) return res.status(400).json({ intel: 'Missing country parameter.' });
+  // Client-supplied, and now interpolated into the system prompt — bound it.
+  const country = String(body.country).replace(/[\r\n]/g, ' ').slice(0, 80);
+  const score = body.score, region = body.region;
 
   const systemPrompt = `You are the senior geopolitical analyst at Felicity Intelligence. Your clients are Dubai real estate investors with AED 5M-500M portfolios tracking how global events impact Dubai property markets.
 
 Rules:
-- Quantify everything: % moves, capital flows in AED/USD billions, basis points.
-- Name specific Dubai areas and developers when relevant to capital flow implications.
-- Every thesis cites a historical analog: 'Last time X happened, Y moved Z%'.
+- Name specific Dubai areas and developers when relevant to capital flow implications, and quote Dubai figures ONLY from the registry evidence below. An area with no evidence gets no number.
 - Embrace second-order effects. The obvious impact is already priced.
 - No disclaimers, no 'investors should consider', no 'it depends'.
 - Think in probabilities when assessing risk scenarios.
 - Tone: Crisp, analytical, institutional-grade. No preamble.
 
-CRITICAL RULES — FACTS AND STATS ONLY:
-- Every claim must cite a specific statistic, data point, or verifiable fact.
-- Use exact numbers: GDP growth %, inflation rate, debt-to-GDP ratio, FDI inflows in USD, trade balance, sovereign credit rating (Moody's/S&P/Fitch), UN Human Development Index rank.
-- Reference official sources: World Bank, IMF, UN, CIA World Factbook, sovereign ratings agencies, central bank data.
-- Population, GDP per capita, Gini coefficient, unemployment rate — use the latest available figures.
-- For Dubai RE implications: cite actual transaction volumes (DLD data), price per sqft trends, nationality-wise buyer breakdowns, visa policy specifics.
-- Historical analogs must reference specific dates, % moves, and dollar amounts.
-- No opinions without supporting data. No vague language. Every sentence must contain at least one specific number or fact.
-- Tone: Bloomberg terminal analyst meets hedge fund research. Dense with data. Zero filler.`;
+WHAT YOU DO AND DO NOT HAVE:
+- You have NO live data feed for ${country}: no GDP, inflation, ratings, FDI, trade or population figures were supplied. Do not state any such statistic as a current fact — describe the situation and its direction in words, and mark the country read as the desk's assessment.
+- Analogs are welcome in words, never with an invented percentage, dollar amount or date attached.
+- The only numbers you may write are the Dubai registry figures in the evidence below. Cite them exactly.
+- Every other sentence carries a mechanism, not a made-up number.
+
+${buildDeskContext()}
+
+${buildSignalContext()}`;
 
   try {
     const prompt = `Geopolitical intelligence brief on ${country} (CII Score: ${score || 'N/A'}/10, Region: ${region || 'Unknown'}):

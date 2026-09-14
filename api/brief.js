@@ -14,27 +14,36 @@
 import { buildDeskContext } from '../js/pix-data.js';
 import { buildSignalContext } from '../js/pix-signals.js';
 import { dbRecipients, resolveAudience, sendIndividually, unsubUrl, fromAddress } from '../lib/subscribers.js';
+import { fetchMacroEvidence, renderMacroEvidence } from '../lib/market-evidence.js';
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
-const BRIEF_SYSTEM_PROMPT = `You are the senior macro strategist at Felicity Intelligence writing the twice-weekly intelligence brief for Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
+// Built per run, not at import: the macro block is fetched live each time
+// the brief is written, so the "global macro" section is a read of real
+// levels and headlines rather than the model's memory of the world.
+function buildSystemPrompt(macroBlock) {
+  return `You are the senior macro strategist at Felicity Intelligence writing the twice-weekly intelligence brief for Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
 
 Rules:
-- Quantify everything: % moves, AED billion flows, basis points, historical correlations.
-- Name specific Dubai areas (Palm Jumeirah, Downtown, Marina, Creek Harbour, JVC, Dubai Hills, Dubai South, Emaar Beachfront, Meydan, Arjan, JLT, Business Bay, MBR City) and developers (Emaar, DAMAC, Nakheel, Sobha, Binghatti, Aldar, Meraas). Only quote figures that appear in the evidence below; an area with no registry evidence gets no number.
-- Every thesis cites a historical analog: 'Last time X happened, Y moved Z%'.
+- Quantify with the evidence: % moves, AED billion flows, basis points — every number you write must appear in the evidence blocks below. A number that is not there does not exist for you.
+- Name specific Dubai areas (Palm Jumeirah, Downtown, Marina, Creek Harbour, JVC, Dubai Hills, Dubai South, Emaar Beachfront, Meydan, Arjan, JLT, Business Bay, MBR City) and developers (Emaar, DAMAC, Nakheel, Sobha, Binghatti, Aldar, Meraas). An area with no registry evidence gets no number.
+- Analogs are welcome in words ("the last time bulk off-plan registrations swamped a district, secondary sellers followed"), but never with an invented percentage, AED figure or date attached.
+- Before you call anything the highest, lowest, best or worst, check the rankings supplied — do not rank by eye.
 - End calls with conviction: LOW / MODERATE / HIGH / VERY HIGH / MAXIMUM.
 - No disclaimers, no 'investors should consider', no 'consult advisor'.
 - Tone: PM note to his book. Dense with data. Zero filler.
 
+${macroBlock}
+
 ${buildDeskContext()}
 
 ${buildSignalContext()}`;
+}
 
 function buildBriefPrompt() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   return `Write today's (${today}) Felicity Intelligence brief with these four sections:
-1. MACRO PULSE — 3 key global macro events this week and their Dubai RE transmission
+1. MACRO PULSE — the 3 global macro levels or headlines from the evidence that matter most for Dubai RE this week, and their transmission. Cite the level. If the evidence is thin, say the desk has a thin macro read rather than inventing one.
 2. CONVICTION CALLS — 2-3 positioned views on specific Dubai areas with entry logic
 3. SIGNAL CHAIN — one global event → step-by-step chain → specific Dubai opportunity
 4. THE DESK'S PICK — one high-conviction trade with conviction level
@@ -44,30 +53,33 @@ Return ONLY valid JSON, no code fences, in exactly this shape:
 }
 
 async function generateBrief(apiKey) {
+  const macro = await fetchMacroEvidence({ finnhubKey: process.env.FINNHUB_API_KEY, timeoutMs: 6000 });
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-opus-4-8',
       max_tokens: 3000,
-      system: BRIEF_SYSTEM_PROMPT,
+      system: buildSystemPrompt(renderMacroEvidence(macro)),
       messages: [{ role: 'user', content: buildBriefPrompt() }],
     }),
   });
   if (!response.ok) throw new Error(`Anthropic ${response.status}: ${(await response.text()).slice(0, 200)}`);
   const data = await response.json();
   const text = data.content?.[0]?.text || '';
+  const macroLive = macro.levels.filter(l => l.ok).length;
 
   // Parse the JSON body; tolerate stray prose/fences around it.
   try {
     const jsonStr = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
     const parsed = JSON.parse(jsonStr);
-    if (parsed.subject && Array.isArray(parsed.sections)) return parsed;
+    if (parsed.subject && Array.isArray(parsed.sections)) return { ...parsed, macroLive, macroTotal: macro.levels.length };
   } catch (e) { /* fall through */ }
 
   return {
     subject: `Felicity Intelligence Brief — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
     sections: [{ title: 'THE BRIEF', html: `<p>${text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>` }],
+    macroLive, macroTotal: macro.levels.length,
   };
 }
 
@@ -154,7 +166,11 @@ export default async function handler(req, res) {
         }),
       });
       const sendData = await sendRes.json();
-      return res.status(200).json({ ok: sendRes.ok, mode: 'test', to: ownerEmail, subject: brief.subject, resend: sendData });
+      return res.status(200).json({
+        ok: sendRes.ok, mode: 'test', to: ownerEmail, subject: brief.subject,
+        macroEvidence: `${brief.macroLive}/${brief.macroTotal} benchmarks live`,
+        resend: sendData,
+      });
     }
 
     // Real run. Two ways to reach the list, and the right one depends on what

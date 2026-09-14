@@ -88,6 +88,51 @@ Things the Sep 2026 refresh learned, so the next one does not relearn them:
 - **Momentum flags parent projects and their buildings separately.**
   Keep the parent only, or the same registrations count twice.
 
+### The AI is only allowed numbers it was handed
+
+The first August test brief was audited line by line against the evidence.
+Every registry figure was right. Three things were not, and all three were
+the prompt's fault, not the model's:
+
+1. **The macro section was written from memory.** "Fed on hold, dollar
+   funding sticky, oil range-bound" — no level, date or headline had been
+   supplied, so the model narrated the world it remembered. Now
+   `lib/market-evidence.js` fetches nine benchmarks (DXY, VIX, US 10Y and
+   3M, S&P 500, Brent, WTI, gold, BTC) from Yahoo plus Finnhub general
+   headlines, and the block is injected into **both** `api/brief.js` (fresh
+   per run) and `api/desk/ask.js` (5-minute cache). A benchmark that fails
+   is listed as *unavailable* with an instruction to say nothing about it;
+   the brief's test response reports `macroEvidence: "9/9 benchmarks live"`
+   so an outage is visible, not papered over.
+2. **The prompts demanded invented history.** "Every thesis cites a
+   historical analog: 'Last time X happened, Y moved Z%'" produced "fell
+   another 12-18% before basing" and "repriced +30-40%" — numbers from
+   nowhere, in an email to paying subscribers. That line is gone from
+   `brief.js`, `desk/ask.js`, `intel.js` and `stocks/[action].js`. Analogs
+   are allowed in words; a percentage, AED figure or date may only be
+   attached if it appears in the evidence. `api/intel.js` was worse — it
+   told the model to "use exact numbers: GDP growth %, inflation rate,
+   debt-to-GDP" with no data feed at all, and to "cite actual DLD
+   transaction volumes" with no DLD evidence injected. It now says plainly
+   that no country feed exists, and carries the PIX blocks for the Dubai
+   side.
+3. **It ranked by eye.** It called Dubai South's 4.8% "the highest villa
+   yield in our entire register"; JVC's 5.2% was two lines up. Ranking is a
+   computation, so `buildDeskContext()` now computes and prints the
+   apartment and villa yield rankings, and the prompts say to use them
+   before writing "highest" or "lowest".
+
+The pattern to keep: **fetch the evidence first, hand the model only that,
+and tell it a number that is not in the block does not exist.** When a
+prompt says "quantify everything", the evidence must contain everything it
+could quantify — otherwise "quantify" means "invent".
+
+To audit a test brief: trigger `/api/brief?test=1`, read the email that
+lands (Gmail is connected), and check every number against
+`buildDeskContext()`, `buildSignalContext()` and the macro block. The
+scratchpad harness `brief-test.mjs` covers the code path with stubbed
+upstreams; only a real send covers the model.
+
 ### What is still a desk opinion (and must stay labeled)
 
 `dubaiAreas` in `js/data.js` carries `sentiment`, `priceDirection`,
