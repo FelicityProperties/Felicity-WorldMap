@@ -122,6 +122,20 @@ the prompt's fault, not the model's:
    apartment and villa yield rankings, and the prompts say to use them
    before writing "highest" or "lowest".
 
+Two more lessons from the second and third test briefs:
+
+- **Fetch shape is part of correctness.** The first macro block fired nine
+  per-symbol Yahoo requests at once and got one back ("1/9 benchmarks
+  live"). `api/markets.js` had already learned this: one batch quote
+  request, then a throttled per-symbol fallback only for misses, one retry
+  on a 429. `lib/market-evidence.js` now does the same, and the test
+  response lists `macroMissing` with each failure's reason so the next
+  outage is diagnosed from the response, not inferred.
+- **Units travel with the number.** With the full block in hand the model
+  wrote "Brent AED 109.61/bbl" (the prompt talks AED everywhere else) and
+  "10Y +3.52% on the day" (a percentage of a percentage). Each level is now
+  rendered as `USD 109.61 per barrel`, and yield moves in basis points.
+
 The pattern to keep: **fetch the evidence first, hand the model only that,
 and tell it a number that is not in the block does not exist.** When a
 prompt says "quantify everything", the evidence must contain everything it
