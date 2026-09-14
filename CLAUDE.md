@@ -156,6 +156,22 @@ They are fine to keep — an intelligence product is allowed a view — but they
 must never be presented as measured evidence, and any numeric field that PIX
 can source should be migrated to PIX.
 
+**A desk opinion may not contain a number the register does not hold.**
+`js/prompts.js` once rendered the Overview's Active Calls with "JVC yield
+7.2% vs prime 4.8%" (register: 6.1% and 3.4%), "DIFC rents up 18% YoY"
+(no DIFC rents exist), and a Historical Playbook of "Prime +42% in 18
+months"-style figures nobody could source. Now every number in a call is
+read from `pixAreas` / `pixIndex` / `pixSignals` at load time and carries
+a `reg` marker, the section subtitle says which parts are opinion, and
+the playbook carries **directions only** — "prime fell hard; recovery
+took years" — because no registered series exists for those years. The
+scratchpad `desk-view-test.mjs` asserts every number in a call appears in
+the registry files and that the playbook holds no percentage at all.
+
+`server.js` (the local dev host) used to carry its own copies of the
+intel and stock-brief prompts, which drifted from `api/`. It now mounts
+every `api/**/*.js` at its Vercel route and owns no prompt.
+
 ### Global markets (the Investing Cockpit)
 
 The same integrity rule applies outside Dubai. Every price and headline in

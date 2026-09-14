@@ -19,7 +19,7 @@ import { initDubaiCompare } from './dubai-compare.js';
 import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
 import { startLiveNewsRefresh, stopLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh, stopLiveMarketRefresh } from './markets-live.js';
-import { DESK_CALLS, HISTORICAL_ANALOGS, renderConvictionBadge, extractConviction } from './prompts.js';
+import { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 
 // ── State ──
@@ -383,6 +383,10 @@ function initDeskCalls() {
   const grid = document.getElementById('desk-calls-grid');
   if (!grid) return;
 
+  // The subtitle states what is registry and what is opinion
+  const sub = grid.closest('section')?.querySelector('.section__header p');
+  if (sub) sub.textContent = DESK_CALLS_NOTE;
+
   grid.innerHTML = DESK_CALLS.map(c => {
     const callClass = c.call.toLowerCase();
     const dots = Array.from({length: 5}, (_, i) =>
@@ -414,6 +418,9 @@ function initDeskCalls() {
 function initPlaybook() {
   const el = document.getElementById('desk-playbook');
   if (!el) return;
+
+  const sub = el.closest('section')?.querySelector('.section__header p');
+  if (sub) sub.textContent = PLAYBOOK_NOTE;
 
   el.innerHTML = HISTORICAL_ANALOGS.map(a => `
     <div class="desk-playbook__item">
