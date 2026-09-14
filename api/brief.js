@@ -14,7 +14,7 @@
 import { buildDeskContext } from '../js/pix-data.js';
 import { buildSignalContext } from '../js/pix-signals.js';
 import { dbRecipients, resolveAudience, sendIndividually, unsubUrl, fromAddress } from '../lib/subscribers.js';
-import { fetchMacroEvidence, renderMacroEvidence } from '../lib/market-evidence.js';
+import { fetchMacroEvidence, renderMacroEvidence, macroMisses } from '../lib/market-evidence.js';
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
@@ -67,19 +67,23 @@ async function generateBrief(apiKey) {
   if (!response.ok) throw new Error(`Anthropic ${response.status}: ${(await response.text()).slice(0, 200)}`);
   const data = await response.json();
   const text = data.content?.[0]?.text || '';
+  // Coverage travels with the brief so a thin read is reported, not hidden.
   const macroLive = macro.levels.filter(l => l.ok).length;
+  const macroMissing = macroMisses(macro);
+  if (macroMissing.length) console.warn('[brief] macro benchmarks missing:', macroMissing.join('; '));
+  const meta = { macroLive, macroTotal: macro.levels.length, macroMissing, headlines: macro.news.items.length };
 
   // Parse the JSON body; tolerate stray prose/fences around it.
   try {
     const jsonStr = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
     const parsed = JSON.parse(jsonStr);
-    if (parsed.subject && Array.isArray(parsed.sections)) return { ...parsed, macroLive, macroTotal: macro.levels.length };
+    if (parsed.subject && Array.isArray(parsed.sections)) return { ...parsed, ...meta };
   } catch (e) { /* fall through */ }
 
   return {
     subject: `Felicity Intelligence Brief — ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
     sections: [{ title: 'THE BRIEF', html: `<p>${text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>` }],
-    macroLive, macroTotal: macro.levels.length,
+    ...meta,
   };
 }
 
@@ -168,7 +172,8 @@ export default async function handler(req, res) {
       const sendData = await sendRes.json();
       return res.status(200).json({
         ok: sendRes.ok, mode: 'test', to: ownerEmail, subject: brief.subject,
-        macroEvidence: `${brief.macroLive}/${brief.macroTotal} benchmarks live`,
+        macroEvidence: `${brief.macroLive}/${brief.macroTotal} benchmarks live, ${brief.headlines} headlines`,
+        ...(brief.macroMissing.length ? { macroMissing: brief.macroMissing } : {}),
         resend: sendData,
       });
     }
