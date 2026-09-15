@@ -143,8 +143,8 @@ could quantify — otherwise "quantify" means "invent".
 
 To audit a test brief: trigger `/api/brief?test=1`, read the email that
 lands (Gmail is connected), and check every number against
-`buildDeskContext()`, `buildSignalContext()` and the macro block. The
-scratchpad harness `brief-test.mjs` covers the code path with stubbed
+`buildDeskContext()`, `buildSignalContext()` and the macro block.
+`tests/brief.test.mjs` (`npm test`) covers the code path with stubbed
 upstreams; only a real send covers the model.
 
 ### What is still a desk opinion (and must stay labeled)
@@ -164,9 +164,9 @@ months"-style figures nobody could source. Now every number in a call is
 read from `pixAreas` / `pixIndex` / `pixSignals` at load time and carries
 a `reg` marker, the section subtitle says which parts are opinion, and
 the playbook carries **directions only** — "prime fell hard; recovery
-took years" — because no registered series exists for those years. The
-scratchpad `desk-view-test.mjs` asserts every number in a call appears in
-the registry files and that the playbook holds no percentage at all.
+took years" — because no registered series exists for those years.
+`tests/desk-view.test.mjs` asserts every number in a call appears in the
+registry files and that the playbook holds no percentage at all.
 
 `server.js` (the local dev host) used to carry its own copies of the
 intel and stock-brief prompts, which drifted from `api/`. It now mounts
@@ -400,11 +400,16 @@ Vanilla HTML/CSS/JS SPA (no build step), ES modules, deployed on Vercel from
 ## Verification before every push
 
 ```bash
-for f in api/*.js api/*/*.js; do node --check "$f"; done
+for f in api/*.js api/*/*.js lib/*.js; do node --check "$f"; done
 for f in js/*.js; do node --input-type=module --check < "$f"; done
 node -e "Promise.all([import('./api/desk/ask.js'),import('./api/brief.js')])"
+npm test
 ```
 
-The last line matters: the API endpoints import `js/pix-data.js` and
+The import line matters: the API endpoints import `js/pix-data.js` and
 `js/pix-signals.js`, so a break in a browser module breaks the serverless
-functions too.
+functions too. `npm test` runs `tests/*.test.mjs` — the brief, desk and
+intel endpoints against stubbed upstreams (including a Yahoo outage and
+a 429), and the Overview desk view against the registry files. The tests
+live in the repo, not a scratchpad, so they survive the session. No
+external dependencies are needed to run them.

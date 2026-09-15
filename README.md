@@ -10,11 +10,12 @@ A real-time global intelligence dashboard built to track macro events, market sh
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | Powers Ask Felicity, country intel, stock AI briefs, and the Mon/Thu newsletter brief (Claude) |
 | `RESEND_API_KEY` | Yes | All email: welcome, lead notifications, and the newsletter broadcast |
-| `FINNHUB_API_KEY` | Yes | Live S&P 500 quotes, earnings, ratings |
+| `FINNHUB_API_KEY` | Yes | Cockpit equity quotes, fundamentals and news; general-market headlines for the brief and Ask Felicity |
 | `FROM_EMAIL` | **Recommended** | Sender for all email, e.g. `Felicity Intelligence <intel@felicitypro.com>`. Without it, emails send from Resend's test address, which **only delivers to the Resend account owner**. Verify the domain in Resend → Domains first. |
 | `OWNER_EMAIL` | No | Where lead/subscriber notifications go (default `mouhannad@felicitypro.com`) |
 | `STRIPE_SECRET_KEY` | For payments | Stripe Checkout subscriptions |
 | `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook verification |
+| `STRIPE_PRICE_PRO`, `STRIPE_PRICE_INSTITUTIONAL` | For payments | Stripe Price IDs for the two plans |
 | `CRON_SECRET` | No | If set, `/api/brief` only accepts scheduled runs from Vercel Cron |
 | `RESEND_AUDIENCE_ID` | No | Pin the newsletter audience; otherwise auto-resolved by name |
 | `DATABASE_URL` | **Recommended** | Neon Postgres. Backs `/api/data`, and stores the newsletter list — without it the list can only live in a Resend Audience, which a send-only API key cannot write to |

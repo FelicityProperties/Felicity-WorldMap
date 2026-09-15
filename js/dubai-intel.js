@@ -120,10 +120,13 @@ function metricsHtml(area, dirClass, dirIcon) {
 function villaRowHtml(p) {
   if (!p || !p.villa) return '';
   const v = p.villa;
+  // A future refresh may carry a villa cohort with too few rentals for a
+  // yield — render "n/a" rather than throw and blank the whole grid.
+  const y = v.yieldPct != null ? `${v.yieldPct.toFixed(1)}%` : 'yield n/a';
   return `
         <div class="pix-cohort">
           <span class="pix-cohort__label">Villas</span>
-          <span class="pix-cohort__stats">${fmtCount(v.psf)}/sqft · ${fmtPrice(v.price)} · ${fmtRent(v.rent)} · <strong class="pix-cohort__yield pix-cohort__yield--${yieldClass(v.yieldPct)}">${v.yieldPct.toFixed(1)}%</strong></span>
+          <span class="pix-cohort__stats">${fmtCount(v.psf)}/sqft · ${fmtPrice(v.price)} · ${fmtRent(v.rent)} · <strong class="pix-cohort__yield pix-cohort__yield--${yieldClass(v.yieldPct)}">${y}</strong></span>
         </div>`;
 }
 

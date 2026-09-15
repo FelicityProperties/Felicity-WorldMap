@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "npx serve . -p 3000",
     "server": "node server.js",
-    "db:setup": "node db/setup.js"
+    "db:setup": "node db/setup.js",
+    "test": "node tests/brief.test.mjs && node tests/desk-view.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
