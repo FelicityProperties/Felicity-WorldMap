@@ -172,6 +172,65 @@ registry files and that the playbook holds no percentage at all.
 intel and stock-brief prompts, which drifted from `api/`. It now mounts
 every `api/**/*.js` at its Vercel route and owns no prompt.
 
+### Strait of Hormuz — what the page may claim
+
+The Hormuz tab (`js/hormuz.js`, `lib/hormuz.js`, `/api/invest/hormuz`)
+shows the **IMF PortWatch "Daily Chokepoints Transit Calls"** series for
+`portid='chokepoint6'`, pulled from the public ArcGIS layer on
+`services9.arcgis.com`. It is the only free, keyless, machine-readable
+daily Hormuz series that exists; the research that established this is
+in the session that built the page, and the alternatives (aisstream.io,
+AISHub, MarineTraffic, Kpler, EIA, UKMTO, WTO, IEA) were each rejected
+for coverage, licence, or not being a feed.
+
+What the number is, and the rules that follow from it:
+
+- **AIS-visible transit calls per UTC day.** A ship with its transponder
+  off is invisible to it; during the 2026 crisis UKMTO's weekly reports
+  put most Hormuz movements outside AIS. So every figure is a **floor**,
+  and the page and the AI blocks say so. Never write "ships in the
+  Strait".
+- **Not today.** The daily series is published **weekly** with a lag of
+  days, and recent rows are revised. The headline carries the date of
+  the last row and its age; the subtitle says "published weekly,
+  revised". No live dot, no ticking clock, no Refresh button (the
+  endpoint is edge-cached for an hour and the feed changes weekly). The
+  whole window is re-pulled every time — never append.
+- **There is no honest live layer.** No free, licensed real-time count
+  exists for a serverless function. The page states this in words. Do
+  not add an aisstream/AIS-sample counter: the open-source trackers on
+  that feed saw zero vessels in the Strait, its licence is unpublished,
+  and datacenter connections are dropped.
+- **Capacity is deadweight tonnage**, never barrels. Do not convert.
+- **Means are ours.** 7-day and 30-day means, the year-earlier window
+  and the 365-day high/low are Felicity arithmetic over the rows
+  served, carry a `felicity calc` marker, and leave missing days
+  missing. The `integrity` block in the payload reports rows received,
+  parsed, dropped, duplicates, gaps and rows where total ≠ tankers +
+  cargo — upstream mismatches are kept as served and counted, never
+  corrected.
+- **Attribution is required by the IMF terms:** "Source: International
+  Monetary Fund, PortWatch, https://portwatch.imf.org/pages/chokepoint6"
+  travels in the payload and is printed on the page.
+- **The date field has changed format** (epoch ms → YYYY-MM-DD string);
+  `parseDate` accepts both and prefers the integer year/month/day
+  columns. A schema change (missing `n_total` etc.) fails loudly with the
+  fields seen rather than rendering nonsense.
+- **Stale path:** the browser keeps the last successful pull; if the
+  fetch fails it is shown under a `STALE` banner with the failure time
+  and the pull time. With nothing stored the page says unavailable.
+
+The same block is injected into the brief and the desk prompts as
+"STRAIT OF HORMUZ — IMF PortWatch daily transit calls"; when the fetch
+fails the block says so and forbids any Hormuz figure. The brief's test
+response reports `hormuzEvidence`.
+
+`tests/hormuz.test.mjs` pins the parsing (both date formats, y/m/d
+precedence), the integrity accounting, every summary number by hand, the
+route's failure paths and the evidence text. The sandbox cannot reach
+ArcGIS, so the first real check after any change to `lib/hormuz.js` is
+to load the tab on the deployed site and read the integrity line.
+
 ### Global markets (the Investing Cockpit)
 
 The same integrity rule applies outside Dubai. Every price and headline in
@@ -209,6 +268,18 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   are not measurable market prices, and carry a `desk` marker.
 - If a live fetch fails, the previous real value stands and the marker shows
   it is stale. Nothing is invented to fill the gap.
+- **Seeds are not values.** `js/data.js` once shipped twenty market prices
+  (gold at $3,234 while the tape said $4,300) and twelve authored headlines
+  with fake ages ("11m"); the topbar ticker scrolled them under a pulsing
+  LIVE badge until the first fetch landed — and forever if it never did —
+  and the hero banner rotated the fake headlines. Rendering the site
+  against a stubbed, failing `/api/markets` is what exposed it. Now
+  `markets` carries symbol metadata with `price: null`, `news` starts
+  empty, `loadFromAPI()` no longer copies the static `/api/data` fixtures
+  over them, the ticker and sidebar list only instruments with a fetched
+  price (`live: true`), the topbar badge is driven by the fetch result
+  (LIVE / `STALE · HH:MM` / NO FEED — the last two without a dot), and
+  `tests/seed.test.mjs` fails the build if a seeded number returns.
 - `Math.random()` in display code is a red flag. The only legitimate use in
   this repo is the cache-buster in `js/news-live.js`.
 - **Randomness is not the only way to fabricate.** `animateTrackers()` in

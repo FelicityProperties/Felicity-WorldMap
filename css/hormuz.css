@@ -1,0 +1,351 @@
+/* ═══════════════════════════════════════════════════════════
+   HORMUZ — Strait of Hormuz daily transit monitor
+   Tokens only. The provenance badge deliberately matches the plain
+   REFERENCE/DLD badge family, never the pulsing live dot: the series is
+   a dated weekly publication, not a stream.
+   ═══════════════════════════════════════════════════════════ */
+
+.hormuz-section {
+  padding-top: var(--space-8);
+}
+
+/* ── Provenance strip ── */
+.hz-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.hz-strip__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.hz-strip__text strong { color: var(--text-primary); font-weight: var(--weight-bold); }
+
+.hz-src {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.hz-strip__link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ── Stale banner: the last real pull, clearly marked ── */
+.hz-stale {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--semantic-amber-dim);
+  border-radius: var(--radius-sm);
+  background: var(--semantic-amber-glow);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.hz-stale__badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--semantic-amber);
+  border: 1px solid var(--semantic-amber-dim);
+  border-radius: var(--radius-xs);
+  padding: 1px 6px;
+}
+
+/* ── Headline stats ── */
+.hz-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.hz-stat {
+  position: relative;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+}
+
+.hz-stat__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.hz-stat__value {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.hz-unit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+  margin-left: 4px;
+  letter-spacing: 0.06em;
+}
+
+.hz-stat__sub {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.hz-stat__sub .up { color: var(--semantic-green); }
+.hz-stat__sub .dn { color: var(--semantic-red); }
+
+/* Marks a number we computed, as opposed to one PortWatch served */
+.hz-calc {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-glow);
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+  cursor: help;
+}
+
+/* ── Panels ── */
+.hz-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.hz-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-4);
+}
+
+.hz-panel__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.hz-panel__sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.6;
+  max-width: 64ch;
+}
+
+.hz-panel__src {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.hz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-5);
+}
+
+.hz-grid .hz-panel { margin-bottom: 0; }
+
+/* ── Chart ── */
+.hz-ranges { display: flex; gap: var(--space-1); }
+
+.hz-range {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  cursor: pointer;
+  min-height: 28px;
+}
+
+.hz-range:hover { color: var(--text-secondary); }
+.hz-range.is-on { color: var(--accent-primary); border-color: var(--border-accent); }
+
+/* Lines stretch to the box; the labels are HTML so they never distort */
+.hz-chart__frame { display: flex; align-items: stretch; gap: var(--space-2); }
+
+.hz-chart__y {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 34px;
+  flex: 0 0 34px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0 0 0;
+}
+
+.hz-chart svg { flex: 1 1 auto; min-width: 0; width: 100%; height: 220px; display: block; }
+
+.hz-chart__x {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--space-1) 0 0 42px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.hz-chart__grid { stroke: var(--border-subtle); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.hz-chart__total { fill: none; stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.hz-chart__tanker { fill: none; stroke: var(--accent-gold); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; opacity: 0.9; }
+.hz-chart__mean { fill: none; stroke: var(--text-secondary); stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+
+.hz-legend {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+.hz-legend__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--text-secondary);
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.hz-legend__swatch--total { border-top-color: var(--accent-primary); }
+.hz-legend__swatch--tanker { border-top-color: var(--accent-gold); }
+.hz-legend__swatch--mean { border-top-style: dashed; }
+
+/* ── Table ── */
+.hz-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.hz-table th,
+.hz-table td {
+  text-align: right;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.hz-table th:first-child,
+.hz-table td:first-child { text-align: left; color: var(--text-secondary); }
+
+.hz-table th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: var(--weight-bold);
+}
+
+.hz-table__total td { color: var(--text-primary); font-weight: var(--weight-bold); }
+.hz-table__cap td { color: var(--text-muted); border-bottom: none; }
+.hz-table__cap em { display: block; font-style: normal; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); }
+
+/* ── Notes ── */
+.hz-notes {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.hz-notes li { margin-bottom: var(--space-2); }
+.hz-notes strong { color: var(--text-primary); }
+
+.hz-integrity {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.hz-attrib {
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.hz-attrib a { color: var(--accent-primary); text-decoration: none; }
+
+@media (max-width: 767px) {
+  .hz-stat__value { font-size: var(--text-2xl); }
+  .hz-chart svg { height: 170px; }
+  .hz-chart__x { margin-left: 42px; }
+  .hz-panel { padding: var(--space-4); }
+  .hz-table { font-size: var(--text-xs); }
+}

@@ -36,6 +36,17 @@ globalThis.fetch = async (url, opts) => {
     if (price == null) return { ok: false, status: 404 };
     return { ok: true, json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: price, chartPreviousClose: price * 0.99, regularMarketTime: 1789380000 } }] } }) };
   }
+  if (url.includes('services9.arcgis.com')) {
+    // A short PortWatch series ending 2026-09-13: 8/day, tankers 3
+    const features = [];
+    for (let i = 0; i < 40; i++) {
+      const d = new Date(Date.UTC(2026, 8, 13) - i * 86400000);
+      const date = d.toISOString().slice(0, 10);
+      features.push({ attributes: { date, year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), portid: 'chokepoint6', portname: 'Strait of Hormuz',
+        n_total: 8, n_tanker: 3, n_cargo: 5, n_container: 2, n_dry_bulk: 1, n_general_cargo: 1, n_roro: 1, capacity: 700000, capacity_tanker: 400000 } });
+    }
+    return { ok: true, status: 200, json: async () => ({ features }) };
+  }
   if (url.includes('finnhub.io/api/v1/news')) {
     return { ok: true, json: async () => [
       { headline: 'Fed holds rates, signals patience', source: 'Reuters', datetime: 1789300000 },
@@ -78,6 +89,8 @@ check(sys.includes('LIVE GLOBAL MACRO EVIDENCE') && sys.includes('9 of 9 benchma
 check(sys.includes('Gold: USD 3,310 per oz'), 'gold recovered via retry after 429');
 check(sys.includes('US 10-year Treasury yield: 4.12% (+4 bp vs prior close)') && sys.includes('Brent crude: USD 71.40 per barrel (+1.01% vs prior close)'), 'macro levels rendered with currency, unit, and bp for yields');
 check(sys.includes('[Reuters] Fed holds rates'), 'headline feed rendered');
+check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transits — tankers 3, cargo 5'), 'Hormuz evidence block in the brief prompt');
+check(/^latest day 2026-09-13 \(\d+d lag\), 40 rows$/.test(res.payload?.hormuzEvidence || ''), `response reports Hormuz coverage (${res.payload?.hormuzEvidence})`);
 check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 207.39') && sys.includes('through 2026-09-13'), 'PIX evidence is the August set');
 check(sys.includes('YIELD RANKINGS') && /Villas: JVC 5\.2% > Town Square 5\.1% > Dubai South 4\.8%/.test(sys), 'villa yield ranking computed correctly');
 check(/Apartments: Mohammed Bin Rashid City 6\.5% > Meydan 6\.3% > JVC 6\.1%/.test(sys), 'apartment yield ranking computed correctly');
@@ -108,6 +121,7 @@ await ask({ method: 'POST', headers: { 'x-forwarded-for': '1.1.1.1' }, body: { q
 sys = calls.find(c => c.url.includes('anthropic.com'))?.body.system || '';
 const yahooCalls1 = calls.filter(c => c.url.includes('yahoo')).length;
 check(sys.includes('LIVE GLOBAL MACRO EVIDENCE') && sys.includes('YIELD RANKINGS'), 'desk prompt carries macro block and rankings');
+check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch'), 'desk prompt carries the Hormuz block');
 check(sys.includes('(DIFC, for one) gets no number'), 'desk prompt names DIFC as evidence-less');
 check(res.payload?.response && !/^Error/.test(res.payload.response), 'desk answered');
 calls.length = 0; res = mkRes();
@@ -125,4 +139,4 @@ check(sys.includes('Residential index 207.39'), 'intel carries the Dubai registr
 
 console.log(`system prompt (brief): ${anthropic.body.system.length} chars`);
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
-console.log('all 31 checks passed');
+console.log('all 34 checks passed');

@@ -3,6 +3,7 @@
 import { buildDeskContext } from '../../js/pix-data.js';
 import { buildSignalContext } from '../../js/pix-signals.js';
 import { macroEvidenceBlock } from '../../lib/market-evidence.js';
+import { hormuzEvidenceBlock } from '../../lib/hormuz.js';
 
 // ── Rate Limiting (in-memory, resets on cold start) ──
 const rateLimit = {};
@@ -20,7 +21,7 @@ function checkRateLimit(ip) {
 
 // The macro block is fetched live (and cached briefly) per request, so the
 // prompt is assembled per call rather than once at import.
-const buildSystemPrompt = macroBlock => `You are the senior macro strategist at Felicity Intelligence. Your clients are Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
+const buildSystemPrompt = (macroBlock, hormuzBlock) => `You are the senior macro strategist at Felicity Intelligence. Your clients are Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
 
 Rules:
 - Take positions. Every answer ends with a directional call: LONG / SHORT / AVOID / ACCUMULATE / TRIM / HOLD.
@@ -36,6 +37,8 @@ Rules:
 - Tone: Druckenmiller meets local Dubai RE domain depth. Every response reads like a PM note to his book.
 
 ${macroBlock}
+
+${hormuzBlock}
 
 ${buildDeskContext()}
 
@@ -90,7 +93,10 @@ export default async function handler(req, res) {
   messages.push({ role: 'user', content: String(question).slice(0, 4000) });
 
   try {
-    const macroBlock = await macroEvidenceBlock({ finnhubKey: process.env.FINNHUB_API_KEY });
+    const [macroBlock, hormuzBlock] = await Promise.all([
+      macroEvidenceBlock({ finnhubKey: process.env.FINNHUB_API_KEY }),
+      hormuzEvidenceBlock({ timeoutMs: 4000 }),
+    ]);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -101,7 +107,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-opus-4-8',
         max_tokens: 1000,
-        system: buildSystemPrompt(macroBlock),
+        system: buildSystemPrompt(macroBlock, hormuzBlock),
         messages
       })
     });

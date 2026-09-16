@@ -184,6 +184,29 @@
   50% { opacity: 0.5; box-shadow: 0 0 4px rgba(34, 197, 94, 0.2); }
 }
 
+/* Feed states — set by app.js from the actual fetch result. No dot, no
+   pulse: a failed or absent feed must never look live. */
+.live-badge--stale {
+  color: var(--semantic-amber);
+  background: var(--semantic-amber-glow);
+  border-color: var(--semantic-amber-dim);
+}
+
+.live-badge--offline {
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border-color: var(--border-subtle);
+}
+
+/* Ticker with nothing fetched yet — words, not seeded numbers */
+.tick-item--empty {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  padding: 0 var(--space-4);
+}
+
 /* ── Clock ── */
 .topbar__clock {
   font-family: var(--font-mono);

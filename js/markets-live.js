@@ -121,14 +121,21 @@ function updateMarkets(newData) {
   newData.forEach(m => { bySymbol[m.sym] = m; });
 
   let updated = 0;
+  const at = Date.now();
   markets.forEach((m, i) => {
     if (bySymbol[m.sym]) {
-      markets[i] = { ...m, ...bySymbol[m.sym] };
+      // `live` and `at` are what the ticker, sidebar and topbar badge key on
+      markets[i] = { ...m, ...bySymbol[m.sym], live: true, at };
       updated++;
     }
   });
 
   return updated > 0;
+}
+
+// Timestamp of the most recent successful fetch (null until one lands)
+export function marketsLastLiveAt() {
+  return markets.reduce((t, m) => (m.at && m.at > t ? m.at : t), 0) || null;
 }
 
 // ── Primary path: same-origin serverless endpoint (no CORS proxy) ──
@@ -183,14 +190,16 @@ export async function fetchLiveMarkets() {
 // ── Periodic Refresh ──
 let refreshTimer = null;
 
+// The callback is told whether the fetch succeeded, every time — a failed
+// refresh has to be able to mark the display stale, not just stay silent.
 export function startLiveMarketRefresh(onUpdate) {
   fetchLiveMarkets().then(ok => {
-    if (ok && onUpdate) onUpdate();
+    if (onUpdate) onUpdate(ok);
   });
 
   refreshTimer = setInterval(async () => {
     const ok = await fetchLiveMarkets();
-    if (ok && onUpdate) onUpdate();
+    if (onUpdate) onUpdate(ok);
   }, 60 * 1000);
 }
 

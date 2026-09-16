@@ -15,13 +15,14 @@ import { buildDeskContext } from '../js/pix-data.js';
 import { buildSignalContext } from '../js/pix-signals.js';
 import { dbRecipients, resolveAudience, sendIndividually, unsubUrl, fromAddress } from '../lib/subscribers.js';
 import { fetchMacroEvidence, renderMacroEvidence, macroMisses } from '../lib/market-evidence.js';
+import { fetchHormuz, renderHormuzEvidence, renderHormuzUnavailable } from '../lib/hormuz.js';
 
 const AUDIENCE_NAME = 'Felicity Intelligence Brief';
 
 // Built per run, not at import: the macro block is fetched live each time
 // the brief is written, so the "global macro" section is a read of real
 // levels and headlines rather than the model's memory of the world.
-function buildSystemPrompt(macroBlock) {
+function buildSystemPrompt(macroBlock, hormuzBlock) {
   return `You are the senior macro strategist at Felicity Intelligence writing the twice-weekly intelligence brief for Dubai real estate investors with AED 5M-500M portfolios. They pay for conviction, not balance.
 
 Rules:
@@ -34,6 +35,8 @@ Rules:
 - Tone: PM note to his book. Dense with data. Zero filler.
 
 ${macroBlock}
+
+${hormuzBlock}
 
 ${buildDeskContext()}
 
@@ -53,14 +56,21 @@ Return ONLY valid JSON, no code fences, in exactly this shape:
 }
 
 async function generateBrief(apiKey) {
-  const macro = await fetchMacroEvidence({ finnhubKey: process.env.FINNHUB_API_KEY, timeoutMs: 6000 });
+  // Both evidence pulls run together; neither can throw past this point —
+  // an outage becomes an "unavailable" block the model is told to respect.
+  const [macro, hormuz] = await Promise.all([
+    fetchMacroEvidence({ finnhubKey: process.env.FINNHUB_API_KEY, timeoutMs: 6000 }),
+    fetchHormuz({ timeoutMs: 8000 }).then(p => ({ ok: true, p }), e => ({ ok: false, error: e.message })),
+  ]);
+  const hormuzBlock = hormuz.ok ? renderHormuzEvidence(hormuz.p) : renderHormuzUnavailable(hormuz.error);
+  if (!hormuz.ok) console.warn('[brief] hormuz evidence unavailable:', hormuz.error);
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-opus-4-8',
       max_tokens: 3000,
-      system: buildSystemPrompt(renderMacroEvidence(macro)),
+      system: buildSystemPrompt(renderMacroEvidence(macro), hormuzBlock),
       messages: [{ role: 'user', content: buildBriefPrompt() }],
     }),
   });
@@ -71,7 +81,10 @@ async function generateBrief(apiKey) {
   const macroLive = macro.levels.filter(l => l.ok).length;
   const macroMissing = macroMisses(macro);
   if (macroMissing.length) console.warn('[brief] macro benchmarks missing:', macroMissing.join('; '));
-  const meta = { macroLive, macroTotal: macro.levels.length, macroMissing, headlines: macro.news.items.length };
+  const meta = {
+    macroLive, macroTotal: macro.levels.length, macroMissing, headlines: macro.news.items.length,
+    hormuz: hormuz.ok ? `latest day ${hormuz.p.latestDate} (${hormuz.p.lagDays}d lag), ${hormuz.p.rows.length} rows` : `unavailable: ${hormuz.error}`,
+  };
 
   // Parse the JSON body; tolerate stray prose/fences around it.
   try {
@@ -174,6 +187,7 @@ export default async function handler(req, res) {
         ok: sendRes.ok, mode: 'test', to: ownerEmail, subject: brief.subject,
         macroEvidence: `${brief.macroLive}/${brief.macroTotal} benchmarks live, ${brief.headlines} headlines`,
         ...(brief.macroMissing.length ? { macroMissing: brief.macroMissing } : {}),
+        hormuzEvidence: brief.hormuz,
         resend: sendData,
       });
     }

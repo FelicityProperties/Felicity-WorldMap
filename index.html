@@ -63,6 +63,7 @@
   <link rel="stylesheet" href="css/footer.css">
   <link rel="stylesheet" href="css/invest.css">
   <link rel="stylesheet" href="css/felicity-bot.css">
+  <link rel="stylesheet" href="css/hormuz.css">
   <link rel="stylesheet" href="css/mobile.css">
 
   <!-- Vercel Web Analytics (activates once enabled in the Vercel dashboard) -->
@@ -95,10 +96,9 @@
     </div>
 
     <div class="topbar__status">
-      <div class="live-badge">
-        <span class="live-badge__dot"></span>
-        LIVE
-      </div>
+      <!-- Set by app.js from the market feed's real result: LIVE, STALE · HH:MM, or NO FEED.
+           Starts as CONNECTING without a dot — nothing has been fetched yet. -->
+      <div class="live-badge live-badge--offline" title="Connecting to the market feed">CONNECTING</div>
       <time class="topbar__clock" id="clock">--:--:-- UTC</time>
     </div>
   </header>
@@ -140,6 +140,12 @@
         <rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 14h6"/>
       </svg>
       <span class="nav-btn__label">Broadcasts</span>
+    </button>
+    <button class="nav-btn" data-tab="hormuz">
+      <svg class="nav-btn__icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M1.5 4.5c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0M1.5 11.5c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0M4.5 8h7l-1.2 2h-4.6z"/>
+      </svg>
+      <span class="nav-btn__label">Hormuz</span>
     </button>
   </nav>
 
@@ -354,6 +360,19 @@
             </div>
             <span class="overview-card__link">Open &rarr;</span>
           </div>
+
+          <div class="overview-card" data-goto="hormuz">
+            <div class="overview-card__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M2 7c3-2.5 5-2.5 8 0s5 2.5 8 0M2 17c3-2.5 5-2.5 8 0s5 2.5 8 0M6.5 12h11l-2 3.5h-7z"/>
+              </svg>
+            </div>
+            <div class="overview-card__body">
+              <h3 class="overview-card__title">Hormuz</h3>
+              <p class="overview-card__desc">Daily Strait of Hormuz transit calls by vessel class from IMF PortWatch satellite AIS — a dated weekly series, labelled as such.</p>
+            </div>
+            <span class="overview-card__link">Open &rarr;</span>
+          </div>
         </div>
       </section>
 
@@ -419,10 +438,10 @@
               <ul class="site-footer__links">
                 <li><button type="button" data-goto="worldmap">World Map</button></li>
                 <li><button type="button" data-goto="invest">Investing Cockpit</button></li>
-                <li><button type="button" data-goto="invest">Investing Cockpit</button></li>
                 <li><button type="button" data-goto="dubai">Dubai Intel</button></li>
                 <li><button type="button" data-goto="signals">Signals</button></li>
                 <li><button type="button" data-goto="broadcasts">Broadcasts</button></li>
+                <li><button type="button" data-goto="hormuz">Hormuz Transits</button></li>
               </ul>
             </div>
 
@@ -433,6 +452,7 @@
                 <li><a href="https://finnhub.io" target="_blank" rel="noopener">Finnhub <span class="site-footer__src-note">equities &amp; news</span></a></li>
                 <li><a href="https://finance.yahoo.com" target="_blank" rel="noopener">Yahoo Finance <span class="site-footer__src-note">indices, FX</span></a></li>
                 <li><a href="https://www.coingecko.com" target="_blank" rel="noopener">CoinGecko <span class="site-footer__src-note">crypto</span></a></li>
+                <li><a href="https://portwatch.imf.org/pages/chokepoint6" target="_blank" rel="noopener">IMF PortWatch <span class="site-footer__src-note">Hormuz transits</span></a></li>
                 <li><a href="https://www.tradingview.com" target="_blank" rel="noopener">TradingView <span class="site-footer__src-note">charts</span></a></li>
                 <li><a href="https://www.anthropic.com" target="_blank" rel="noopener">Claude <span class="site-footer__src-note">analysis</span></a></li>
               </ul>
@@ -588,6 +608,18 @@
           <div class="section__header-line"></div>
         </div>
         <div class="broadcasts-grid" id="broadcasts-grid"></div>
+      </section>
+    </div>
+
+    <!-- ── TAB: Hormuz ── -->
+    <div class="tab-panel tab-panel--scroll" id="tab-hormuz">
+      <section class="hormuz-section section" id="section-hormuz">
+        <div class="section__header">
+          <h2>Strait of Hormuz — Transit Monitor</h2>
+          <p>IMF PortWatch · AIS-visible daily transit calls · published weekly</p>
+          <div class="section__header-line"></div>
+        </div>
+        <div class="hormuz-root" id="hormuz-root"></div>
       </section>
     </div>
 

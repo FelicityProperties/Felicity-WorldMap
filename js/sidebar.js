@@ -182,18 +182,29 @@ function renderNews() {
 
 // ── Markets ──
 function renderMarkets() {
-  const ts = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  // Only instruments with a fetched price are listed; the header says LIVE
+  // only when a fetch has actually landed, with the time it did.
+  const priced = markets.filter(m => m.live && typeof m.price === 'number' && Number.isFinite(m.price));
+  const lastAt = priced.reduce((t, m) => (m.at && m.at > t ? m.at : t), 0);
+  const ts = lastAt ? new Date(lastAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
 
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> Updated ${ts}
+        ${priced.length
+          ? `<span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> Updated ${ts}`
+          : `<span class="news-header__static">No live prices</span> nothing fetched yet`
+        }
       </div>
       <button class="news-refresh-btn" id="markets-refresh-btn">\u21BB Refresh</button>
     </div>
   `;
 
-  const cards = markets.map(m => {
+  if (!priced.length) {
+    return header + '<div class="card-item"><div class="market-row__sub">Prices appear here only once a real quote has been fetched \u2014 none is seeded.</div></div>';
+  }
+
+  const cards = priced.map(m => {
     const cls = m.chg >= 0 ? 'up' : 'dn';
     const sign = m.chg >= 0 ? '+' : '';
     const val = formatPrice(m.price, m.sym);

@@ -5,16 +5,19 @@
 //   POST /api/invest/advise                 Felicity Bot investment analysis
 //   POST /api/invest/scan                   screen instruments on real indicators
 //   POST /api/invest/backtest               historical strategy simulation
+//   GET  /api/invest/hormuz                 Strait of Hormuz daily transit calls
 //
 // Every price and headline is fetched live from a real provider:
 //   US equities  → Finnhub    (quote, company-news)
 //   Indices / FX / futures → Yahoo Finance chart API
 //   Crypto       → CoinGecko
 //   Market news  → Finnhub general news
+//   Hormuz transits → IMF PortWatch (ArcGIS), see lib/hormuz.js
 //
 // Nothing is simulated. If a provider fails the response says so.
 
 import { findAsset } from '../../js/invest-data.js';
+import { fetchHormuz, HORMUZ_SOURCE } from '../../lib/hormuz.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -747,6 +750,24 @@ async function handleBacktest(req, res) {
   });
 }
 
+// ── Strait of Hormuz ──
+// Lives on this router rather than in its own file because Hobby caps
+// serverless functions at twelve and api/ holds eleven. The series is a
+// macro input to the same desk that reads oil and yields, so it is not
+// a stranger here. Cached at the edge for an hour: the layer changes
+// weekly, and a new release shows up within the hour.
+async function handleHormuz(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
+  if (!checkRateLimit(limitKey(req, 'hormuz'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+  try {
+    return res.status(200).json(await fetchHormuz({ timeoutMs: 9000 }));
+  } catch (e) {
+    console.warn('[invest/hormuz]', e.message);
+    return res.status(200).json({ ok: false, error: e.message, source: HORMUZ_SOURCE });
+  }
+}
+
 // ── Router ──
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -761,6 +782,7 @@ export default async function handler(req, res) {
   if (action === 'advise')   return handleAdvise(req, res);
   if (action === 'scan')     return handleScan(req, res);
   if (action === 'backtest') return handleBacktest(req, res);
+  if (action === 'hormuz')   return handleHormuz(req, res);   // no symbol — dispatched before resolution
 
   const symbol = url.searchParams.get('symbol');
   const asset = resolveAsset(symbol);

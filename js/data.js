@@ -127,51 +127,44 @@ export const regionMap = {
 };
 
 // ── Arrays (mutated in place via splice+push) ──
+// Symbol metadata only. price/chg are null until markets-live.js fills them
+// from a real fetch — a seeded number would be shown under the LIVE badge
+// before the first fetch and forever if the feed failed.
 export const markets = [
-  { sym: "BTC", name: "Bitcoin", price: 83420, chg: 1.24, type: "crypto", reCorrelation: "Crypto wealth concentration drives Marina & JVC demand", reAreas: ["Dubai Marina", "JVC", "Business Bay"], reDirection: "BULLISH-MID" },
-  { sym: "ETH", name: "Ethereum", price: 1612, chg: -0.87, type: "crypto", reCorrelation: "DeFi/Web3 professionals relocating to Dubai free zones", reAreas: ["Dubai Marina", "JVC", "DIFC"], reDirection: "BULLISH-MID" },
-  { sym: "XAU", name: "Gold", price: 3234, chg: 0.43, type: "commodity", reCorrelation: "Safe-haven alignment with Dubai premium gold souk economy", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-LUXURY" },
-  { sym: "WTI", name: "Crude Oil", price: 61.2, chg: -1.12, type: "commodity", reCorrelation: "Direct GCC sovereign wealth and fiscal spending correlation", reAreas: ["All prime areas", "Dubai South", "Expo City"], reDirection: "WATCH" },
-  { sym: "DXY", name: "US Dollar Index", price: 99.4, chg: -0.31, type: "index", reCorrelation: "Dollar-pegged AED: weak USD = capital preservation appeal", reAreas: ["All segments"], reDirection: "BULLISH-PRIME" },
-  { sym: "SPX", name: "S&P 500", price: 5282, chg: 0.65, type: "index", reCorrelation: "US tech wealth migration to Dubai golden visa holders", reAreas: ["Palm Jumeirah", "Emaar Beachfront", "Dubai Hills"], reDirection: "BULLISH-LUXURY" },
-  { sym: "FTSE", name: "FTSE 100", price: 8247, chg: 0.22, type: "index", reCorrelation: "UK non-dom tax flight to Dubai freehold properties", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-PRIME" },
-  { sym: "NIKKEI", name: "Nikkei 225", price: 34880, chg: -0.44, type: "index", reCorrelation: "Japanese institutional allocation to Dubai commercial RE", reAreas: ["DIFC", "Business Bay"], reDirection: "NEUTRAL" },
-  { sym: "AED", name: "AED/USD", price: 3.6725, chg: 0.00, type: "forex", reCorrelation: "Peg stability reinforces Dubai as dollar-denominated safe haven", reAreas: ["All segments"], reDirection: "NEUTRAL" },
+  { sym: "BTC", name: "Bitcoin", price: null, chg: null, type: "crypto", reCorrelation: "Crypto wealth concentration drives Marina & JVC demand", reAreas: ["Dubai Marina", "JVC", "Business Bay"], reDirection: "BULLISH-MID" },
+  { sym: "ETH", name: "Ethereum", price: null, chg: null, type: "crypto", reCorrelation: "DeFi/Web3 professionals relocating to Dubai free zones", reAreas: ["Dubai Marina", "JVC", "DIFC"], reDirection: "BULLISH-MID" },
+  { sym: "XAU", name: "Gold", price: null, chg: null, type: "commodity", reCorrelation: "Safe-haven alignment with Dubai premium gold souk economy", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-LUXURY" },
+  { sym: "WTI", name: "Crude Oil", price: null, chg: null, type: "commodity", reCorrelation: "Direct GCC sovereign wealth and fiscal spending correlation", reAreas: ["All prime areas", "Dubai South", "Expo City"], reDirection: "WATCH" },
+  { sym: "DXY", name: "US Dollar Index", price: null, chg: null, type: "index", reCorrelation: "Dollar-pegged AED: weak USD = capital preservation appeal", reAreas: ["All segments"], reDirection: "BULLISH-PRIME" },
+  { sym: "SPX", name: "S&P 500", price: null, chg: null, type: "index", reCorrelation: "US tech wealth migration to Dubai golden visa holders", reAreas: ["Palm Jumeirah", "Emaar Beachfront", "Dubai Hills"], reDirection: "BULLISH-LUXURY" },
+  { sym: "FTSE", name: "FTSE 100", price: null, chg: null, type: "index", reCorrelation: "UK non-dom tax flight to Dubai freehold properties", reAreas: ["Downtown Dubai", "DIFC", "Palm Jumeirah"], reDirection: "BULLISH-PRIME" },
+  { sym: "NIKKEI", name: "Nikkei 225", price: null, chg: null, type: "index", reCorrelation: "Japanese institutional allocation to Dubai commercial RE", reAreas: ["DIFC", "Business Bay"], reDirection: "NEUTRAL" },
+  { sym: "AED", name: "AED/USD", price: null, chg: null, type: "forex", reCorrelation: "Peg stability reinforces Dubai as dollar-denominated safe haven", reAreas: ["All segments"], reDirection: "NEUTRAL" },
 
   // ── Energy Commodities ──
-  { sym: "BRENT", name: "Brent Crude", price: 65.8, chg: -0.92, type: "commodity", reCorrelation: "Global oil benchmark — direct GCC sovereign revenue impact, 4-6mo lag to Dubai prime", reAreas: ["Palm Jumeirah", "Downtown Dubai", "DIFC", "Creek Harbour"], reDirection: "WATCH" },
-  { sym: "NG", name: "Natural Gas", price: 3.42, chg: 1.85, type: "commodity", reCorrelation: "LNG exports drive Qatar/UAE LNG corridor — Dubai South industrial demand", reAreas: ["Dubai South", "JAFZA", "DIP"], reDirection: "BULLISH-INDUSTRIAL" },
-  { sym: "RBOB", name: "RBOB Gasoline", price: 2.12, chg: -0.34, type: "commodity", reCorrelation: "US driving demand proxy — leading indicator for crude refining margins", reAreas: ["Dubai South", "JAFZA"], reDirection: "WATCH" },
-  { sym: "HO", name: "Heating Oil", price: 2.28, chg: 0.18, type: "commodity", reCorrelation: "Diesel/jet fuel proxy — Dubai logistics hub freight cost driver", reAreas: ["Dubai South", "DIP"], reDirection: "WATCH" },
-  { sym: "COAL", name: "Coal (Newcastle)", price: 142.5, chg: -1.20, type: "commodity", reCorrelation: "Asian energy demand proxy — China industrial activity signal", reAreas: ["Dubai South", "JAFZA"], reDirection: "NEUTRAL" },
+  { sym: "BRENT", name: "Brent Crude", price: null, chg: null, type: "commodity", reCorrelation: "Global oil benchmark — direct GCC sovereign revenue impact, 4-6mo lag to Dubai prime", reAreas: ["Palm Jumeirah", "Downtown Dubai", "DIFC", "Creek Harbour"], reDirection: "WATCH" },
+  { sym: "NG", name: "Natural Gas", price: null, chg: null, type: "commodity", reCorrelation: "LNG exports drive Qatar/UAE LNG corridor — Dubai South industrial demand", reAreas: ["Dubai South", "JAFZA", "DIP"], reDirection: "BULLISH-INDUSTRIAL" },
+  { sym: "RBOB", name: "RBOB Gasoline", price: null, chg: null, type: "commodity", reCorrelation: "US driving demand proxy — leading indicator for crude refining margins", reAreas: ["Dubai South", "JAFZA"], reDirection: "WATCH" },
+  { sym: "HO", name: "Heating Oil", price: null, chg: null, type: "commodity", reCorrelation: "Diesel/jet fuel proxy — Dubai logistics hub freight cost driver", reAreas: ["Dubai South", "DIP"], reDirection: "WATCH" },
+  { sym: "COAL", name: "Coal (Newcastle)", price: null, chg: null, type: "commodity", reCorrelation: "Asian energy demand proxy — China industrial activity signal", reAreas: ["Dubai South", "JAFZA"], reDirection: "NEUTRAL" },
 
   // ── Precious Metals ──
-  { sym: "XAG", name: "Silver", price: 32.4, chg: 0.78, type: "commodity", reCorrelation: "Industrial+monetary metal — tech demand proxy, lighter safe-haven correlation", reAreas: ["Dubai Marina", "Business Bay"], reDirection: "BULLISH-MID" },
-  { sym: "XPT", name: "Platinum", price: 985, chg: 0.45, type: "commodity", reCorrelation: "Auto catalyst demand — global manufacturing health indicator", reAreas: ["Business Bay"], reDirection: "NEUTRAL" },
-  { sym: "XPD", name: "Palladium", price: 1080, chg: -0.62, type: "commodity", reCorrelation: "Auto catalyst — Russian supply concentration adds geopolitical premium", reAreas: ["Palm Jumeirah", "DIFC"], reDirection: "WATCH" },
+  { sym: "XAG", name: "Silver", price: null, chg: null, type: "commodity", reCorrelation: "Industrial+monetary metal — tech demand proxy, lighter safe-haven correlation", reAreas: ["Dubai Marina", "Business Bay"], reDirection: "BULLISH-MID" },
+  { sym: "XPT", name: "Platinum", price: null, chg: null, type: "commodity", reCorrelation: "Auto catalyst demand — global manufacturing health indicator", reAreas: ["Business Bay"], reDirection: "NEUTRAL" },
+  { sym: "XPD", name: "Palladium", price: null, chg: null, type: "commodity", reCorrelation: "Auto catalyst — Russian supply concentration adds geopolitical premium", reAreas: ["Palm Jumeirah", "DIFC"], reDirection: "WATCH" },
 
   // ── Base Metals ──
-  { sym: "HG", name: "Copper", price: 4.62, chg: 1.10, type: "commodity", reCorrelation: "Dr. Copper — global growth bellwether, infrastructure demand proxy", reAreas: ["Dubai South", "Expo City", "Creek Harbour"], reDirection: "BULLISH-COMMERCIAL" },
-  { sym: "ALI", name: "Aluminum", price: 2540, chg: 0.32, type: "commodity", reCorrelation: "GCC aluminum producer concentration (EGA/Alba) — UAE export revenue", reAreas: ["Dubai South", "JAFZA"], reDirection: "BULLISH-INDUSTRIAL" },
+  { sym: "HG", name: "Copper", price: null, chg: null, type: "commodity", reCorrelation: "Dr. Copper — global growth bellwether, infrastructure demand proxy", reAreas: ["Dubai South", "Expo City", "Creek Harbour"], reDirection: "BULLISH-COMMERCIAL" },
+  { sym: "ALI", name: "Aluminum", price: null, chg: null, type: "commodity", reCorrelation: "GCC aluminum producer concentration (EGA/Alba) — UAE export revenue", reAreas: ["Dubai South", "JAFZA"], reDirection: "BULLISH-INDUSTRIAL" },
 
   // ── Soft Commodities ──
-  { sym: "ZW", name: "Wheat", price: 5.85, chg: -0.42, type: "commodity", reCorrelation: "Food security proxy — GCC import dependency, Black Sea geopolitics", reAreas: ["Dubai South"], reDirection: "NEUTRAL" },
+  { sym: "ZW", name: "Wheat", price: null, chg: null, type: "commodity", reCorrelation: "Food security proxy — GCC import dependency, Black Sea geopolitics", reAreas: ["Dubai South"], reDirection: "NEUTRAL" },
 ];
 
-export const news = [
-  { cat: "conflict", lbl: "Conflict",  title: "Drone strikes reported near Khartoum \u2014 3rd consecutive day of aerial activity", region: "Sudan", time: "4m", reImpact: "Sudanese HNW capital flight to Dubai accelerating", reAreas: ["JVC", "International City", "Dubai South"], reSignal: "BULLISH" },
-  { cat: "politics", lbl: "Politics",  title: "EU foreign ministers convene emergency session on eastern border security", region: "Brussels", time: "11m", reImpact: "European corporate relocation interest in Dubai free zones rising", reAreas: ["DIFC", "Business Bay", "Dubai Marina"], reSignal: "BULLISH" },
-  { cat: "markets",  lbl: "Markets",   title: "Oil drops 1.1% as OPEC+ signals potential output increase at June meeting", region: "Global", time: "18m", reImpact: "GCC fiscal pressure rising. Off-plan secondary market caution", reAreas: ["Dubai South", "JVC"], reSignal: "WATCH" },
-  { cat: "conflict", lbl: "Conflict",  title: "Ceasefire talks in Donbas stall \u2014 both sides report fresh artillery exchanges", region: "Ukraine", time: "25m", reImpact: "European HNW capital continues Dubai luxury inflow", reAreas: ["Palm Jumeirah", "DIFC", "Downtown Dubai"], reSignal: "BULLISH-LUXURY" },
-  { cat: "energy",   lbl: "Energy",    title: "Red Sea vessel diversions push LNG spot prices to 6-week high", region: "Middle East", time: "33m", reImpact: "Dubai logistics hub demand surging. Jebel Ali rerouting", reAreas: ["Dubai South", "JAFZA"], reSignal: "BULLISH" },
-  { cat: "politics", lbl: "Politics",  title: "Taiwan Strait patrol frequency elevated after PLA naval drills conclude", region: "Taiwan", time: "41m", reImpact: "Asian HNW diversification into Dubai safe-haven assets", reAreas: ["Downtown Dubai", "Creek Harbour", "Business Bay"], reSignal: "WATCH" },
-  { cat: "markets",  lbl: "Markets",   title: "Gold hits new 3-month high on USD weakness and safe-haven flows", region: "Global", time: "52m", reImpact: "Safe-haven capital flow aligns with Dubai premium segment", reAreas: ["DIFC", "Downtown Dubai", "Palm Jumeirah"], reSignal: "BULLISH-LUXURY" },
-  { cat: "conflict", lbl: "Conflict",  title: "Pakistan-Afghanistan border clashes displace 4,000 civilians \u2014 UN reports", region: "S. Asia", time: "1h", reImpact: "Regional instability drives South Asian capital to Dubai mid-market", reAreas: ["JVC", "International City", "Town Square"], reSignal: "BULLISH" },
-  { cat: "energy",   lbl: "Energy",    title: "Saudi Aramco confirms Q1 output at 9.3mb/d \u2014 slightly below forecast", region: "Saudi Arabia", time: "1h", reImpact: "GCC production discipline supports sovereign RE spending", reAreas: ["All prime areas"], reSignal: "NEUTRAL" },
-  { cat: "politics", lbl: "Politics",  title: "Iran nuclear talks resume in Vienna \u2014 delegations describe 'constructive atmosphere'", region: "Iran", time: "2h", reImpact: "De-escalation signal reduces Gulf risk premium slightly", reAreas: ["All segments"], reSignal: "NEUTRAL" },
-  { cat: "conflict", lbl: "Conflict",  title: "Myanmar junta forces advance in Shan State amid ceasefire collapse", region: "Myanmar", time: "2h", reImpact: "SE Asian HNW flight capital trickling into Dubai properties", reAreas: ["Dubai Marina", "JVC"], reSignal: "WATCH" },
-  { cat: "markets",  lbl: "Markets",   title: "Bitcoin surpasses $83,000 as institutional inflows accelerate", region: "Global", time: "3h", reImpact: "Crypto wealth crystallization into Dubai Marina and JVC apartments", reAreas: ["Dubai Marina", "JVC", "Business Bay"], reSignal: "BULLISH" },
-];
+// Empty until news-live.js fills it from the RSS endpoint. It used to ship
+// twelve authored headlines with fake ages ("11m") that the hero banner and
+// the sidebar rotated as if they were the wire.
+export const news = [];
 
 export const flights = [
   { call: "EK201",            from: "DXB", to: "LHR",           lat: 28.5,  lng: 40.2,  alt: "37,000ft", type: "com", hdg: 315 },
@@ -418,8 +411,8 @@ export async function loadFromAPI() {
 
     if (data.ciiScores)    replaceObject(ciiScores, data.ciiScores);
     if (data.regionMap)    replaceObject(regionMap, data.regionMap);
-    if (data.markets)      replaceArray(markets, data.markets);
-    if (data.news)         replaceArray(news, data.news);
+    // markets and news are deliberately NOT taken from /api/data: its rows are
+    // static fixtures with a time_ago column, not a feed. The live modules own them.
     if (data.flights)      replaceArray(flights, data.flights);
     if (data.ships)        replaceArray(ships, data.ships);
     if (data.confZones)    replaceArray(confZones, data.confZones);

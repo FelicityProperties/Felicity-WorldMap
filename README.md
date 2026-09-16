@@ -22,6 +22,19 @@ A real-time global intelligence dashboard built to track macro events, market sh
 | `UNSUB_SECRET` | No | HMAC key for unsubscribe links; falls back to `RESEND_API_KEY` |
 | `SITE_URL` | No | Absolute origin used in unsubscribe links (default the Vercel URL) |
 
+## Strait of Hormuz Transit Monitor
+
+The **Hormuz** tab shows the IMF PortWatch daily transit-call series for
+the Strait of Hormuz (`portid='chokepoint6'`), fetched server-side from
+the public ArcGIS layer via `GET /api/invest/hormuz` (no key needed,
+edge-cached one hour). Counts are **AIS-visible transits only** — a
+floor, not every ship — published weekly with a lag and revised, so the
+page shows the date of the last row rather than "today". 7-day / 30-day
+means and the year-earlier comparison are computed on the page from the
+rows served and marked as such. There is no free, licensed real-time
+source, so no live counter is shown. Attribution: *Source: International
+Monetary Fund, PortWatch, https://portwatch.imf.org/pages/chokepoint6*.
+
 ## Dubai Market Data (PIX / PropertyIndex)
 
 `js/pix-data.js` holds a snapshot of official **Dubai Land Department**

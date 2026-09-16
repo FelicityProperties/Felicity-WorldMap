@@ -50,14 +50,21 @@ iframe {
     bottom: calc(44px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* ── Main nav: proper 48px touch targets, readable labels ── */
+  /* ── Main nav: proper 48px touch targets, readable labels ──
+     Seven tabs no longer fit as equal columns on a 400px screen — the
+     labels overlapped. Each button now sizes to its label and the strip
+     scrolls sideways (the nav already hides its scrollbar) instead of
+     printing "OVERVIEWWORLD MAP". */
   .nav-btn {
     min-height: 48px;
-    min-width: 0;
+    flex: 1 0 auto;
+    min-width: 50px;
+    padding: 0 6px;
   }
 
   .nav-btn__label {
-    font-size: 9px;
+    font-size: 8px;
+    letter-spacing: 0.02em;
   }
 
   /* ── Global overflow guard: nothing scrolls the page sideways ── */

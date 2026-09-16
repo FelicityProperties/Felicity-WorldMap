@@ -9,7 +9,7 @@ import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
 import { loadFromAPI } from './data.js';
 import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge, signalUrl } from './pix-signals.js';
-import { initHero, refreshAlertBanner } from './hero.js';
+import { initHero, refreshAlertBanner, markNewsUnavailable } from './hero.js';
 import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
 import { initDubaiIntel } from './dubai-intel.js';
@@ -17,8 +17,9 @@ import { initRegionDrawer } from './regions.js';
 import { initFelicityBot } from './felicity-bot.js';
 import { initDubaiCompare } from './dubai-compare.js';
 import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
+import { initHormuz } from './hormuz.js';
 import { startLiveNewsRefresh, stopLiveNewsRefresh } from './news-live.js';
-import { startLiveMarketRefresh, stopLiveMarketRefresh } from './markets-live.js';
+import { startLiveMarketRefresh, stopLiveMarketRefresh, marketsLastLiveAt } from './markets-live.js';
 import { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 
@@ -49,6 +50,7 @@ async function boot() {
   initDubaiCompare();  // side-by-side registry comparison above the area grid
   initInvest();
   initSignals();
+  initHormuz();        // IMF PortWatch daily transit series — one fetch, no polling
   initDesk();
   initFelicityBot();   // floating desk, reachable from every tab
   initDeskCalls();
@@ -97,15 +99,41 @@ async function boot() {
 // wait. `startPolling` stops first, so it can never leave a timer orphaned.
 let macroTimer = null;
 
+// The topbar badge reports the state of the market feed, not a mood: LIVE
+// after a successful fetch, STALE with the last real time once a refresh
+// fails, NO FEED when nothing has ever landed. It never pulses over a
+// number that was not fetched.
+function setFeedBadge(ok) {
+  const el = document.querySelector('.live-badge');
+  if (!el) return;
+  const lastAt = marketsLastLiveAt();
+  el.classList.remove('live-badge--stale', 'live-badge--offline');
+  if (ok) {
+    el.innerHTML = '<span class="live-badge__dot"></span>LIVE';
+    el.title = 'Market feed fetched successfully';
+  } else if (lastAt) {
+    const t = new Date(lastAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    el.classList.add('live-badge--stale');
+    el.textContent = `STALE · ${t}`;
+    el.title = `Latest market refresh failed — showing the last real prices from ${t}`;
+  } else {
+    el.classList.add('live-badge--offline');
+    el.textContent = 'NO FEED';
+    el.title = 'No market prices have been fetched yet';
+  }
+}
+
 function startPolling() {
   stopPolling();
 
-  startLiveMarketRefresh(() => {
+  startLiveMarketRefresh(ok => {
+    setFeedBadge(ok);
     buildTicker();
     if (getCurrentTab() === 'markets') refreshCurrentTab();
   });
 
-  startLiveNewsRefresh(() => {
+  startLiveNewsRefresh(ok => {
+    if (!ok) { markNewsUnavailable(); return; }
     if (getCurrentTab() === 'news') refreshCurrentTab();
     refreshAlertBanner();
   });

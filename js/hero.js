@@ -94,3 +94,13 @@ export function refreshAlertBanner() {
     showAlert(textEl);
   }
 }
+
+// Called when a news fetch fails. With headlines already on screen they
+// stand (they were real); with none, the banner says so instead of sitting
+// on "Loading…" forever. Nothing authored is ever rotated in their place.
+export function markNewsUnavailable() {
+  const textEl = document.getElementById('alert-text');
+  if (textEl && !news.length) {
+    textEl.textContent = 'Live news feed unavailable — no headlines are shown in its place';
+  }
+}

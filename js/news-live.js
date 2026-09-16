@@ -222,14 +222,15 @@ export async function fetchLiveNews() {
 
 let refreshTimer = null;
 
+// The callback is told whether the fetch succeeded, every time
 export function startLiveNewsRefresh(onUpdate) {
   fetchLiveNews().then(ok => {
-    if (ok && onUpdate) onUpdate();
+    if (onUpdate) onUpdate(ok);
   });
 
   refreshTimer = setInterval(async () => {
     const ok = await fetchLiveNews();
-    if (ok && onUpdate) onUpdate();
+    if (onUpdate) onUpdate(ok);
   }, 3 * 60 * 1000);
 }
 
