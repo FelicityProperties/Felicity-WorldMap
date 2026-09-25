@@ -89,7 +89,11 @@ export function mountHeatmap(host, dataSource = 'SPX500') {
     blockColor: 'change',
     symbolUrl: '',
     hasTopBar: true,
-    isDataSetEnabled: true,
+    // The widget's own dataset menu is OFF. With it on, TradingView kept
+    // drawing the S&P 500 whatever `dataSource` was passed on remount — it
+    // holds the last dataset the menu showed inside the iframe and prefers
+    // that over the config. Our chips are the dataset menu.
+    isDataSetEnabled: false,
     isZoomEnabled: true,
     hasSymbolTooltip: true,
     isMonoSize: false,
@@ -172,7 +176,10 @@ export function mountHeatmapPicker(hostId, initial = 'SPX500') {
     // The widget's own header names the dataset it is actually drawing. If it
     // does not match the chip, TradingView rejected the key — say so rather
     // than let the S&P fallback pass for the market that was asked for.
-    note.textContent = `Requested: ${labelOf(key)} (dataset ${key}). The widget's top-left header must name this market — if it still reads "S&P 500", TradingView rejected the key and the map below is NOT ${labelOf(key)}; pick it from that header's own menu instead.`;
+    note.textContent = `Showing: ${labelOf(key)} (TradingView dataset ${key}). The widget's top-left header names the market it is actually drawing — if it does not match, TradingView does not serve that dataset to embeds.`;
+    // A fresh container each time so nothing from the previous iframe survives
+    const w = host.querySelector(`#${hostId}-widget`);
+    if (w) w.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
     mountHeatmap(`${hostId}-widget`, key);
   };
   show(initial);
