@@ -12,6 +12,12 @@
 #map {
   width: 100%;
   height: 100%;
+  /* Own stacking context: Leaflet's zoom and attribution controls carry
+     z-index 1000 and were drawing over the country panel and region drawer
+     (the third "key risk" sat behind the tile credit). Contained here, they
+     stay under anything the app layers above the map. */
+  position: relative;
+  z-index: var(--z-base);
 }
 
 .leaflet-container {
