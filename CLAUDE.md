@@ -331,16 +331,34 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   sidebar's RE Signals tab follows the same rule: it is a dated snapshot of
   `pix-signals.js`, so it carries a plain `DLD` badge with the detection
   date — no pulse, no Refresh.
-- **TradingView's ticker tape does drop some US feeds after all.**
-  `TVC:DXY` rendered a red "!" in the tape (user screenshot, Sep 2026);
-  `CAPITALCOM:DXY` is used instead. Treat any tape symbol showing "!" the
-  same way — switch provider, do not remove the instrument.
-- **Heatmaps are now a picker over ~28 markets** (`HEATMAP_MARKETS` in
+- **TradingView's ticker tape does drop US feeds after all.** `TVC:DXY`
+  and `NASDAQ:NDX` rendered a red "!" (user screenshots, Sep 2026), and
+  `TVC:US10Y`/`TVC:VIX` are the same class of feed. The tape now uses the
+  CFD mirrors TradingView's own demo uses (`FOREXCOM:SPXUSD`,
+  `FOREXCOM:NSXUSD`, `CAPITALCOM:DXY`, `CAPITALCOM:VIX`, `CAPITALCOM:UK100`,
+  `CAPITALCOM:J225`) and the exchange-listed T-note future `CBOT:ZN1!` for
+  the 10-year. Treat any tape symbol showing "!" the same way — switch
+  provider, do not remove the instrument.
+- **The World Map's basemap and geometry are ours to serve.** CARTO's
+  basemap tiles began printing "API KEY REQUIRED" across every tile, which
+  blanked the map; the choropleth also depended on jsDelivr, unpkg and a
+  dynamic CDN import, any of which failing left no countries at all. Now:
+  Esri's keyless World Dark Gray Canvas (attribution control on — Esri
+  requires it) with an automatic fall-through to OpenStreetMap tiles
+  darkened by CSS after a burst of tile errors; Natural Earth 110m
+  geometry, the country-name table, topojson-client and Leaflet 1.9.4 are
+  vendored under `assets/geo/` and `js/vendor/` with their licences. Do
+  not reintroduce a CDN for anything the map needs to draw at all.
+- **Heatmaps are a picker over ~30 markets** (`HEATMAP_MARKETS` in
   `js/tv-widgets.js`). The `dataSource` keys could not be verified from
-  this sandbox (TradingView docs are egress-blocked); the widget keeps its
-  own dataset menu enabled so a wrong key is recoverable in the UI, and the
-  note under the chips says so. When the owner reports which chips render
-  empty, fix the keys rather than removing markets.
+  this sandbox (TradingView's docs, widget host and every third-party
+  write-up are egress-blocked). The first attempt shipped index-style keys
+  and the owner reported every chip still drawing the S&P 500 — TradingView
+  falls back to SPX500 on a key it does not know. The picker now prints the
+  requested key under the chips and tells the reader that the widget's own
+  header must name the market; the country-wide `All<ISO2>` datasets are
+  offered alongside the index ones. Confirm keys against the widget header
+  on the deployed site and fix, rather than remove, any that fall back.
 - **Broadcasts embed by channel**, via YouTube's own
   `/embed/live_stream?channel=<id>` resolver, with the broadcaster's live
   page and the YouTube channel linked under every frame. The old

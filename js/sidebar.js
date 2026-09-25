@@ -246,7 +246,7 @@ function renderFlights() {
   const at = meta.fetchedAt ? new Date(meta.fetchedAt).toISOString().slice(11, 16) + ' UTC' : '';
   const n = flights.length.toLocaleString('en-US');
   const status = meta.ok
-    ? `<span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${n} aircraft airborne \u00b7 OpenSky ADS-B \u00b7 ${at}`
+    ? `<span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${n} airborne of ${Number(meta.received || 0).toLocaleString('en-US')} heard \u00b7 OpenSky ADS-B (${escapeHtml(meta.auth || 'anonymous')}) \u00b7 ${at}`
     : flights.length
       ? `<span class="news-header__static">STALE</span> refresh failed (${escapeHtml(meta.error || '')}) \u2014 ${n} positions from ${at} stand`
       : `<span class="news-header__static">NO FEED</span> ${escapeHtml(meta.error || 'nothing fetched yet')}`;

@@ -225,3 +225,14 @@
     display: none;
   }
 }
+
+/* Fallback basemap: OpenStreetMap's light tiles darkened to match the UI.
+   Only applied when the keyless dark provider fails (see BASEMAPS in map.js). */
+.map--osm-dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.75) contrast(1.05) saturate(0.35); }
+.leaflet-control-attribution {
+  background: rgba(10, 14, 22, 0.75) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono);
+  font-size: 8px !important;
+}
+.leaflet-control-attribution a { color: var(--text-secondary) !important; }

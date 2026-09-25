@@ -55,22 +55,25 @@ export function mountTickerTape(host) {
     ...THEME,
     displayMode: 'adaptive',
     showSymbolLogo: true,
+    // A red "!" beside a symbol means TradingView is not serving that feed to
+    // embeds — every US index/yield/vol feed under TVC:/NASDAQ:/CBOE: did it
+    // (DXY, NDX, US10Y, VIX). The CFD mirrors from Forex.com and Capital.com
+    // are the symbols TradingView's own tape demo uses, and they render.
     symbols: [
       { proName: 'FOREXCOM:SPXUSD',   title: 'S&P 500' },
-      { proName: 'NASDAQ:NDX',        title: 'Nasdaq 100' },
-      // TVC:DXY rendered a red "!" in the tape — TradingView does not serve
-      // that US index feed to embeds. The CFD provider's mirror does render.
+      { proName: 'FOREXCOM:NSXUSD',   title: 'Nasdaq 100' },
       { proName: 'CAPITALCOM:DXY',    title: 'Dollar Index' },
       { proName: 'TVC:GOLD',          title: 'Gold' },
       { proName: 'TVC:USOIL',         title: 'WTI Crude' },
+      { proName: 'TVC:UKOIL',         title: 'Brent Crude' },
       { proName: 'COINBASE:BTCUSD',   title: 'Bitcoin' },
       { proName: 'COINBASE:ETHUSD',   title: 'Ethereum' },
       { proName: 'FX:EURUSD',         title: 'EUR/USD' },
       { proName: 'FX:USDJPY',         title: 'USD/JPY' },
-      { proName: 'TVC:US10Y',         title: 'US 10Y' },
-      { proName: 'TVC:VIX',           title: 'VIX' },
-      { proName: 'TVC:UKX',           title: 'FTSE 100' },
-      { proName: 'TVC:NI225',         title: 'Nikkei 225' },
+      { proName: 'CBOT:ZN1!',         title: 'US 10Y T-Note fut.' },
+      { proName: 'CAPITALCOM:VIX',    title: 'VIX' },
+      { proName: 'CAPITALCOM:UK100',  title: 'FTSE 100' },
+      { proName: 'CAPITALCOM:J225',   title: 'Nikkei 225' },
     ],
   });
 }
@@ -107,38 +110,45 @@ export const HEATMAP_MARKETS = [
     { key: 'NASDAQ100',  label: 'Nasdaq 100' },
     { key: 'DJDJI',      label: 'Dow Jones 30' },
     { key: 'AllUSA',     label: 'All US' },
-    { key: 'TSX',        label: 'Canada TSX' },
-    { key: 'IBOV',       label: 'Brazil Bovespa' },
+    { key: 'AllCA',      label: 'All Canada' },
+    { key: 'AllBR',      label: 'All Brazil' },
   ]},
   { region: 'Europe', items: [
     { key: 'UK100',      label: 'FTSE 100' },
+    { key: 'AllUK',      label: 'All UK' },
     { key: 'DAX',        label: 'Germany DAX' },
+    { key: 'AllDE',      label: 'All Germany' },
     { key: 'CAC40',      label: 'France CAC 40' },
-    { key: 'SX5E',       label: 'Euro Stoxx 50' },
-    { key: 'IBEX35',     label: 'Spain IBEX 35' },
-    { key: 'FTSEMIB',    label: 'Italy FTSE MIB' },
-    { key: 'AEX',        label: 'Netherlands AEX' },
-    { key: 'SMI',        label: 'Swiss SMI' },
-    { key: 'OMXS30',     label: 'Sweden OMX 30' },
+    { key: 'AllFR',      label: 'All France' },
+    { key: 'AllES',      label: 'All Spain' },
+    { key: 'AllIT',      label: 'All Italy' },
+    { key: 'AllNL',      label: 'All Netherlands' },
+    { key: 'AllCH',      label: 'All Switzerland' },
+    { key: 'AllSE',      label: 'All Sweden' },
   ]},
   { region: 'Asia-Pacific', items: [
     { key: 'NI225',      label: 'Nikkei 225' },
+    { key: 'AllJP',      label: 'All Japan' },
     { key: 'HSI',        label: 'Hang Seng' },
-    { key: 'KOSPI',      label: 'Korea KOSPI' },
+    { key: 'AllHK',      label: 'All Hong Kong' },
+    { key: 'AllCN',      label: 'All China' },
+    { key: 'AllKR',      label: 'All Korea' },
     { key: 'NIFTY50',    label: 'India Nifty 50' },
-    { key: 'SENSEX',     label: 'India Sensex' },
+    { key: 'AllIN',      label: 'All India' },
     { key: 'ASX200',     label: 'Australia ASX 200' },
-    { key: 'STI',        label: 'Singapore STI' },
-    { key: 'TWSE',       label: 'Taiwan TWSE' },
-    { key: 'SSE50',      label: 'China SSE 50' },
+    { key: 'AllSG',      label: 'All Singapore' },
+    { key: 'AllTW',      label: 'All Taiwan' },
   ]},
   { region: 'Middle East', items: [
-    { key: 'AllAE',      label: 'UAE (all listed)' },
-    { key: 'TASI',       label: 'Saudi Tadawul' },
-    { key: 'AllQA',      label: 'Qatar (all listed)' },
-    { key: 'AllTR',      label: 'Türkiye (all listed)' },
+    { key: 'AllAE',      label: 'All UAE' },
+    { key: 'AllSA',      label: 'All Saudi Arabia' },
+    { key: 'AllQA',      label: 'All Qatar' },
+    { key: 'AllTR',      label: 'All Türkiye' },
   ]},
 ];
+
+// Every key the picker offers, for the tests
+export const HEATMAP_KEYS = HEATMAP_MARKETS.flatMap(g => g.items.map(m => m.key));
 
 // Chip bar over the heatmap. Picking a market re-mounts the widget with
 // that dataSource; the chip stays lit so the active market is never a guess.
@@ -153,17 +163,26 @@ export function mountHeatmapPicker(hostId, initial = 'SPX500') {
           ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${m.key}">${m.label}</button>`).join('')}
         </div>`).join('')}
     </div>
-    <div class="hm-picker__note">If a market renders empty, TradingView is not serving that dataset to embeds — use the widget's own dataset menu (top bar) to pick from its live list.</div>
+    <div class="hm-picker__note" id="${hostId}-note"></div>
     <div class="tradingview-widget-container hm-picker__widget" id="${hostId}-widget"><div class="tradingview-widget-container__widget"></div></div>`;
 
-  mountHeatmap(`${hostId}-widget`, initial);
+  const labelOf = key => HEATMAP_MARKETS.flatMap(g => g.items).find(m => m.key === key)?.label || key;
+  const note = host.querySelector(`#${hostId}-note`);
+  const show = key => {
+    // The widget's own header names the dataset it is actually drawing. If it
+    // does not match the chip, TradingView rejected the key — say so rather
+    // than let the S&P fallback pass for the market that was asked for.
+    note.textContent = `Requested: ${labelOf(key)} (dataset ${key}). The widget's top-left header must name this market — if it still reads "S&P 500", TradingView rejected the key and the map below is NOT ${labelOf(key)}; pick it from that header's own menu instead.`;
+    mountHeatmap(`${hostId}-widget`, key);
+  };
+  show(initial);
 
   host.querySelector(`#${hostId}-picker`).addEventListener('click', e => {
     const b = e.target.closest('[data-ds]');
     if (!b) return;
     host.querySelectorAll('.hm-picker__chip').forEach(x => x.classList.remove('is-on'));
     b.classList.add('is-on');
-    mountHeatmap(`${hostId}-widget`, b.dataset.ds);
+    show(b.dataset.ds);
   });
 }
 

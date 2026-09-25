@@ -38,7 +38,7 @@ export async function fetchLiveFlights() {
     if (!Array.isArray(d.flights)) throw new Error('payload had no flights array');
     flights.length = 0;
     flights.push(...d.flights);
-    Object.assign(layerMeta.flights, { ok: true, fetchedAt: d.fetchedAt, asOf: d.asOf, error: null, source: d.source, auth: d.auth, count: d.count });
+    Object.assign(layerMeta.flights, { ok: true, fetchedAt: d.fetchedAt, asOf: d.asOf, error: null, source: d.source, auth: d.auth, count: d.count, received: d.received, onGround: d.onGround, noPosition: d.noPosition });
     return true;
   } catch (e) {
     // Previous real positions stand; the meta says the refresh failed

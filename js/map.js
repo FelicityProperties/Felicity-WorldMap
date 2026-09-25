@@ -6,6 +6,44 @@ import { ciiScores, regionMap, flights, ships, confZones, events } from './data.
 import { layerMeta } from './live-layers.js';
 import { ciiColor } from './utils.js';
 import { escapeHtml, safeUrl } from './safe.js';
+// Vendored (js/vendor/topojson-client, BSD) so the map does not depend on a CDN
+import { feature as topoFeature } from './vendor/topojson-client/index.js';
+
+// ── Basemap ──
+// CARTO's basemap tiles started demanding an API key ("API KEY REQUIRED"
+// printed across every tile), which is what blanked the map. Esri's World
+// Dark Gray Canvas is served without a key and requires attribution, so the
+// attribution control is on. If Esri ever fails too, the second provider is
+// OpenStreetMap's own tiles darkened with a CSS filter.
+const BASEMAPS = [
+  {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    options: { maxZoom: 16, attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ' },
+    cssClass: '',
+  },
+  {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
+    cssClass: 'map--osm-dark',
+  },
+];
+let basemapIndex = 0, basemapLayer = null, tileErrors = 0;
+
+function mountBasemap() {
+  const b = BASEMAPS[basemapIndex];
+  if (basemapLayer) map.removeLayer(basemapLayer);
+  tileErrors = 0;
+  document.getElementById('map')?.classList.toggle('map--osm-dark', b.cssClass === 'map--osm-dark');
+  basemapLayer = L.tileLayer(b.url, b.options).addTo(map);
+  basemapLayer.on('tileerror', () => {
+    // A handful of failed tiles is normal; a burst means the provider is gone
+    if (++tileErrors >= 8 && basemapIndex < BASEMAPS.length - 1) {
+      console.warn('[map] basemap failing, switching provider');
+      basemapIndex++;
+      mountBasemap();
+    }
+  });
+}
 
 let map, geoLayer;
 let fMarkers = [], sMarkers = [], cMarkers = [], eMarkers = [];
@@ -25,12 +63,11 @@ export function setCountryClickHandler(fn) {
 export function initMap() {
   map = L.map('map', {
     zoomControl: false,
-    attributionControl: false
+    attributionControl: true,
+    minZoom: 2,
   }).setView([20, 20], 2);
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18
-  }).addTo(map);
+  map.attributionControl.setPrefix('');   // tiles and data credits only, no Leaflet flag
+  mountBasemap();
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   canvas = L.canvas({ padding: 0.3 });
@@ -40,21 +77,20 @@ export function initMap() {
 }
 
 // ── GeoJSON Loading ──
+// Country geometry and names are served from this site (assets/geo — the
+// Natural Earth 110m world atlas and the world-countries name table), not
+// from jsDelivr/unpkg: two CDNs and a dynamic import were three separate ways
+// for the choropleth to silently never appear.
 async function loadGeoJSON() {
   try {
     const [topoRes, nameRes] = await Promise.all([
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'),
-      fetch('https://unpkg.com/world-countries@5.0.0/dist/world-countries.json')
+      fetch('assets/geo/countries-110m.json'),
+      fetch('assets/geo/country-names.json'),
     ]);
+    if (!topoRes.ok || !nameRes.ok) throw new Error(`geo assets HTTP ${topoRes.status}/${nameRes.status}`);
     const topo = await topoRes.json();
-    const nameData = await nameRes.json();
-    const { feature } = await import('https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js');
-    const geo = feature(topo, topo.objects.countries);
-
-    const idToName = {};
-    nameData.forEach(c => {
-      if (c.ccn3) idToName[parseInt(c.ccn3)] = c.name.common;
-    });
+    const idToName = await nameRes.json();   // { "784": "United Arab Emirates", ... }
+    const geo = topoFeature(topo, topo.objects.countries);
 
     // Map world-countries common names to our ciiScores keys where they differ
     const nameAliases = {
@@ -298,9 +334,17 @@ function updateStatusCounts() {
   const sc = document.getElementById('scount');
   const cc = document.getElementById('ccount');
   const ec = document.getElementById('ecount');
-  if (fc) fc.textContent = layerMeta.flights.ok || flights.length ? `${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
+  // The reason for a missing feed rides on the label's tooltip so an outage
+  // can be read from the status bar without opening the console
+  if (fc) {
+    fc.textContent = layerMeta.flights.ok || flights.length ? `${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
+    fc.title = layerMeta.flights.ok ? `OpenSky ADS-B · fetched ${layerMeta.flights.fetchedAt || ''}` : `OpenSky: ${layerMeta.flights.error || 'not fetched yet'}`;
+  }
   if (sc) sc.textContent = ships.length + ' ref. vessels';
   if (cc) cc.textContent = confZones.length + ' conflicts';
-  if (ec) ec.textContent = layerMeta.events.ok || events.length ? `${events.length} event locations` : 'events: no feed';
+  if (ec) {
+    ec.textContent = layerMeta.events.ok || events.length ? `${events.length} event locations` : 'events: no feed';
+    ec.title = layerMeta.events.ok ? `GDELT GEO 24h · fetched ${layerMeta.events.fetchedAt || ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
+  }
   updateCountryCount();
 }
