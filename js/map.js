@@ -90,7 +90,7 @@ async function loadGeoJSON() {
     if (!topoRes.ok || !nameRes.ok) throw new Error(`geo assets HTTP ${topoRes.status}/${nameRes.status}`);
     const topo = await topoRes.json();
     const idToName = await nameRes.json();   // { "784": "United Arab Emirates", ... }
-    const geo = topoFeature(topo, topo.objects.countries);
+    const geo = fixAntimeridian(topoFeature(topo, topo.objects.countries));
 
     // Map world-countries common names to our ciiScores keys where they differ
     const nameAliases = {
@@ -138,6 +138,25 @@ async function loadGeoJSON() {
     console.error('GeoJSON load failed:', e);
     updateCountryCount();
   }
+}
+
+// A ring that touches both −180° and +180° (Russia's Chukotka piece, Fiji,
+// Kiribati) is drawn by Leaflet as a band across the whole world. Shifting
+// that ring's western longitudes by +360° keeps it a compact shape past the
+// dateline, which Leaflet wraps correctly.
+function fixAntimeridian(geo) {
+  const fixRing = ring => {
+    let min = Infinity, max = -Infinity;
+    for (const [lng] of ring) { if (lng < min) min = lng; if (lng > max) max = lng; }
+    return (max - min > 300) ? ring.map(([lng, lat]) => [lng < 0 ? lng + 360 : lng, lat]) : ring;
+  };
+  for (const f of geo.features) {
+    const g = f.geometry;
+    if (!g) continue;
+    if (g.type === 'Polygon') g.coordinates = g.coordinates.map(fixRing);
+    else if (g.type === 'MultiPolygon') g.coordinates = g.coordinates.map(poly => poly.map(fixRing));
+  }
+  return geo;
 }
 
 // ── Choropleth Rendering ──
