@@ -12,7 +12,7 @@ import {
   getWatchlist, isWatched, toggleWatch, clearWatchlist,
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
-import { mountTickerTape, mountHeatmap, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk } from './tv-widgets.js';
+import { mountTickerTape, mountHeatmapPicker, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk } from './tv-widgets.js';
 import { hasFundamentals, loadFundamentals, exportBrief } from './equity-fundamentals.js';
 import { renderPortfolio } from './portfolio.js';
 import { escapeHtml, safeUrl } from './safe.js';
@@ -141,7 +141,7 @@ function renderShell() {
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
-      <button class="invest-view-btn" data-view="heatmap">S&amp;P 500 Heatmap</button>
+      <button class="invest-view-btn" data-view="heatmap">Heatmaps</button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
     </div>
@@ -332,9 +332,9 @@ function renderList() {
 // ── Full-width market views: heatmaps and the economic calendar ──
 const MARKET_VIEWS = {
   heatmap: {
-    title: 'S&P 500 Heatmap',
-    sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move.',
-    mount: host => mountHeatmap(host, 'SPX500'),
+    title: 'Market Heatmaps',
+    sub: 'Twenty-eight markets across the Americas, Europe, Asia-Pacific and the Gulf \u2014 every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. Pick a market above the map.',
+    mount: host => mountHeatmapPicker(host, 'SPX500'),
   },
   crypto: {
     title: 'Crypto Heatmap',

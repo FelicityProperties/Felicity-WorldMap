@@ -1,6 +1,38 @@
-// Vercel Serverless Function — serves dashboard data from Neon or hardcoded fallback
+// Vercel Serverless Function — serves dashboard data from Neon or hardcoded fallback,
+// and the World Map's live layers:
+//
+//   GET /api/data                 countries / conflict zones / reference ships (Neon or fallback)
+//   GET /api/data?layer=flights   live ADS-B aircraft positions (OpenSky), edge-cached 20 min
+//   GET /api/data?layer=events    24h conflict-news locations (GDELT GEO), edge-cached 15 min
+//
+// The layers live here rather than in their own file because Hobby caps
+// serverless functions at twelve. A failed upstream returns ok:false with
+// the reason and is NOT cached, so a single blip does not blank the map
+// for everyone for twenty minutes.
+
+import { fetchFlights, fetchEvents, FLIGHTS_SOURCE, EVENTS_SOURCE } from '../lib/live-layers.js';
 
 const FALLBACK = null; // Will be populated below if DB is unavailable
+
+async function handleLayer(layer, res) {
+  try {
+    if (layer === 'flights') {
+      const data = await fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET });
+      res.setHeader('Cache-Control', 's-maxage=1200, stale-while-revalidate=600');
+      return res.status(200).json(data);
+    }
+    if (layer === 'events') {
+      const data = await fetchEvents();
+      res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=900');
+      return res.status(200).json(data);
+    }
+    return res.status(404).json({ ok: false, error: `Unknown layer: ${layer}` });
+  } catch (e) {
+    console.warn(`[data/${layer}]`, e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ ok: false, error: e.message, source: layer === 'flights' ? FLIGHTS_SOURCE : EVENTS_SOURCE });
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,6 +41,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const layer = url.searchParams.get('layer');
+  if (layer) return handleLayer(layer, res);
 
   const connectionString = process.env.DATABASE_URL;
 

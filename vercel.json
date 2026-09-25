@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/brief", "schedule": "0 4 * * 1,4" }
+    { "path": "/api/brief", "schedule": "0 4 * * 1,4" },
+    { "path": "/api/invest/hormuz?refresh=1", "schedule": "0 5 * * *" }
   ],
   "headers": [
     {

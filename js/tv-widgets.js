@@ -58,7 +58,9 @@ export function mountTickerTape(host) {
     symbols: [
       { proName: 'FOREXCOM:SPXUSD',   title: 'S&P 500' },
       { proName: 'NASDAQ:NDX',        title: 'Nasdaq 100' },
-      { proName: 'TVC:DXY',           title: 'Dollar Index' },
+      // TVC:DXY rendered a red "!" in the tape — TradingView does not serve
+      // that US index feed to embeds. The CFD provider's mirror does render.
+      { proName: 'CAPITALCOM:DXY',    title: 'Dollar Index' },
       { proName: 'TVC:GOLD',          title: 'Gold' },
       { proName: 'TVC:USOIL',         title: 'WTI Crude' },
       { proName: 'COINBASE:BTCUSD',   title: 'Bitcoin' },
@@ -90,6 +92,78 @@ export function mountHeatmap(host, dataSource = 'SPX500') {
     isMonoSize: false,
     width: '100%',
     height: '100%',
+  });
+}
+
+// ── Heatmap markets ──
+// Every dataset TradingView's stock heatmap can draw, grouped by region.
+// `dataSource` keys are the ones the widget's own dataset menu uses; the
+// menu stays enabled inside the widget (isDataSetEnabled) so a market that
+// TradingView stops serving can still be picked from its live list rather
+// than rendering an empty box with no way out.
+export const HEATMAP_MARKETS = [
+  { region: 'Americas', items: [
+    { key: 'SPX500',     label: 'S&P 500' },
+    { key: 'NASDAQ100',  label: 'Nasdaq 100' },
+    { key: 'DJDJI',      label: 'Dow Jones 30' },
+    { key: 'AllUSA',     label: 'All US' },
+    { key: 'TSX',        label: 'Canada TSX' },
+    { key: 'IBOV',       label: 'Brazil Bovespa' },
+  ]},
+  { region: 'Europe', items: [
+    { key: 'UK100',      label: 'FTSE 100' },
+    { key: 'DAX',        label: 'Germany DAX' },
+    { key: 'CAC40',      label: 'France CAC 40' },
+    { key: 'SX5E',       label: 'Euro Stoxx 50' },
+    { key: 'IBEX35',     label: 'Spain IBEX 35' },
+    { key: 'FTSEMIB',    label: 'Italy FTSE MIB' },
+    { key: 'AEX',        label: 'Netherlands AEX' },
+    { key: 'SMI',        label: 'Swiss SMI' },
+    { key: 'OMXS30',     label: 'Sweden OMX 30' },
+  ]},
+  { region: 'Asia-Pacific', items: [
+    { key: 'NI225',      label: 'Nikkei 225' },
+    { key: 'HSI',        label: 'Hang Seng' },
+    { key: 'KOSPI',      label: 'Korea KOSPI' },
+    { key: 'NIFTY50',    label: 'India Nifty 50' },
+    { key: 'SENSEX',     label: 'India Sensex' },
+    { key: 'ASX200',     label: 'Australia ASX 200' },
+    { key: 'STI',        label: 'Singapore STI' },
+    { key: 'TWSE',       label: 'Taiwan TWSE' },
+    { key: 'SSE50',      label: 'China SSE 50' },
+  ]},
+  { region: 'Middle East', items: [
+    { key: 'AllAE',      label: 'UAE (all listed)' },
+    { key: 'TASI',       label: 'Saudi Tadawul' },
+    { key: 'AllQA',      label: 'Qatar (all listed)' },
+    { key: 'AllTR',      label: 'Türkiye (all listed)' },
+  ]},
+];
+
+// Chip bar over the heatmap. Picking a market re-mounts the widget with
+// that dataSource; the chip stays lit so the active market is never a guess.
+export function mountHeatmapPicker(hostId, initial = 'SPX500') {
+  const host = document.getElementById(hostId);
+  if (!host) return;
+  host.innerHTML = `
+    <div class="hm-picker" id="${hostId}-picker">
+      ${HEATMAP_MARKETS.map(g => `
+        <div class="hm-picker__group">
+          <span class="hm-picker__region">${g.region}</span>
+          ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${m.key}">${m.label}</button>`).join('')}
+        </div>`).join('')}
+    </div>
+    <div class="hm-picker__note">If a market renders empty, TradingView is not serving that dataset to embeds — use the widget's own dataset menu (top bar) to pick from its live list.</div>
+    <div class="tradingview-widget-container hm-picker__widget" id="${hostId}-widget"><div class="tradingview-widget-container__widget"></div></div>`;
+
+  mountHeatmap(`${hostId}-widget`, initial);
+
+  host.querySelector(`#${hostId}-picker`).addEventListener('click', e => {
+    const b = e.target.closest('[data-ds]');
+    if (!b) return;
+    host.querySelectorAll('.hm-picker__chip').forEach(x => x.classList.remove('is-on'));
+    b.classList.add('is-on');
+    mountHeatmap(`${hostId}-widget`, b.dataset.ds);
   });
 }
 

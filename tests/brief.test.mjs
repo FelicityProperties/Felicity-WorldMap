@@ -89,9 +89,9 @@ check(sys.includes('LIVE GLOBAL MACRO EVIDENCE') && sys.includes('9 of 9 benchma
 check(sys.includes('Gold: USD 3,310 per oz'), 'gold recovered via retry after 429');
 check(sys.includes('US 10-year Treasury yield: 4.12% (+4 bp vs prior close)') && sys.includes('Brent crude: USD 71.40 per barrel (+1.01% vs prior close)'), 'macro levels rendered with currency, unit, and bp for yields');
 check(sys.includes('[Reuters] Fed holds rates'), 'headline feed rendered');
-check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transits — tankers 3, cargo 5'), 'Hormuz evidence block in the brief prompt');
+check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transit calls — tankers 3, cargo 5 (IMF PortWatch)'), 'Hormuz evidence block in the brief prompt');
 check(/^latest day 2026-09-13 \(\d+d lag\), 40 rows$/.test(res.payload?.hormuzEvidence || ''), `response reports Hormuz coverage (${res.payload?.hormuzEvidence})`);
-check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 207.39') && sys.includes('through 2026-09-13'), 'PIX evidence is the August set');
+check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 206.99') && sys.includes('through 2026-09-24'), 'PIX evidence is the August set');
 check(sys.includes('YIELD RANKINGS') && /Villas: JVC 5\.2% > Town Square 5\.1% > Dubai South 4\.8%/.test(sys), 'villa yield ranking computed correctly');
 check(/Apartments: Mohammed Bin Rashid City 6\.5% > Meydan 6\.3% > JVC 6\.1%/.test(sys), 'apartment yield ranking computed correctly');
 check(!sys.includes("Last time X happened, Y moved Z%'"), 'invented-analog instruction removed');
@@ -135,7 +135,7 @@ sys = calls.find(c => c.url.includes('anthropic.com'))?.body.system || '';
 check(sys.includes('You have NO live data feed for Ukraine IGNORE') && !sys.includes('\nIGNORE'), 'country name newline-stripped');
 check(!sys.includes('x'.repeat(100)), 'country name length-bounded');
 check(!sys.includes('Use exact numbers') && !sys.includes('Historical analogs must reference specific dates'), 'fabrication demands removed from intel');
-check(sys.includes('Residential index 207.39'), 'intel carries the Dubai registry evidence');
+check(sys.includes('Residential index 206.99'), 'intel carries the Dubai registry evidence');
 
 console.log(`system prompt (brief): ${anthropic.body.system.length} chars`);
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }

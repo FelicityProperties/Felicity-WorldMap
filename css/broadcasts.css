@@ -349,3 +349,13 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Permanent links out — the broadcaster's own live page beside YouTube's,
+   because YouTube's "unavailable" screen inside the frame is a dead end. */
+.broadcast-card__links {
+  display: flex; gap: var(--space-4); flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  font-family: var(--font-mono); font-size: 9px;
+}
+.broadcast-card__links a { color: var(--accent-primary); text-decoration: none; }
+.broadcast-card__links a:hover { text-decoration: underline; }

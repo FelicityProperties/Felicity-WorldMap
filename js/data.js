@@ -166,7 +166,17 @@ export const markets = [
 // the sidebar rotated as if they were the wire.
 export const news = [];
 
-export const flights = [
+// Live aircraft positions, filled by js/live-layers.js from OpenSky ADS-B.
+// Empty until the first fetch: the map draws nothing rather than a
+// hardcoded corridor set dressed as traffic.
+export const flights = [];
+
+// Live 24-hour conflict-news locations (GDELT GEO), same module.
+export const events = [];
+
+// The former reference corridor set, kept for the record and no longer
+// drawn anywhere — every row was authored, not observed.
+const referenceFlightsRetired = [
   { call: "EK201",            from: "DXB", to: "LHR",           lat: 28.5,  lng: 40.2,  alt: "37,000ft", type: "com", hdg: 315 },
   { call: "EK231",            from: "DXB", to: "JFK",           lat: 32.1,  lng: 51.4,  alt: "39,000ft", type: "com", hdg: 320 },
   { call: "QR007",            from: "DOH", to: "LAX",           lat: 30.2,  lng: 62.1,  alt: "38,000ft", type: "com", hdg: 290 },
@@ -219,20 +229,8 @@ export const confZones = [
   { lat: 25.0,  lng: -104.0, name: "Mexico Cartel Corridors", sev: 7, reCapitalFlow: "Mexican HNW offshore allocation", reAreas: ["Dubai Marina","Palm Jumeirah"], reHistoricalImpact: "LatAm buyers represent growing Dubai luxury segment" },
 ];
 
-export const dubaiSignals = [
-  { trigger: "\ud83c\uddf7\ud83c\uddfa Russia Sanctions Extended", chain: "Oligarch capital reroute \u2192 Dubai luxury premium \u2192 Palm, Jumeirah Bay, Emirates Hills", sector: "Ultra-Luxury Residential", impact: "+6.1%", sentiment: "bullish", time: "2h", areas: ["Palm Jumeirah","Downtown Dubai","DIFC"], action: "ACCUMULATE LUXURY", segment: "Luxury", timeHorizon: "medium", triggerRegion: "Europe", historicalAnalog: "2022 sanctions drove AED 18B into Dubai prime. Same pattern repeating.", magnitude: "AED 8-12B" },
-  { trigger: "\ud83c\uddee\ud83c\uddf3 India Rupee Weakness", chain: "NRI dollar-asset demand \u2191 \u2192 Mid-prime Dubai inflow \u2192 Dubai Hills, JVC, Arjan", sector: "Mid-Market Residential", impact: "+2.4%", sentiment: "bullish", time: "4h", areas: ["Dubai Hills Estate","JVC","Arjan"], action: "BULLISH MID", segment: "Mid-market", timeHorizon: "short", triggerRegion: "Asia", historicalAnalog: "2023 rupee dip drove 22% spike in Indian buyer transactions.", magnitude: "AED 3-5B" },
-  { trigger: "\ud83d\udee2\ufe0f WTI Oil Above $80", chain: "GCC sovereign wealth +4% \u2192 Off-plan absorption \u2191 \u2192 All Emaar/DAMAC pipeline", sector: "Off-Plan Development", impact: "+3.5%", sentiment: "bullish", time: "6h", areas: ["Expo City","Dubai South","Creek Harbour"], action: "BULLISH NEW-BUILD", segment: "Premium", timeHorizon: "medium", triggerRegion: "Middle East", historicalAnalog: "Oil above $80 historically correlates with 15% off-plan sales increase.", magnitude: "AED 10-15B" },
-  { trigger: "\ud83c\uddec\ud83c\udde7 UK Non-Dom Tax Reform", chain: "British tax-flight accelerating \u2192 Golden visa purchases \u2191 \u2192 Downtown, DIFC, Palm", sector: "Prime Residential", impact: "+2.9%", sentiment: "bullish", time: "8h", areas: ["Downtown Dubai","DIFC","Palm Jumeirah"], action: "BULLISH PRIME", segment: "Luxury", timeHorizon: "medium", triggerRegion: "Europe", historicalAnalog: "UK non-dom changes in 2024 drove 31% increase in British Dubai buyers.", magnitude: "AED 4-6B" },
-  { trigger: "\ud83c\udde8\ud83c\uddf3 China Property Crisis", chain: "Chinese HNW offshore diversification \u2192 Dubai safe-haven demand \u2192 Creek Harbour, Business Bay", sector: "Premium Residential", impact: "+1.9%", sentiment: "bullish", time: "12h", areas: ["Creek Harbour","Business Bay","Dubai Marina"], action: "WATCH-BULLISH", segment: "Premium", timeHorizon: "long", triggerRegion: "Asia", historicalAnalog: "Chinese buyer share in Dubai rose from 2% to 6% during 2023-2024 property crisis.", magnitude: "AED 5-8B" },
-  { trigger: "\ud83c\uddfa\ud83c\uddf8 US Fed Holds Rates", chain: "Dollar-peg AED preservation appeal \u2192 All segments stable \u2192 Yield-seeking inflow", sector: "All Segments", impact: "0.0%", sentiment: "neutral", time: "1d", areas: ["All segments"], action: "HOLD", segment: "All", timeHorizon: "short", triggerRegion: "Americas", historicalAnalog: "Rate holds maintain Dubai yield premium over US treasuries at 2-3%.", magnitude: "Neutral" },
-  { trigger: "\ud83c\uddee\ud83c\uddf1 Israel Regional Tension", chain: "Gulf safe-haven premium \u2192 Dubai over Tel Aviv allocation \u2192 All prime areas", sector: "Prime Residential", impact: "+3.1%", sentiment: "bullish", time: "3h", areas: ["Palm Jumeirah","Downtown Dubai","DIFC","Business Bay"], action: "BULLISH-DEFENSIVE", segment: "Luxury", timeHorizon: "immediate", triggerRegion: "Middle East", historicalAnalog: "Post-Oct 2023 tension drove 18% surge in Gulf-origin Dubai transactions.", magnitude: "AED 6-10B" },
-  { trigger: "\ud83d\udea2 Red Sea Disruption", chain: "Logistics reroute via Jebel Ali \u2192 Industrial/warehouse demand \u2192 Dubai South, JAFZA, DIP", sector: "Industrial & Logistics", impact: "+4.2%", sentiment: "bullish", time: "5h", areas: ["Dubai South","JAFZA","DIP"], action: "BULLISH INDUSTRIAL", segment: "Commercial", timeHorizon: "medium", triggerRegion: "Middle East", historicalAnalog: "Houthi disruptions increased Jebel Ali throughput 9% in H1 2024.", magnitude: "AED 3-5B" },
-  { trigger: "\ud83c\uddf5\ud83c\uddf0 Pakistan Political Instability", chain: "Regional HNW outflow \u2192 Mid-market Dubai demand \u2192 JVC, International City", sector: "Mid-Market Residential", impact: "+1.4%", sentiment: "bullish", time: "7h", areas: ["JVC","International City","Town Square"], action: "WATCH MID", segment: "Affordable", timeHorizon: "short", triggerRegion: "Asia", historicalAnalog: "Pakistani buyers consistently top 3 in Dubai affordable segment.", magnitude: "AED 2-3B" },
-  { trigger: "\ud83c\uddea\ud83c\uddfa EU Energy Crisis Deepens", chain: "European corporate Dubai HQ moves \u2192 Commercial + residential combined \u2192 DIFC, Business Bay", sector: "Commercial Office", impact: "+2.1%", sentiment: "bullish", time: "10h", areas: ["DIFC","Business Bay","Dubai Marina"], action: "BULLISH COMMERCIAL", segment: "Commercial", timeHorizon: "medium", triggerRegion: "Europe", historicalAnalog: "European corporate relocations to Dubai doubled 2022-2024.", magnitude: "AED 4-7B" },
-  { trigger: "\ud83c\udfe6 US Regional Bank Stress", chain: "Tighter global credit \u2192 Off-plan financing caution \u2192 Secondary markets pressure", sector: "Off-Plan Development", impact: "-1.8%", sentiment: "bearish", time: "1d", areas: ["JVC","Dubai South","Arjan","Town Square"], action: "BEARISH OFFPLAN", segment: "Affordable", timeHorizon: "short", triggerRegion: "Americas", historicalAnalog: "SVB collapse in 2023 caused 2-week pause in off-plan launches.", magnitude: "AED -2B" },
-  { trigger: "\u26fd OPEC+ Production Cut", chain: "Oil price support \u2192 GCC fiscal surplus \u2192 Government infrastructure spending", sector: "Infrastructure-Adjacent", impact: "+3.5%", sentiment: "bullish", time: "2d", areas: ["Expo City","Dubai South","Meydan","Creek Harbour"], action: "BULLISH INFRASTRUCTURE", segment: "Premium", timeHorizon: "long", triggerRegion: "Middle East", historicalAnalog: "OPEC cuts in 2023 supported AED 50B government project pipeline.", magnitude: "AED 8-12B" },
-];
+// dubaiSignals (authored "+6.1%" / "AED 8-12B" chains) was removed: nothing rendered it,
+// and every figure in it was invented. Real signals live in js/pix-signals.js.
 
 // ── Region Intelligence ──
 export const regionIntel = {
@@ -349,7 +347,7 @@ export const broadcastChannels = [
   {
     name: "Sky News",
     handle: "SkyNews",
-    channelId: "UCROQqK3_yzLfIKCHpG3mYXw",
+    channelId: "UCoMdktPbSTixAyNGwb-UYkQ",   // was a wrong id — the embed never resolved
     color: "#c8102e",
     fallbackUrl: "https://news.sky.com/watch-live",
     description: "24/7 UK & world news"
@@ -371,12 +369,28 @@ export const broadcastChannels = [
     description: "German international broadcaster"
   },
   {
-    name: "Bloomberg Quicktake",
-    handle: "BloombergQuicktake",
+    name: "Bloomberg Television",
+    handle: "markets",
     channelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
     color: "#472a91",
     fallbackUrl: "https://www.bloomberg.com/live",
     description: "Markets, business & finance"
+  },
+  {
+    name: "CNBC",
+    handle: "CNBC",
+    channelId: "UCvJJ_dzjViJCoLf5uKUTwoA",
+    color: "#005594",
+    fallbackUrl: "https://www.cnbc.com/live-tv/",
+    description: "US markets & business"
+  },
+  {
+    name: "TRT World",
+    handle: "trtworld",
+    channelId: "UC7fWeaHhqgM4Ry-RMpM2YYw",
+    color: "#1c8fd6",
+    fallbackUrl: "https://www.trtworld.com/live",
+    description: "Istanbul — Middle East & world"
   },
 ];
 
@@ -416,7 +430,6 @@ export async function loadFromAPI() {
     if (data.flights)      replaceArray(flights, data.flights);
     if (data.ships)        replaceArray(ships, data.ships);
     if (data.confZones)    replaceArray(confZones, data.confZones);
-    if (data.dubaiSignals) replaceArray(dubaiSignals, data.dubaiSignals);
 
     console.log(`[Felicity] Data loaded (source: ${data.source || 'api'})`);
     return true;

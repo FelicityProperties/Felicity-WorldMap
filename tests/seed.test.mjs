@@ -2,7 +2,7 @@
 // never a market price or a headline: those come from the live endpoints
 // or are not shown. This pins that, so a seeded "price: 3234" cannot creep
 // back and scroll under the LIVE badge during an outage.
-const { markets, news } = await import('../js/data.js');
+const { markets, news, flights, events, ships } = await import('../js/data.js');
 
 const fails = [];
 const check = (cond, msg) => { if (!cond) fails.push(msg); };
@@ -13,6 +13,8 @@ for (const m of markets) {
   check(typeof m.sym === 'string' && typeof m.name === 'string', `${m.sym}: symbol metadata intact`);
 }
 check(Array.isArray(news) && news.length === 0, `news starts empty (${news.length})`);
+check(Array.isArray(flights) && flights.length === 0 && Array.isArray(events) && events.length === 0, 'flights and events start empty — live layers fill them');
+check(Array.isArray(ships) && ships.length > 0 && ships.every(s => typeof s.name === 'string'), 'ships remain a labelled reference set');
 
 // The ticker must render words, not numbers, from this state
 const src = await import('node:fs').then(fs => fs.readFileSync(new URL('../js/ticker.js', import.meta.url), 'utf8'));

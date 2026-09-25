@@ -494,8 +494,9 @@
           <div class="layer-controls">
             <button class="layer-btn active" data-layer="choropleth"><span class="layer-btn__dot"></span>Instability</button>
             <button class="layer-btn active" data-layer="conflicts"><span class="layer-btn__dot"></span>Conflicts</button>
-            <button class="layer-btn active" data-layer="flights"><span class="layer-btn__dot"></span>Flights</button>
-            <button class="layer-btn active" data-layer="ships"><span class="layer-btn__dot"></span>Ships</button>
+            <button class="layer-btn active" data-layer="events"><span class="layer-btn__dot"></span>Events 24h</button>
+            <button class="layer-btn active" data-layer="flights"><span class="layer-btn__dot"></span>Aircraft</button>
+            <button class="layer-btn active" data-layer="ships"><span class="layer-btn__dot"></span>Ships (ref.)</button>
           </div>
           <div class="map-legend">
             <div class="map-legend__title">CII Score</div>
@@ -634,7 +635,9 @@
     <div class="statusbar__center">
       <span class="statusbar__label" id="ctrycount">0 countries</span>
       <span class="statusbar__sep">|</span>
-      <span class="statusbar__label" id="fcount">0 flights</span>
+      <span class="statusbar__label" id="ecount">events: no feed</span>
+      <span class="statusbar__sep">|</span>
+      <span class="statusbar__label" id="fcount">aircraft: no feed</span>
       <span class="statusbar__sep">|</span>
       <span class="statusbar__label" id="scount">0 vessels</span>
       <span class="statusbar__sep">|</span>

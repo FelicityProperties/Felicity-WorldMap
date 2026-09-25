@@ -2,12 +2,16 @@
 // MAP — Leaflet Init, GeoJSON, Layers, Markers, Animation
 // ═══════════════════════════════════════════════════════════
 
-import { ciiScores, regionMap, flights, ships, confZones } from './data.js';
+import { ciiScores, regionMap, flights, ships, confZones, events } from './data.js';
+import { layerMeta } from './live-layers.js';
 import { ciiColor } from './utils.js';
+import { escapeHtml, safeUrl } from './safe.js';
 
 let map, geoLayer;
-let fMarkers = [], sMarkers = [], cMarkers = [];
-let layerState = { choropleth: true, conflicts: true, flights: true, ships: true };
+let fMarkers = [], sMarkers = [], cMarkers = [], eMarkers = [];
+// Thousands of live aircraft are drawn on one canvas, not as DOM nodes
+let canvas = null;
+let layerState = { choropleth: true, conflicts: true, flights: true, ships: true, events: true };
 let onCountryClick = null;
 
 export function getMap() { return map; }
@@ -29,6 +33,7 @@ export function initMap() {
   }).addTo(map);
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
+  canvas = L.canvas({ padding: 0.3 });
 
   loadGeoJSON();
   return map;
@@ -168,13 +173,31 @@ function mkIcon(color, size = 8, square = false) {
 
 // ── Dynamic Layer Rendering ──
 export function renderDynLayers() {
+  if (!map) return;   // a live-layer refresh can land before the map tab has ever been opened
   // Clear existing
   fMarkers.forEach(m => map.removeLayer(m));
   sMarkers.forEach(m => map.removeLayer(m));
   cMarkers.forEach(m => map.removeLayer(m));
+  eMarkers.forEach(m => map.removeLayer(m));
   fMarkers = [];
   sMarkers = [];
   cMarkers = [];
+  eMarkers = [];
+
+  // Live conflict-news locations (GDELT, last 24h) — sized by article count
+  if (layerState.events) {
+    events.forEach(e => {
+      const n = e.count || 1;
+      const r = Math.min(16, 4 + Math.log2(n + 1) * 2);
+      const m = L.circleMarker([e.lat, e.lng], {
+        renderer: canvas, radius: r, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.22, weight: 1,
+      }).addTo(map);
+      const link = e.url ? `<br><a href="${safeUrl(e.url)}" target="_blank" rel="noopener" style="color:#00d4ff">${escapeHtml(e.title || 'Lead article')} ↗</a>` : '';
+      m.bindPopup(`<b>${escapeHtml(e.name)}</b><br>${n} article${n === 1 ? '' : 's'} in the last 24h · GDELT${link}`);
+      m.bindTooltip(`${escapeHtml(e.name)} · ${n}`, { direction: 'top' });
+      eMarkers.push(m);
+    });
+  }
 
   // Conflict zones
   if (layerState.conflicts) {
@@ -203,16 +226,19 @@ export function renderDynLayers() {
     });
   }
 
-  // Flight markers
+  // Live aircraft (OpenSky ADS-B). Thousands of points, so they go on the
+  // canvas renderer as small circles; the tooltip carries what the feed
+  // actually reports \u2014 callsign, registry country, altitude, speed, track.
   if (layerState.flights) {
     flights.forEach(f => {
-      const col = f.type === 'mil' ? '#ef4444' : '#3b82f6';
-      const sz = f.type === 'mil' ? 10 : 7;
-      const m = L.marker([f.lat, f.lng], {
-        icon: mkIcon(col, sz, true)
+      const m = L.circleMarker([f.lat, f.lng], {
+        renderer: canvas, radius: 2.2, color: '#3b82f6', fillColor: '#60a5fa', fillOpacity: 0.85, weight: 0.6,
       }).addTo(map);
+      const alt = f.alt != null ? `${Math.round(f.alt * 3.281).toLocaleString('en-US')} ft` : 'alt n/a';
+      const spd = f.vel != null ? `${Math.round(f.vel * 1.944)} kn` : '';
+      const hdg = f.hdg != null ? `${f.hdg}\u00b0` : '';
       m.bindTooltip(
-        `<b>${f.call}</b><br>${f.from} \u2192 ${f.to}<br>${f.alt} \u00b7 ${f.type === 'mil' ? 'Military' : 'Commercial'}`,
+        `<b>${escapeHtml(f.call || f.icao)}</b><br>${escapeHtml(f.country)}<br>${alt}${spd ? ' \u00b7 ' + spd : ''}${hdg ? ' \u00b7 ' + hdg : ''}`,
         { direction: 'top' }
       );
       fMarkers.push(m);
@@ -255,16 +281,12 @@ export function toggleLayer(name, btn) {
   }
 }
 
-// ── Animate Trackers ──
-// Flight and ship markers are a FIXED reference set of major air and sea
-// corridors — see `flights`/`ships` in js/data.js. There is no live ADS-B or
-// AIS feed behind them.
-//
-// This function used to drift every marker across the map on a timer
-// (`f.lat += cos(hdg) * 0.025`), which made a static dataset look like live
-// tracking. That is the same fabrication as the Math.random() ticker drift
-// removed earlier — it survived that purge only because it used arithmetic
-// rather than randomness. Positions now stand where the data puts them.
+// ── No simulated movement ──
+// Aircraft positions are OpenSky state vectors and move only when a new
+// fetch lands. An earlier build drifted a hardcoded corridor set across the
+// map on a timer (`f.lat += cos(hdg) * 0.025`) to look live; that was
+// fabrication and is gone. Ships remain a labelled reference set — there is
+// no free, licensed AIS feed.
 // ── Status Updates ──
 function updateCountryCount() {
   const el = document.getElementById('ctrycount');
@@ -275,8 +297,10 @@ function updateStatusCounts() {
   const fc = document.getElementById('fcount');
   const sc = document.getElementById('scount');
   const cc = document.getElementById('ccount');
-  if (fc) fc.textContent = flights.length + ' flights';
-  if (sc) sc.textContent = ships.length + ' vessels';
+  const ec = document.getElementById('ecount');
+  if (fc) fc.textContent = layerMeta.flights.ok || flights.length ? `${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
+  if (sc) sc.textContent = ships.length + ' ref. vessels';
   if (cc) cc.textContent = confZones.length + ' conflicts';
+  if (ec) ec.textContent = layerMeta.events.ok || events.length ? `${events.length} event locations` : 'events: no feed';
   updateCountryCount();
 }

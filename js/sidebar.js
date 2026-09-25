@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { news, markets, flights, ships } from './data.js';
+import { layerMeta } from './live-layers.js';
 import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
 import { escapeHtml as safeEscape, isSafeUrl } from './safe.js';
 import { formatPrice } from './utils.js';
@@ -235,42 +236,55 @@ function renderMarkets() {
 }
 
 // ── Flights ──
-// Flights and ships are a fixed reference set of major corridors, NOT a live
-// feed. The header used to carry a pulsing "TRACKING" dot, a ticking clock
-// and a Refresh button — three separate signals of live data over a hardcoded
-// list. It says what it is now.
+// Live OpenSky ADS-B positions (js/live-layers.js). The header says LIVE
+// only after a real fetch, STALE when the latest refresh failed but earlier
+// positions stand, and NO FEED before anything has landed. Ships below
+// remain a labelled reference set — no free, licensed AIS feed exists.
+const DXB = { lat: 25.25, lng: 55.36 };
 function renderFlights() {
-  const mil = flights.filter(f => f.type === 'mil').length;
-  const com = flights.length - mil;
+  const meta = layerMeta.flights;
+  const at = meta.fetchedAt ? new Date(meta.fetchedAt).toISOString().slice(11, 16) + ' UTC' : '';
+  const n = flights.length.toLocaleString('en-US');
+  const status = meta.ok
+    ? `<span class="news-header__live"><span class="news-header__live-dot"></span>LIVE</span> ${n} aircraft airborne \u00b7 OpenSky ADS-B \u00b7 ${at}`
+    : flights.length
+      ? `<span class="news-header__static">STALE</span> refresh failed (${escapeHtml(meta.error || '')}) \u2014 ${n} positions from ${at} stand`
+      : `<span class="news-header__static">NO FEED</span> ${escapeHtml(meta.error || 'nothing fetched yet')}`;
 
   const header = `
     <div class="news-header">
-      <div class="news-header__status">
-        <span class="news-header__ref">REFERENCE</span> ${com} commercial \u00b7 ${mil} military \u2014 major air corridors, not a live ADS-B feed
-      </div>
+      <div class="news-header__status">${status}</div>
     </div>
   `;
 
-  const cards = flights.map(f => `
+  if (!flights.length) {
+    return header + '<div class="card-item"><div class="market-row__sub">Aircraft appear here only from a real OpenSky fetch \u2014 nothing is seeded.</div></div>';
+  }
+
+  // The forty aircraft nearest Dubai, with what the transponder reports
+  const d2 = f => (f.lat - DXB.lat) ** 2 + ((f.lng - DXB.lng) * Math.cos(DXB.lat * Math.PI / 180)) ** 2;
+  const nearest = [...flights].sort((x, y) => d2(x) - d2(y)).slice(0, 40);
+  const cards = nearest.map(f => {
+    const alt = f.alt != null ? `${Math.round(f.alt * 3.281).toLocaleString('en-US')} ft` : 'alt n/a';
+    const spd = f.vel != null ? ` \u00b7 ${Math.round(f.vel * 1.944)} kn` : '';
+    const hdg = f.hdg != null ? ` \u00b7 ${f.hdg}\u00b0` : '';
+    return `
     <div class="card-item">
       <div class="track-card">
         <div>
-          <div class="track-card__callsign">
-            ${escapeHtml(f.call)}
-            <span class="badge badge--${f.type === 'mil' ? 'mil' : 'com'}">${f.type === 'mil' ? 'MIL' : 'COM'}</span>
-          </div>
-          <div class="track-card__route">${escapeHtml(f.from)} \u2192 ${escapeHtml(f.to)}</div>
-          <div class="track-card__detail">${escapeHtml(f.alt)}</div>
+          <div class="track-card__callsign">${escapeHtml(f.call || f.icao)}</div>
+          <div class="track-card__route">${escapeHtml(f.country)}</div>
+          <div class="track-card__detail">${alt}${spd}${hdg}</div>
         </div>
         <div class="track-card__coords">
-          <div>${f.lat.toFixed(1)}\u00b0N</div>
-          <div>${f.lng.toFixed(1)}\u00b0E</div>
+          <div>${Math.abs(f.lat).toFixed(1)}\u00b0${f.lat >= 0 ? 'N' : 'S'}</div>
+          <div>${Math.abs(f.lng).toFixed(1)}\u00b0${f.lng >= 0 ? 'E' : 'W'}</div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
-  return header + cards;
+  return header + `<div class="card-item"><div class="market-row__sub">Nearest 40 to Dubai of ${n} airborne \u00b7 aircraft outside OpenSky sensor coverage (oceans, parts of Africa and Asia) are not seen</div></div>` + cards;
 }
 
 // ── Ships ──

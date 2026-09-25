@@ -3,8 +3,11 @@
 // ═══════════════════════════════════════════════════════════
 //
 // Source: Dubai Land Department data modelled by PropertyIndex
-// (propertyindex.ae). Snapshot 2026-09-14; DLD registrations loaded
-// through 2026-08 (last complete calendar month). Every figure below
+// (propertyindex.ae). Snapshot 2026-09-25; DLD registrations loaded
+// through 2026-08 (last complete calendar month). PropertyIndex restates
+// history as late registrations land — this snapshot moved the August
+// index from 207.39 to 206.99 and the villa index by −4.6 points, so
+// every figure below was re-pulled, not carried over. Every figure below
 // is registered-transaction evidence — median registered sale PSF,
 // median registered price, median registered annual rent — not an
 // estimate or a listing.
@@ -29,28 +32,28 @@ export const PIX_WINDOW = 'Sep 2025 – Aug 2026';
 
 // ── PIX Market Index (base Jan 2012 = 100), as of 2026-08 ──
 export const pixIndex = {
-  residential: { level: 207.39, momPct: -0.33, yoyPct: -2.38, medianPsf: 1695, txCount: 10678 },
-  apartment:   { level: 199.92, momPct: -0.26, yoyPct: -2.63, medianPsf: 1701, txCount: 9506 },
-  villa:       { level: 270.95, momPct: -0.71, yoyPct: -1.01, medianPsf: 1621, txCount: 1172 },
+  residential: { level: 206.99, momPct: -0.41, yoyPct: -2.46, medianPsf: 1696, txCount: 10667 },
+  apartment:   { level: 199.92, momPct: -0.27, yoyPct: -2.63, medianPsf: 1701, txCount: 9506 },
+  villa:       { level: 266.38, momPct: -1.20, yoyPct: -1.51, medianPsf: 1630, txCount: 1161 },
 };
 
 // Trailing 13 months, residential segment (index level).
 // PropertyIndex restates history as late registrations land, so this
 // series is re-pulled in full on every refresh — never appended to.
 export const pixSeries = [
-  { month: 'Aug 25', level: 212.44 },
-  { month: 'Sep 25', level: 214.86 },
-  { month: 'Oct 25', level: 216.33 },
-  { month: 'Nov 25', level: 218.00 },
-  { month: 'Dec 25', level: 219.18 },
-  { month: 'Jan 26', level: 220.49 },
-  { month: 'Feb 26', level: 219.35 },
-  { month: 'Mar 26', level: 218.81 },
-  { month: 'Apr 26', level: 220.11 },
-  { month: 'May 26', level: 220.45 },
-  { month: 'Jun 26', level: 214.01 },
-  { month: 'Jul 26', level: 208.08 },
-  { month: 'Aug 26', level: 207.39 },
+  { month: 'Aug 25', level: 212.21 },
+  { month: 'Sep 25', level: 214.61 },
+  { month: 'Oct 25', level: 216.14 },
+  { month: 'Nov 25', level: 217.79 },
+  { month: 'Dec 25', level: 218.99 },
+  { month: 'Jan 26', level: 220.26 },
+  { month: 'Feb 26', level: 219.09 },
+  { month: 'Mar 26', level: 218.57 },
+  { month: 'Apr 26', level: 219.84 },
+  { month: 'May 26', level: 220.22 },
+  { month: 'Jun 26', level: 213.78 },
+  { month: 'Jul 26', level: 207.84 },
+  { month: 'Aug 26', level: 206.99 },
 ];
 
 // ── Per-area registry evidence (L12M through Aug 2026) ──
@@ -67,17 +70,17 @@ export const pixSeries = [
 // an `est` marker rather than a registry figure that does not exist.
 export const pixAreas = {
   'Downtown Dubai': {
-    sales: 2552, valueAed: 11.03e9, rentals: 9985,
+    sales: 2552, valueAed: 11.03e9, rentals: 9983,
     cohort: 'Apartment', psf: 2983, price: 2920000, rent: 144000, yieldPct: 4.5,
     url: 'https://www.propertyindex.ae/dubai/downtown-dubai',
   },
   'Dubai Marina': {
-    sales: 2160, valueAed: 6.24e9, rentals: 15480,
+    sales: 2160, valueAed: 6.24e9, rentals: 15479,
     cohort: 'Apartment', psf: 2011, price: 2200000, rent: 110000, yieldPct: 5.3,
     url: 'https://www.propertyindex.ae/dubai/dubai-marina',
   },
   'Dubai Creek Harbour': {
-    sales: 3947, valueAed: 11.36e9, rentals: 6230,
+    sales: 3947, valueAed: 11.36e9, rentals: 6229,
     cohort: 'Apartment', psf: 2558, price: 2600000, rent: 130000, yieldPct: 5.1,
     url: 'https://www.propertyindex.ae/dubai/dubai-creek-harbour-the-lagoons',
   },
@@ -88,25 +91,25 @@ export const pixAreas = {
     url: 'https://www.propertyindex.ae/dubai/dubai-hills-estate',
   },
   'Business Bay': {
-    sales: 7251, valueAed: 19.62e9, rentals: 19338,
+    sales: 7251, valueAed: 19.62e9, rentals: 19339,
     cohort: 'Apartment', psf: 2542, price: 2000000, rent: 95000, yieldPct: 4.4,
     url: 'https://www.propertyindex.ae/dubai/business-bay',
   },
   'Palm Jumeirah': {
     sales: 1147, valueAed: 11.41e9, rentals: 4373,
     cohort: 'Apartment', psf: 3593, price: 5900000, rent: 196350, yieldPct: 3.4,
-    villa: { sales: 84, psf: 4986, price: 37850000, rent: 949849, yieldPct: 2.7 },
+    villa: { sales: 84, psf: 4929, price: 37850000, rent: 949849, yieldPct: 2.8 },
     url: 'https://www.propertyindex.ae/dubai/palm-jumeirah',
   },
   'JVC': {
-    sales: 12652, valueAed: 13.59e9, rentals: 31468,
+    sales: 12646, valueAed: 13.58e9, rentals: 31468,
     cohort: 'Apartment', psf: 1500, price: 1020000, rent: 65000, yieldPct: 6.1,
     villa: { sales: 217, psf: 1653, price: 3365000, rent: 180000, yieldPct: 5.2 },
     url: 'https://www.propertyindex.ae/dubai/jumeirah-village-circle',
   },
   'Dubai South': {
     sales: 13101, valueAed: 13.17e9, rentals: 5464,
-    cohort: 'Apartment', psf: 1632, price: 783194, rent: 55000, yieldPct: 4.4,
+    cohort: 'Apartment', psf: 1630, price: 785000, rent: 55000, yieldPct: 4.5,
     villa: { sales: 1450, psf: 1328, price: 4380000, rent: 125000, yieldPct: 4.8 },
     scope: 'Dubai World Central',
     url: 'https://www.propertyindex.ae/dubai/dubai-south-dubai-world-central',
@@ -118,31 +121,31 @@ export const pixAreas = {
     url: 'https://www.propertyindex.ae/dubai/expo-city',
   },
   'Mohammed Bin Rashid City': {
-    sales: 1857, valueAed: 3.89e9, rentals: 6282,
+    sales: 1857, valueAed: 3.89e9, rentals: 6281,
     cohort: 'Apartment', psf: 1997, price: 1743828, rent: 97500, yieldPct: 6.5,
     villa: { sales: 736, psf: 2481, price: 13700000, rent: 193561, yieldPct: 4.4 },
     url: 'https://www.propertyindex.ae/dubai/mohammed-bin-rashid-city',
   },
   'DAMAC Hills': {
-    sales: 1452, valueAed: 1.90e9, rentals: 3403,
-    cohort: 'Apartment', psf: 1678, price: 1243500, rent: 55000, yieldPct: 5.9,
+    sales: 1451, valueAed: 1.90e9, rentals: 3403,
+    cohort: 'Apartment', psf: 1677, price: 1243000, rent: 55000, yieldPct: 5.9,
     villa: { sales: 331, psf: 1685, price: 3850000, rent: 209426, yieldPct: 4.5 },
     url: 'https://www.propertyindex.ae/dubai/damac-hills',
   },
   'JLT': {
-    sales: 1809, valueAed: 3.30e9, rentals: 9162,
+    sales: 1809, valueAed: 3.30e9, rentals: 9161,
     cohort: 'Apartment', psf: 1745, price: 1550000, rent: 85367, yieldPct: 5.8,
     url: 'https://www.propertyindex.ae/dubai/jumeirah-lake-towers',
   },
   'Meydan': {
-    sales: 1958, valueAed: 3.08e9, rentals: 8517,
-    cohort: 'Apartment', psf: 2082, price: 1249626, rent: 61000, yieldPct: 6.3,
+    sales: 1958, valueAed: 3.08e9, rentals: 8516,
+    cohort: 'Apartment', psf: 2082, price: 1249626, rent: 61100, yieldPct: 6.3,
     villa: { sales: 46, psf: 2268, price: 6700000, rent: 320000, yieldPct: 4.4 },
     url: 'https://www.propertyindex.ae/dubai/meydan',
   },
   'Arjan': {
     sales: 3783, valueAed: 3.95e9, rentals: 14580,
-    cohort: 'Apartment', psf: 1556, price: 900000, rent: 61067, yieldPct: 5.4,
+    cohort: 'Apartment', psf: 1556, price: 900000, rent: 60900, yieldPct: 5.4,
     url: 'https://www.propertyindex.ae/dubai/arjan',
   },
   'Town Square': {
@@ -163,14 +166,14 @@ export const pixAreas = {
   },
   // Emaar Beachfront sits inside the Dubai Harbour master community
   'Emaar Beachfront': {
-    sales: 849, valueAed: 6.34e9, rentals: 1435,
+    sales: 849, valueAed: 6.34e9, rentals: 1434,
     cohort: 'Apartment', psf: 4100, price: 5730000, rent: 175000, yieldPct: 4.3,
     scope: 'Dubai Harbour',
     url: 'https://www.propertyindex.ae/dubai/dubai-harbour',
   },
   // Dubai Islands is now registered under its own name (formerly Palm Deira)
   'Dubai Islands': {
-    sales: 5005, valueAed: 16.80e9, rentals: 4,
+    sales: 5003, valueAed: 16.80e9, rentals: 4,
     cohort: 'Apartment', psf: 2696, price: 2818000, rent: null, yieldPct: null,
     note: 'Only 4 registered rentals in window — yield unavailable',
     url: 'https://www.propertyindex.ae/dubai/dubai-islands',
@@ -246,9 +249,9 @@ export function buildDeskContext() {
 Index as of ${PIX_AS_OF}; area medians from registered transactions ${PIX_WINDOW}. Anchor every call to these numbers and cite them.
 
 MARKET STATE (base Jan 2012 = 100):
-- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market PLATEAUED around 220 from Jan to May 2026 (peak 220.49 in Jan) after a +12% YoY run through 2025, then dropped -2.9% in June and -2.8% in July and slipped again in August: three consecutive monthly declines, and YoY turned negative in July for the first time in the cycle.
+- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market PLATEAUED around 220 from Jan to May 2026 (peak 220.26 in Jan) after a +12% YoY run through 2025, then dropped -2.9% in June and -2.8% in July and slipped -0.4% in August: three consecutive monthly declines, and YoY turned negative in July for the first time in the cycle.
 - Apartments ${i.apartment.level} (${fmtPct(i.apartment.yoyPct)} YoY), median ${fmtCount(i.apartment.medianPsf)} AED/sqft.
-- Villas ${i.villa.level} (${fmtPct(i.villa.yoyPct)} YoY), median ${fmtCount(i.villa.medianPsf)} AED/sqft. Villas are holding up better than apartments by about 1.6 points YoY, but both segments are now negative.
+- Villas ${i.villa.level} (${fmtPct(i.villa.yoyPct)} YoY), median ${fmtCount(i.villa.medianPsf)} AED/sqft. Villas are holding up better than apartments by about 1.1 points YoY, but both segments are now negative and the villa index fell -1.2% in August alone.
 - Roughly ${fmtCount(i.residential.txCount)} registered residential transactions per month emirate-wide.
 
 AREA REGISTRY MEDIANS (apartment cohort unless noted; gross yield = registered rent PSF / registered sale PSF, excludes service charges and voids):
@@ -262,7 +265,7 @@ Rules for using this evidence:
 - The market is CORRECTING, not uniformly bullish. Never describe it as broadly rising.
 - Historical analogs: you may describe how a prior Dubai cycle behaved in words, but you may not attach a percentage, AED figure or date to it unless that figure appears in this evidence. The 13-month index path above is the only price history you have. Never write "last time X happened, Y fell Z%" with an invented Z.
 - Yields and prices above are registered medians, not projections for a specific unit. Say so when it matters.
-- Highest registry apartment yields sit in MBR City (6.5%), Meydan (6.3%), JVC (6.1%), Dubai Hills, DAMAC Hills (5.9%), JLT and Town Square (5.8%); the prime waterfront (Palm Jumeirah 3.4%, Emaar Beachfront/Dubai Harbour 4.3%, Expo City 4.3%) trades yield for capital value. Villa yields run 2.7% (Palm) to 5.2% (JVC).
+- Highest registry apartment yields sit in MBR City (6.5%), Meydan (6.3%), JVC (6.1%), Dubai Hills, DAMAC Hills (5.9%), JLT and Town Square (5.8%); the prime waterfront (Palm Jumeirah 3.4%, Emaar Beachfront/Dubai Harbour 4.3%, Expo City 4.3%) trades yield for capital value. Villa yields run 2.8% (Palm) to 5.2% (JVC).
 - Where yield is 'n/a' there were too few registered rentals in the window — do not invent one.
 - DIFC is not in this list because the DLD register holds no DIFC sales or rentals in the window. Say the evidence is unavailable rather than quoting a number.`;
 }

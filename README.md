@@ -16,6 +16,7 @@ A real-time global intelligence dashboard built to track macro events, market sh
 | `STRIPE_SECRET_KEY` | For payments | Stripe Checkout subscriptions |
 | `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook verification |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_INSTITUTIONAL` | For payments | Stripe Price IDs for the two plans |
+| `OPENSKY_CLIENT_ID`, `OPENSKY_CLIENT_SECRET` | No | OAuth2 client credentials from a free OpenSky account: raises the live-aircraft allowance from 400 to 4,000 credits/day (a global pull costs 4) |
 | `CRON_SECRET` | No | If set, `/api/brief` only accepts scheduled runs from Vercel Cron |
 | `RESEND_AUDIENCE_ID` | No | Pin the newsletter audience; otherwise auto-resolved by name |
 | `DATABASE_URL` | **Recommended** | Neon Postgres. Backs `/api/data`, and stores the newsletter list — without it the list can only live in a Resend Audience, which a send-only API key cannot write to |
@@ -24,16 +25,27 @@ A real-time global intelligence dashboard built to track macro events, market sh
 
 ## Strait of Hormuz Transit Monitor
 
-The **Hormuz** tab shows the IMF PortWatch daily transit-call series for
-the Strait of Hormuz (`portid='chokepoint6'`), fetched server-side from
-the public ArcGIS layer via `GET /api/invest/hormuz` (no key needed,
-edge-cached one hour). Counts are **AIS-visible transits only** — a
-floor, not every ship — published weekly with a lag and revised, so the
-page shows the date of the last row rather than "today". 7-day / 30-day
-means and the year-earlier comparison are computed on the page from the
-rows served and marked as such. There is no free, licensed real-time
-source, so no live counter is shown. Attribution: *Source: International
+The **Hormuz** tab has two layers. The **live wire** (`GET
+/api/invest/hormuz-wire`, 10-minute cache, polled while the page is open)
+shows front-month Brent and WTI and the newest online headlines mentioning
+the Strait (GDELT). The **daily transits** are the IMF PortWatch series
+for `portid='chokepoint6'` via `GET /api/invest/hormuz` (no key, one-hour
+cache; every pull is stored in Postgres and a daily cron re-pulls it, so a
+PortWatch outage serves the last stored pull marked as such). Counts are
+**AIS-visible transits only** — a floor, not every ship — published weekly
+with a lag and revised, so the page shows the date of the last row rather
+than "today". Means and the year-earlier comparison are computed from the
+rows served and marked as Felicity arithmetic. There is no free, licensed
+real-time ship count, so none is shown. Attribution: *Source: International
 Monetary Fund, PortWatch, https://portwatch.imf.org/pages/chokepoint6*.
+
+## World Map live layers
+
+`GET /api/data?layer=flights` returns OpenSky Network ADS-B positions of
+every aircraft the network can hear (20-minute cache); `?layer=events`
+returns GDELT GEO locations of conflict-related news in the last 24 hours
+(15-minute cache). Ships stay a labelled reference set — no free AIS feed
+exists.
 
 ## Dubai Market Data (PIX / PropertyIndex)
 

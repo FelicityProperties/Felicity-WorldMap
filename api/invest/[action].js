@@ -5,7 +5,8 @@
 //   POST /api/invest/advise                 Felicity Bot investment analysis
 //   POST /api/invest/scan                   screen instruments on real indicators
 //   POST /api/invest/backtest               historical strategy simulation
-//   GET  /api/invest/hormuz                 Strait of Hormuz daily transit calls
+//   GET  /api/invest/hormuz                 Strait of Hormuz daily transit calls (?refresh=1 from the daily cron)
+//   GET  /api/invest/hormuz-wire            live Brent/WTI + newest Strait headlines
 //
 // Every price and headline is fetched live from a real provider:
 //   US equities  → Finnhub    (quote, company-news)
@@ -17,7 +18,7 @@
 // Nothing is simulated. If a provider fails the response says so.
 
 import { findAsset } from '../../js/invest-data.js';
-import { fetchHormuz, HORMUZ_SOURCE } from '../../lib/hormuz.js';
+import { fetchHormuz, fetchHormuzWire, saveSnapshot, loadSnapshot, HORMUZ_SOURCE, WIRE_SOURCE } from '../../lib/hormuz.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -756,15 +757,45 @@ async function handleBacktest(req, res) {
 // macro input to the same desk that reads oil and yields, so it is not
 // a stranger here. Cached at the edge for an hour: the layer changes
 // weekly, and a new release shows up within the hour.
-async function handleHormuz(req, res) {
+//
+// Every successful pull is stored in Postgres; a PortWatch failure serves
+// the last stored pull with stale:true and the reason, uncached, so a blip
+// never blanks the tab for everyone for an hour (the first version cached
+// its own failures). A daily cron hits ?refresh=1 (vercel.json) so the
+// stored copy is never more than a day behind the layer.
+async function handleHormuz(req, res, url) {
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
   if (!checkRateLimit(limitKey(req, 'hormuz'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+  const refresh = url.searchParams.get('refresh') === '1';
   try {
-    return res.status(200).json(await fetchHormuz({ timeoutMs: 9000 }));
+    const data = await fetchHormuz({ timeoutMs: 9000, deadlineMs: 16000 });
+    const stored = await saveSnapshot(data);
+    res.setHeader('Cache-Control', refresh ? 'no-store' : 's-maxage=3600, stale-while-revalidate=86400');
+    return res.status(200).json({ ...data, stored: stored.stored });
   } catch (e) {
     console.warn('[invest/hormuz]', e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    const snap = await loadSnapshot();
+    if (snap) {
+      return res.status(200).json({ ...snap, stale: true, staleAt: new Date().toISOString(), staleReason: e.message, servedFrom: 'stored pull' });
+    }
     return res.status(200).json({ ok: false, error: e.message, source: HORMUZ_SOURCE });
+  }
+}
+
+// Oil and the newest Strait headlines — the part of the page that is
+// actually live. Ten-minute edge cache; a failed pull is not cached.
+async function handleHormuzWire(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
+  if (!checkRateLimit(limitKey(req, 'hormuz-wire'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+  try {
+    const data = await fetchHormuzWire({ timeoutMs: 8000 });
+    res.setHeader('Cache-Control', data.ok ? 's-maxage=600, stale-while-revalidate=600' : 'no-store');
+    return res.status(200).json(data.ok ? data : { ...data, error: data.headlinesError || 'all wire sources failed' });
+  } catch (e) {
+    console.warn('[invest/hormuz-wire]', e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ ok: false, error: e.message, source: WIRE_SOURCE });
   }
 }
 
@@ -782,7 +813,8 @@ export default async function handler(req, res) {
   if (action === 'advise')   return handleAdvise(req, res);
   if (action === 'scan')     return handleScan(req, res);
   if (action === 'backtest') return handleBacktest(req, res);
-  if (action === 'hormuz')   return handleHormuz(req, res);   // no symbol — dispatched before resolution
+  if (action === 'hormuz')      return handleHormuz(req, res, url);   // no symbol — dispatched before resolution
+  if (action === 'hormuz-wire') return handleHormuzWire(req, res);
 
   const symbol = url.searchParams.get('symbol');
   const asset = resolveAsset(symbol);

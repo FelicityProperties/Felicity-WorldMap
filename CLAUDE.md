@@ -225,6 +225,33 @@ The same block is injected into the brief and the desk prompts as
 fails the block says so and forbids any Hormuz figure. The brief's test
 response reports `hormuzEvidence`.
 
+**Persistence and the daily cron.** Every successful pull is stored in
+Postgres (`hormuz_snapshots`, created on demand, last 30 kept). When
+PortWatch fails, `/api/invest/hormuz` serves the stored pull with
+`stale: true`, `staleAt` and `staleReason`, **uncached** — the first
+version edge-cached its own failures for an hour, which the adversarial
+review caught. `vercel.json` runs `/api/invest/hormuz?refresh=1` daily at
+05:00 UTC so the stored copy trails the layer by at most a day.
+
+**The live wire.** `/api/invest/hormuz-wire` is the part of the page that
+is genuinely live: front-month Brent and WTI (Yahoo, same `quoteYahoo`
+as the cockpit) and the newest online headlines mentioning "Strait of
+Hormuz" (GDELT DOC 2.0, refreshed by GDELT every 15 minutes, served with a
+10-minute edge cache, polled every 10 minutes while the page is visible
+through the `startPolling` pair). It carries a LIVE badge with its fetch
+time because it *is* live. It is labelled as oil and press, never as a
+ship count. Do not let "live" leak from the wire onto the transit series.
+
+Lessons from the review of the first version: the 7-day mean on the
+chart must look back through the full series (not just the drawn range,
+or the first week of every range is a 1-to-6-day mean); age is computed
+at render time from the row date, never copied from a stored payload;
+the year-earlier window is calendar-based (`oneYearBefore`, leap-safe)
+and only compared when both windows have ≥20 days present; a lone data
+day between gaps gets a dot; the unit is "transits", never "ships"; and
+only a fixed reason category — never raw upstream text — reaches the AI
+prompt.
+
 `tests/hormuz.test.mjs` pins the parsing (both date formats, y/m/d
 precedence), the integrity accounting, every summary number by hand, the
 route's failure paths and the evidence text. The sandbox cannot reach
@@ -287,13 +314,39 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   1.2s timer (`f.lat += cos(hdg) * 0.025`) over a hardcoded corridor set in
   `js/data.js`. It survived the `Math.random()` purge purely because it used
   arithmetic instead. Deterministic drift is the same lie. Removed.
-- Flights and ships are a **fixed reference set of major air and sea
-  corridors** — there is no ADS-B or AIS feed. Their panels carry a
-  `REFERENCE` badge saying so, never a live dot, no ticking clock, and no
-  Refresh button (refreshing static data is theatre). Do not re-add any of
-  those three. The sidebar's RE Signals tab follows the same rule: it is a
-  dated snapshot of `pix-signals.js`, so it carries a plain `DLD` badge
-  with the detection date — no pulse, no Refresh.
+- **Aircraft are live now; ships are not.** `lib/live-layers.js` pulls
+  OpenSky Network ADS-B state vectors (`/api/data?layer=flights`, edge-
+  cached 20 minutes — anonymous OpenSky allows 400 credits/day and a global
+  pull costs 4; set `OPENSKY_CLIENT_ID`/`OPENSKY_CLIENT_SECRET` for a
+  free account's 4,000) and GDELT GEO conflict-news locations for the last
+  24 hours (`?layer=events`, 15 minutes). `js/live-layers.js` fills the
+  `flights`/`events` arrays (both start empty — the old authored corridor
+  set is retired) and the sidebar header says LIVE with the fetch time,
+  STALE when a refresh failed and earlier positions stand, or NO FEED.
+  Aircraft outside OpenSky's sensor coverage (oceans, parts of Africa and
+  Asia) are not in the feed; the sidebar says so. Events are places the
+  press is writing about, sized by article count — not verified incidents.
+  Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
+  dot, no clock, no Refresh: there is no free, licensed AIS feed. The
+  sidebar's RE Signals tab follows the same rule: it is a dated snapshot of
+  `pix-signals.js`, so it carries a plain `DLD` badge with the detection
+  date — no pulse, no Refresh.
+- **TradingView's ticker tape does drop some US feeds after all.**
+  `TVC:DXY` rendered a red "!" in the tape (user screenshot, Sep 2026);
+  `CAPITALCOM:DXY` is used instead. Treat any tape symbol showing "!" the
+  same way — switch provider, do not remove the instrument.
+- **Heatmaps are now a picker over ~28 markets** (`HEATMAP_MARKETS` in
+  `js/tv-widgets.js`). The `dataSource` keys could not be verified from
+  this sandbox (TradingView docs are egress-blocked); the widget keeps its
+  own dataset menu enabled so a wrong key is recoverable in the UI, and the
+  note under the chips says so. When the owner reports which chips render
+  empty, fix the keys rather than removing markets.
+- **Broadcasts embed by channel**, via YouTube's own
+  `/embed/live_stream?channel=<id>` resolver, with the broadcaster's live
+  page and the YouTube channel linked under every frame. The old
+  three-proxy video-id discovery is gone (slow, flaky, one proxy dead). Sky
+  News's channel id was wrong and never resolved; Bloomberg's handle was
+  stale; CNBC and TRT World were added.
 
 ### Polling stops when nobody is looking
 

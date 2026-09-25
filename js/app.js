@@ -17,9 +17,10 @@ import { initRegionDrawer } from './regions.js';
 import { initFelicityBot } from './felicity-bot.js';
 import { initDubaiCompare } from './dubai-compare.js';
 import { initInvest, onInvestShown, onInvestHidden } from './invest.js';
-import { initHormuz } from './hormuz.js';
+import { initHormuz, startHormuzWireRefresh, stopHormuzWireRefresh } from './hormuz.js';
 import { startLiveNewsRefresh, stopLiveNewsRefresh } from './news-live.js';
 import { startLiveMarketRefresh, stopLiveMarketRefresh, marketsLastLiveAt } from './markets-live.js';
+import { startLiveLayersRefresh, stopLiveLayersRefresh } from './live-layers.js';
 import { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 
@@ -138,6 +139,17 @@ function startPolling() {
     refreshAlertBanner();
   });
 
+  // Aircraft (OpenSky) and 24h event locations (GDELT) for the World Map.
+  // Redraw the layers whether the fetch succeeded or not: on failure the
+  // status counts and sidebar header change to say so.
+  startLiveLayersRefresh(layer => {
+    if (mapInitialized) renderDynLayers();
+    if (layer === 'flights' && getCurrentTab() === 'flights') refreshCurrentTab();
+  });
+
+  // Hormuz live wire (oil + headlines); renders itself into the tab
+  startHormuzWireRefresh();
+
   updateMacroData();
   macroTimer = setInterval(updateMacroData, 60000);
 }
@@ -145,6 +157,8 @@ function startPolling() {
 function stopPolling() {
   stopLiveMarketRefresh();
   stopLiveNewsRefresh();
+  stopLiveLayersRefresh();
+  stopHormuzWireRefresh();
   if (macroTimer) { clearInterval(macroTimer); macroTimer = null; }
 }
 

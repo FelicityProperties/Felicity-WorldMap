@@ -252,8 +252,8 @@
 }
 
 .hz-chart__grid { stroke: var(--border-subtle); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.hz-chart__total { fill: none; stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.hz-chart__tanker { fill: none; stroke: var(--accent-gold); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; opacity: 0.9; }
+.hz-chart__total { stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.hz-chart__tanker { stroke: var(--accent-gold); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; opacity: 0.9; }
 .hz-chart__mean { fill: none; stroke: var(--text-secondary); stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 
 .hz-legend {
@@ -348,4 +348,43 @@
   .hz-chart__x { margin-left: 42px; }
   .hz-panel { padding: var(--space-4); }
   .hz-table { font-size: var(--text-xs); }
+}
+
+/* ── Live wire (the part that is actually live) ── */
+.hz-wire { margin-bottom: var(--space-5); border-color: var(--border-accent); }
+.hz-wire__status { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); white-space: normal; text-align: right; }
+.hz-live { display: inline-flex; align-items: center; gap: 4px; color: var(--semantic-green); font-weight: var(--weight-bold); }
+.hz-live__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--semantic-green); animation: live-pulse 2s ease-in-out infinite; }
+.hz-src--stale { color: var(--semantic-amber); border-color: var(--semantic-amber-dim); }
+
+.hz-quotes { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: stretch; margin-bottom: var(--space-4); }
+.hz-quote {
+  display: flex; flex-direction: column; gap: 2px; min-width: 150px;
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4);
+}
+.hz-quote__label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+.hz-quote__price { font-family: var(--font-display); font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-primary); }
+.hz-quote__price em { font-family: var(--font-mono); font-size: 10px; font-style: normal; color: var(--text-muted); margin-left: 3px; }
+.hz-quote__chg { font-family: var(--font-mono); font-size: 10px; }
+.hz-quote__chg.up { color: var(--semantic-green); }
+.hz-quote__chg.dn { color: var(--semantic-red); }
+.hz-quote__na { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+.hz-quotes__src { flex-basis: 100%; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); }
+
+.hz-heads { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-2) var(--space-5); }
+.hz-heads li { padding: var(--space-2) 0; border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); line-height: 1.5; }
+.hz-heads a { color: var(--text-primary); text-decoration: none; }
+.hz-heads a:hover { color: var(--accent-primary); }
+.hz-heads__meta { display: block; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+.hz-heads__none { font-size: var(--text-sm); color: var(--text-muted); }
+
+/* A day boxed in by gaps still shows as a dot */
+.hz-chart__total circle { fill: var(--accent-primary); }
+.hz-chart__tanker circle { fill: var(--accent-gold); }
+.hz-chart__total path, .hz-chart__tanker path { fill: none; }
+.hz-table th .hz-calc { position: static; margin-left: 4px; }
+
+@media (max-width: 767px) {
+  .hz-grid { grid-template-columns: 1fr; }
+  .hz-wire__status { text-align: left; }
 }
