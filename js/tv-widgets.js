@@ -89,11 +89,11 @@ export function mountHeatmap(host, dataSource = 'SPX500') {
     blockColor: 'change',
     symbolUrl: '',
     hasTopBar: true,
-    // The widget's own dataset menu is OFF. With it on, TradingView kept
-    // drawing the S&P 500 whatever `dataSource` was passed on remount — it
-    // holds the last dataset the menu showed inside the iframe and prefers
-    // that over the config. Our chips are the dataset menu.
-    isDataSetEnabled: false,
+    // The widget's own dataset menu is the ONE control that reliably reaches
+    // every market: TradingView documents only two dataSource codes (SPX500,
+    // ASX200) and silently draws the S&P 500 for any code it does not know,
+    // which is what every guessed code did. Keep the menu on.
+    isDataSetEnabled: true,
     isZoomEnabled: true,
     hasSymbolTooltip: true,
     isMonoSize: false,
@@ -103,59 +103,27 @@ export function mountHeatmap(host, dataSource = 'SPX500') {
 }
 
 // ── Heatmap markets ──
-// Every dataset TradingView's stock heatmap can draw, grouped by region.
-// `dataSource` keys are the ones the widget's own dataset menu uses; the
-// menu stays enabled inside the widget (isDataSetEnabled) so a market that
-// TradingView stops serving can still be picked from its live list rather
-// than rendering an empty box with no way out.
+// TradingView documents exactly two `dataSource` codes for the stock
+// heatmap (SPX500, ASX200) and silently draws the S&P 500 for any code it
+// does not recognise — which is what every guessed European, Asian and Gulf
+// code did, three deploys in a row. So the chips below carry only codes
+// with evidence, and the widget's own market menu (top-left header, "S&P
+// 500 Index ▾") is the primary control: it lists DAX, Nikkei, FTSE, Hang
+// Seng, Nifty, Tadawul and the rest, and it works today.
+//
+// GET /api/invest/tv-datasets reads the real code table out of
+// TradingView's bundle from the deployed function; when it has been read,
+// add the codes here with their evidence.
 export const HEATMAP_MARKETS = [
-  { region: 'Americas', items: [
-    { key: 'SPX500',     label: 'S&P 500' },
-    { key: 'NASDAQ100',  label: 'Nasdaq 100' },
-    { key: 'DJDJI',      label: 'Dow Jones 30' },
-    { key: 'AllUSA',     label: 'All US' },
-    { key: 'AllCA',      label: 'All Canada' },
-    { key: 'AllBR',      label: 'All Brazil' },
-  ]},
-  { region: 'Europe', items: [
-    { key: 'UK100',      label: 'FTSE 100' },
-    { key: 'AllUK',      label: 'All UK' },
-    { key: 'DAX',        label: 'Germany DAX' },
-    { key: 'AllDE',      label: 'All Germany' },
-    { key: 'CAC40',      label: 'France CAC 40' },
-    { key: 'AllFR',      label: 'All France' },
-    { key: 'AllES',      label: 'All Spain' },
-    { key: 'AllIT',      label: 'All Italy' },
-    { key: 'AllNL',      label: 'All Netherlands' },
-    { key: 'AllCH',      label: 'All Switzerland' },
-    { key: 'AllSE',      label: 'All Sweden' },
-  ]},
-  { region: 'Asia-Pacific', items: [
-    { key: 'NI225',      label: 'Nikkei 225' },
-    { key: 'AllJP',      label: 'All Japan' },
-    { key: 'HSI',        label: 'Hang Seng' },
-    { key: 'AllHK',      label: 'All Hong Kong' },
-    { key: 'AllCN',      label: 'All China' },
-    { key: 'AllKR',      label: 'All Korea' },
-    { key: 'NIFTY50',    label: 'India Nifty 50' },
-    { key: 'AllIN',      label: 'All India' },
-    { key: 'ASX200',     label: 'Australia ASX 200' },
-    { key: 'AllSG',      label: 'All Singapore' },
-    { key: 'AllTW',      label: 'All Taiwan' },
-  ]},
-  { region: 'Middle East', items: [
-    { key: 'AllAE',      label: 'All UAE' },
-    { key: 'AllSA',      label: 'All Saudi Arabia' },
-    { key: 'AllQA',      label: 'All Qatar' },
-    { key: 'AllTR',      label: 'All Türkiye' },
+  { region: 'Verified', items: [
+    { key: 'SPX500', label: 'S&P 500',         evidence: 'TradingView widget docs' },
+    { key: 'ASX200', label: 'Australia ASX 200', evidence: 'TradingView widget demo' },
   ]},
 ];
 
-// Every key the picker offers, for the tests
 export const HEATMAP_KEYS = HEATMAP_MARKETS.flatMap(g => g.items.map(m => m.key));
 
-// Chip bar over the heatmap. Picking a market re-mounts the widget with
-// that dataSource; the chip stays lit so the active market is never a guess.
+// Verified chips plus a clear pointer to the widget's own market menu.
 export function mountHeatmapPicker(hostId, initial = 'SPX500') {
   const host = document.getElementById(hostId);
   if (!host) return;
@@ -164,20 +132,20 @@ export function mountHeatmapPicker(hostId, initial = 'SPX500') {
       ${HEATMAP_MARKETS.map(g => `
         <div class="hm-picker__group">
           <span class="hm-picker__region">${g.region}</span>
-          ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${m.key}">${m.label}</button>`).join('')}
+          ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${m.key}" title="${m.evidence}">${m.label}</button>`).join('')}
         </div>`).join('')}
+      <div class="hm-picker__group hm-picker__group--menu">
+        <span class="hm-picker__region">Every other market</span>
+        <span class="hm-picker__hint">DAX, CAC 40, FTSE 100, Nikkei 225, Hang Seng, KOSPI, Nifty 50, Tadawul, DFM/ADX and 60+ more: open the <strong>market menu in the widget's top-left header</strong> (it reads "S&P 500 Index ▾") and pick from TradingView's own list.</span>
+      </div>
     </div>
     <div class="hm-picker__note" id="${hostId}-note"></div>
     <div class="tradingview-widget-container hm-picker__widget" id="${hostId}-widget"><div class="tradingview-widget-container__widget"></div></div>`;
 
-  const labelOf = key => HEATMAP_MARKETS.flatMap(g => g.items).find(m => m.key === key)?.label || key;
   const note = host.querySelector(`#${hostId}-note`);
   const show = key => {
-    // The widget's own header names the dataset it is actually drawing. If it
-    // does not match the chip, TradingView rejected the key — say so rather
-    // than let the S&P fallback pass for the market that was asked for.
-    note.textContent = `Showing: ${labelOf(key)} (TradingView dataset ${key}). The widget's top-left header names the market it is actually drawing — if it does not match, TradingView does not serve that dataset to embeds.`;
-    // A fresh container each time so nothing from the previous iframe survives
+    const m = HEATMAP_MARKETS.flatMap(g => g.items).find(x => x.key === key);
+    note.textContent = `Showing ${m ? m.label : key} (TradingView dataset ${key}). The widget's header names the market it is drawing.`;
     const w = host.querySelector(`#${hostId}-widget`);
     if (w) w.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
     mountHeatmap(`${hostId}-widget`, key);

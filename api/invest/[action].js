@@ -19,6 +19,7 @@
 
 import { findAsset } from '../../js/invest-data.js';
 import { fetchHormuz, fetchHormuzWire, saveSnapshot, loadSnapshot, HORMUZ_SOURCE, WIRE_SOURCE } from '../../lib/hormuz.js';
+import { discoverDatasets } from '../../lib/tv-datasets.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -815,6 +816,14 @@ export default async function handler(req, res) {
   if (action === 'backtest') return handleBacktest(req, res);
   if (action === 'hormuz')      return handleHormuz(req, res, url);   // no symbol — dispatched before resolution
   if (action === 'hormuz-wire') return handleHormuzWire(req, res);
+  if (action === 'tv-datasets') {
+    // Diagnostic: the heatmap's real dataSource codes, read from TradingView's
+    // own bundle by this function (the dev sandbox cannot reach TradingView).
+    if (!checkRateLimit(limitKey(req, 'tv-datasets'), 5)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+    res.setHeader('Cache-Control', 's-maxage=3600');
+    try { return res.status(200).json(await discoverDatasets()); }
+    catch (e) { res.setHeader('Cache-Control', 'no-store'); return res.status(200).json({ ok: false, error: e.message }); }
+  }
 
   const symbol = url.searchParams.get('symbol');
   const asset = resolveAsset(symbol);

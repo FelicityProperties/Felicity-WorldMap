@@ -1980,3 +1980,6 @@ body.tv-fullscreen-open { overflow: hidden; }
 .hm-picker__note { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); line-height: 1.5; }
 .hm-picker__widget { flex: 1 1 auto; min-height: 380px; position: relative; }
 .hm-picker__widget .tradingview-widget-container__widget { height: 100%; width: 100%; }
+.hm-picker__group--menu { flex-basis: 100%; align-items: flex-start; }
+.hm-picker__hint { font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; max-width: 90ch; }
+.hm-picker__hint strong { color: var(--accent-primary); }

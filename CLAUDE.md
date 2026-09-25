@@ -349,16 +349,21 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   geometry, the country-name table, topojson-client and Leaflet 1.9.4 are
   vendored under `assets/geo/` and `js/vendor/` with their licences. Do
   not reintroduce a CDN for anything the map needs to draw at all.
-- **Heatmaps are a picker over ~30 markets** (`HEATMAP_MARKETS` in
-  `js/tv-widgets.js`). The `dataSource` keys could not be verified from
-  this sandbox (TradingView's docs, widget host and every third-party
-  write-up are egress-blocked). The first attempt shipped index-style keys
-  and the owner reported every chip still drawing the S&P 500 — TradingView
-  falls back to SPX500 on a key it does not know. The picker now prints the
-  requested key under the chips and tells the reader that the widget's own
-  header must name the market; the country-wide `All<ISO2>` datasets are
-  offered alongside the index ones. Confirm keys against the widget header
-  on the deployed site and fix, rather than remove, any that fall back.
+- **Heatmap `dataSource` codes are unknown and guessing them fails
+  silently.** TradingView documents only `SPX500` and `ASX200`; any other
+  code — `DAX`, `NIKKEI225`, `AllDE`, index-style, country-style — is
+  replaced by the S&P 500 with no error. Three attempts shipped guessed
+  keys and the owner reported the same S&P 500 three times. The chips in
+  `HEATMAP_MARKETS` (`js/tv-widgets.js`) therefore carry **only the two
+  documented codes**, `isDataSetEnabled` stays `true`, and the page tells
+  the reader to switch markets from the widget's own top-left menu, which
+  is the one control TradingView guarantees. Never add a chip whose code
+  has not been seen working on the deployed site. To learn the real codes,
+  open `/api/invest/tv-datasets` on the deployed site: `lib/tv-datasets.js`
+  fetches the embed page and its script bundles (the sandbox cannot; the
+  function can) and returns the quoted UPPERCASE tokens found around
+  `SPX500`/`ASX200`. Read them, confirm each in the widget header, then
+  add the chip.
 - **Broadcasts embed by channel**, via YouTube's own
   `/embed/live_stream?channel=<id>` resolver, with the broadcaster's live
   page and the YouTube channel linked under every frame. The old

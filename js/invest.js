@@ -333,7 +333,7 @@ function renderList() {
 const MARKET_VIEWS = {
   heatmap: {
     title: 'Market Heatmaps',
-    sub: 'Twenty-eight markets across the Americas, Europe, Asia-Pacific and the Gulf \u2014 every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. Pick a market above the map.',
+    sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. To switch market, open the menu in the widget\u2019s own top-left header \u2014 it lists TradingView\u2019s full set of indices and countries (DAX, Nikkei, FTSE, CAC, Hang Seng and more).',
     mount: host => mountHeatmapPicker(host, 'SPX500'),
   },
   crypto: {
