@@ -324,7 +324,15 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   set is retired) and the sidebar header says LIVE with the fetch time,
   STALE when a refresh failed and earlier positions stand, or NO FEED.
   Aircraft outside OpenSky's sensor coverage (oceans, parts of Africa and
-  Asia) are not in the feed; the sidebar says so. Events are places the
+  Asia) are not in the feed; the sidebar says so. **The "15 aircraft" the
+  owner saw on the deployed map were not OpenSky at all**: `loadFromAPI()`
+  still copied `data.flights` from `/api/data`, whose Neon `flights` table
+  and fallback block carried the retired authored corridor set (EK201,
+  AF1, an MQ-9), so fifteen fictional aircraft sat under the LIVE header
+  until the real fetch replaced them — or forever when it failed. The copy
+  is gone, `api/data.js` no longer reads or ships `markets`, `news`,
+  `flights` or `dubaiSignals` at all, and `tests/seed.test.mjs` calls the
+  handler without a database and asserts those keys are absent. Events are places the
   press is writing about, sized by article count — not verified incidents.
   Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
   dot, no clock, no Refresh: there is no free, licensed AIS feed. The

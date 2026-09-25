@@ -425,9 +425,10 @@ export async function loadFromAPI() {
 
     if (data.ciiScores)    replaceObject(ciiScores, data.ciiScores);
     if (data.regionMap)    replaceObject(regionMap, data.regionMap);
-    // markets and news are deliberately NOT taken from /api/data: its rows are
-    // static fixtures with a time_ago column, not a feed. The live modules own them.
-    if (data.flights)      replaceArray(flights, data.flights);
+    // markets, news and flights are deliberately NOT taken from /api/data: its
+    // rows are static fixtures (a time_ago column, an authored flight corridor
+    // set), not a feed. The live modules own them. Copying `flights` here is
+    // what put fifteen fictional aircraft on the map under a LIVE header.
     if (data.ships)        replaceArray(ships, data.ships);
     if (data.confZones)    replaceArray(confZones, data.confZones);
 

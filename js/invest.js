@@ -334,7 +334,7 @@ const MARKET_VIEWS = {
   heatmap: {
     title: 'Market Heatmaps',
     sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. To switch market, open the menu in the widget\u2019s own top-left header \u2014 it lists TradingView\u2019s full set of indices and countries (DAX, Nikkei, FTSE, CAC, Hang Seng and more).',
-    mount: host => mountHeatmapPicker(host, 'SPX500'),
+    mount: host => mountHeatmapPicker(host),   // remembers the last chip across re-mounts
   },
   crypto: {
     title: 'Crypto Heatmap',

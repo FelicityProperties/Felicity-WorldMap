@@ -791,7 +791,10 @@ async function handleHormuzWire(req, res) {
   if (!checkRateLimit(limitKey(req, 'hormuz-wire'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
   try {
     const data = await fetchHormuzWire({ timeoutMs: 8000 });
-    res.setHeader('Cache-Control', data.ok ? 's-maxage=600, stale-while-revalidate=600' : 'no-store');
+    // `ok` means at least one source answered; only a COMPLETE pull is
+    // cached, or a GDELT hiccup would blank the headlines for twenty minutes.
+    const complete = data.ok && !data.headlinesError && Object.values(data.quotes || {}).every(q => q && q.ok);
+    res.setHeader('Cache-Control', complete ? 's-maxage=600, stale-while-revalidate=600' : 'no-store');
     return res.status(200).json(data.ok ? data : { ...data, error: data.headlinesError || 'all wire sources failed' });
   } catch (e) {
     console.warn('[invest/hormuz-wire]', e.message);
@@ -820,9 +823,14 @@ export default async function handler(req, res) {
     // Diagnostic: the heatmap's real dataSource codes, read from TradingView's
     // own bundle by this function (the dev sandbox cannot reach TradingView).
     if (!checkRateLimit(limitKey(req, 'tv-datasets'), 5)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
-    res.setHeader('Cache-Control', 's-maxage=3600');
-    try { return res.status(200).json(await discoverDatasets()); }
-    catch (e) { res.setHeader('Cache-Control', 'no-store'); return res.status(200).json({ ok: false, error: e.message }); }
+    try {
+      // 40s overall budget: the function's maxDuration is 60s and the page
+      // plus its bundles are fetched one after another.
+      const found = await discoverDatasets({ timeoutMs: 10000, budgetMs: 40000 });
+      const usable = found.scripts.some(s => !s.error);
+      res.setHeader('Cache-Control', usable ? 's-maxage=3600' : 'no-store');
+      return res.status(200).json(found);
+    } catch (e) { res.setHeader('Cache-Control', 'no-store'); return res.status(200).json({ ok: false, error: e.message }); }
   }
 
   const symbol = url.searchParams.get('symbol');
@@ -831,10 +839,13 @@ export default async function handler(req, res) {
 
   if (!checkRateLimit(limitKey(req, action), 90)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
 
+  // Cache headers are set AFTER the upstream call succeeds. Setting them
+  // first meant a single Yahoo timeout was served from the edge for the
+  // full window — an empty chart for fifteen minutes, blank news for ten.
   try {
     if (action === 'quote') {
-      res.setHeader('Cache-Control', 's-maxage=30');
       const { quote, source } = await getQuote(asset, finnhubKey);
+      res.setHeader('Cache-Control', 's-maxage=30');
       return res.status(200).json({ ok: true, symbol: asset.symbol, assetClass: asset.class, kind: asset.kind || 'price', source, quote });
     }
 
@@ -844,9 +855,9 @@ export default async function handler(req, res) {
       // for embedding — the advanced-chart iframe simply shows nothing —
       // so yield instruments get a chart drawn from the same Yahoo daily
       // data the backtester already uses.
-      res.setHeader('Cache-Control', 's-maxage=900');
       const range = RANGES.has(url.searchParams.get('range')) ? url.searchParams.get('range') : '1y';
       const k = await fetchCandles(asset, range, '1d');
+      res.setHeader('Cache-Control', 's-maxage=900');
       // Thin to ~400 points so a 10y series does not ship 2,500 rows
       const step = Math.max(1, Math.ceil(k.c.length / 400));
       const t = [], c = [];
@@ -860,13 +871,14 @@ export default async function handler(req, res) {
     }
 
     if (action === 'news') {
-      res.setHeader('Cache-Control', 's-maxage=600');
       const { items, error } = await getNews(asset, finnhubKey);
+      res.setHeader('Cache-Control', error ? 'no-store' : 's-maxage=600');
       return res.status(200).json({ ok: !error, symbol: asset.symbol, count: items.length, items, error });
     }
 
     return res.status(404).json({ ok: false, error: `Unknown action: ${action}` });
   } catch (e) {
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ ok: false, symbol: asset.symbol, error: e.message });
   }
 }

@@ -144,11 +144,20 @@ async function loadGeoJSON() {
 // Kiribati) is drawn by Leaflet as a band across the whole world. Shifting
 // that ring's western longitudes by +360° keeps it a compact shape past the
 // dateline, which Leaflet wraps correctly.
+// Antarctica genuinely spans every longitude, so the shift is only kept when
+// it turns the ring into a compact shape (under half the globe) — shifting
+// Antarctica moved its western half a world-copy to the right and left
+// nothing under South America.
 function fixAntimeridian(geo) {
-  const fixRing = ring => {
+  const span = ring => {
     let min = Infinity, max = -Infinity;
     for (const [lng] of ring) { if (lng < min) min = lng; if (lng > max) max = lng; }
-    return (max - min > 300) ? ring.map(([lng, lat]) => [lng < 0 ? lng + 360 : lng, lat]) : ring;
+    return max - min;
+  };
+  const fixRing = ring => {
+    if (span(ring) <= 300) return ring;
+    const shifted = ring.map(([lng, lat]) => [lng < 0 ? lng + 360 : lng, lat]);
+    return span(shifted) < 180 ? shifted : ring;
   };
   for (const f of geo.features) {
     const g = f.geometry;
@@ -157,6 +166,13 @@ function fixAntimeridian(geo) {
     else if (g.type === 'MultiPolygon') g.coordinates = g.coordinates.map(poly => poly.map(fixRing));
   }
   return geo;
+}
+
+// Kosovo, N. Cyprus and Somaliland carry no ISO numeric id in the Natural
+// Earth topology, so the name table cannot resolve them; the feature's own
+// `properties.name` does, and it is what the CII table is keyed on.
+function featureName(f, idToName) {
+  return idToName[parseInt(f.id)] || (f.properties && f.properties.name) || '';
 }
 
 // ── Choropleth Rendering ──
@@ -169,7 +185,7 @@ function renderGeo(geo, idToName) {
 
   geoLayer = L.geoJSON(geo, {
     style: f => {
-      const name = idToName[parseInt(f.id)] || '';
+      const name = featureName(f, idToName);
       const score = ciiScores[name];
       return {
         fillColor: ciiColor(score),
@@ -179,12 +195,12 @@ function renderGeo(geo, idToName) {
       };
     },
     onEachFeature: (f, layer) => {
-      const name = idToName[parseInt(f.id)] || 'Unknown';
+      const name = featureName(f, idToName) || 'Unknown';
       const score = ciiScores[name];
       const reg = regionMap[name] || '';
 
       layer.bindTooltip(
-        `<b>${name}</b>${score ? '<br>CII ' + score.toFixed(1) + '/10' : ''}`,
+        `<b>${escapeHtml(name)}</b>${score ? '<br>CII ' + score.toFixed(1) + '/10' : ''}`,
         { sticky: true, direction: 'top' }
       );
 
@@ -265,11 +281,12 @@ export function renderDynLayers() {
         fillOpacity: 0.25,
         weight: 1.5
       }).addTo(map);
-      const reInfo = c.reCapitalFlow ? `<br><span style="color:#d4af37">Capital Flow:</span> ${c.reCapitalFlow}` : '';
-      const reAreasInfo = c.reAreas ? `<br><span style="color:#d4af37">Dubai Areas:</span> ${c.reAreas.join(', ')}` : '';
-      const reHistInfo = c.reHistoricalImpact ? `<br><span style="color:#d4af37;font-size:10px">${c.reHistoricalImpact}</span>` : '';
+      // confZones can be replaced from /api/data rows — escape like any upstream
+      const reInfo = c.reCapitalFlow ? `<br><span style="color:#d4af37">Capital Flow:</span> ${escapeHtml(c.reCapitalFlow)}` : '';
+      const reAreasInfo = Array.isArray(c.reAreas) ? `<br><span style="color:#d4af37">Dubai Areas:</span> ${escapeHtml(c.reAreas.join(', '))}` : '';
+      const reHistInfo = c.reHistoricalImpact ? `<br><span style="color:#d4af37;font-size:10px">${escapeHtml(c.reHistoricalImpact)}</span>` : '';
       m.bindTooltip(
-        `<b>${c.name}</b><br>Severity ${c.sev}/10${reInfo}${reAreasInfo}${reHistInfo}`,
+        `<b>${escapeHtml(c.name)}</b><br>Severity ${escapeHtml(c.sev)}/10${reInfo}${reAreasInfo}${reHistInfo}`,
         { direction: 'top' }
       );
       m.on('click', () => {
@@ -312,7 +329,7 @@ export function renderDynLayers() {
         ? '<br><span style="color:#ef4444">\u26a0 AIS transponder offline</span>'
         : '';
       m.bindTooltip(
-        `<b>${s.name}</b><br>${s.speed} \u2192 ${s.dest}${extra}`,
+        `<b>${escapeHtml(s.name)}</b><br>${escapeHtml(s.speed)} \u2192 ${escapeHtml(s.dest)}${extra}`,
         { direction: 'top' }
       );
       sMarkers.push(m);
@@ -355,14 +372,18 @@ function updateStatusCounts() {
   const ec = document.getElementById('ecount');
   // The reason for a missing feed rides on the label's tooltip so an outage
   // can be read from the status bar without opening the console
+  // A failed refresh with earlier positions standing says so in the label
+  // itself, not only in the tooltip — a stale count must never read as live
   if (fc) {
-    fc.textContent = layerMeta.flights.ok || flights.length ? `${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
+    const fStale = !layerMeta.flights.ok && flights.length ? 'stale · ' : '';
+    fc.textContent = layerMeta.flights.ok || flights.length ? `${fStale}${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
     fc.title = layerMeta.flights.ok ? `OpenSky ADS-B · fetched ${layerMeta.flights.fetchedAt || ''}` : `OpenSky: ${layerMeta.flights.error || 'not fetched yet'}`;
   }
   if (sc) sc.textContent = ships.length + ' ref. vessels';
   if (cc) cc.textContent = confZones.length + ' conflicts';
   if (ec) {
-    ec.textContent = layerMeta.events.ok || events.length ? `${events.length} event locations` : 'events: no feed';
+    const eStale = !layerMeta.events.ok && events.length ? 'stale · ' : '';
+    ec.textContent = layerMeta.events.ok || events.length ? `${eStale}${events.length} event locations` : 'events: no feed';
     ec.title = layerMeta.events.ok ? `GDELT GEO 24h · fetched ${layerMeta.events.fetchedAt || ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
   }
   updateCountryCount();

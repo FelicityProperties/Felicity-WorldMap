@@ -123,8 +123,12 @@ export const HEATMAP_MARKETS = [
 
 export const HEATMAP_KEYS = HEATMAP_MARKETS.flatMap(g => g.items.map(m => m.key));
 
+// The last chip chosen, so a re-mount (fullscreen on/off re-mounts the
+// widget at the new size) keeps the market the reader picked.
+let lastHeatmapKey = null;
+
 // Verified chips plus a clear pointer to the widget's own market menu.
-export function mountHeatmapPicker(hostId, initial = 'SPX500') {
+export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500') {
   const host = document.getElementById(hostId);
   if (!host) return;
   host.innerHTML = `
@@ -144,6 +148,7 @@ export function mountHeatmapPicker(hostId, initial = 'SPX500') {
 
   const note = host.querySelector(`#${hostId}-note`);
   const show = key => {
+    lastHeatmapKey = key;
     const m = HEATMAP_MARKETS.flatMap(g => g.items).find(x => x.key === key);
     note.textContent = `Showing ${m ? m.label : key} (TradingView dataset ${key}). The widget's header names the market it is drawing.`;
     const w = host.querySelector(`#${hostId}-widget`);

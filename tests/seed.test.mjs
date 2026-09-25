@@ -23,7 +23,21 @@ check(/tick-item--empty/.test(src), 'ticker has an explicit empty state');
 
 // And loadFromAPI must not re-seed from the static /api/data fixtures
 const dataSrc = await import('node:fs').then(fs => fs.readFileSync(new URL('../js/data.js', import.meta.url), 'utf8'));
-check(!/replaceArray\(markets,/.test(dataSrc) && !/replaceArray\(news,/.test(dataSrc), '/api/data does not seed markets or news');
+check(!/replaceArray\(markets,/.test(dataSrc) && !/replaceArray\(news,/.test(dataSrc) && !/replaceArray\(flights,/.test(dataSrc), '/api/data does not seed markets, news or flights');
+
+// And the server must not publish seeded prices, authored headlines or a
+// fictional flight corridor set at all — not even as a "fallback"
+const apiSrc = await import('node:fs').then(fs => fs.readFileSync(new URL('../api/data.js', import.meta.url), 'utf8'));
+check(!/price:\s*\d/.test(apiSrc) && !/time:\s*"\d+[mh]"/.test(apiSrc), '/api/data carries no seeded price or headline age');
+check(!/call:\s*"/.test(apiSrc) && !/FROM flights/.test(apiSrc), '/api/data carries no authored flights');
+const { default: dataHandler } = await import('../api/data.js');
+const r = { code: 0, payload: null, headers: {}, setHeader(k, v) { this.headers[k] = v; }, end() {} };
+r.status = c => { r.code = c; return r; }; r.json = p => { r.payload = p; return r; };
+const savedDb = process.env.DATABASE_URL; delete process.env.DATABASE_URL;
+await dataHandler({ method: 'GET', url: '/api/data', headers: { host: 'localhost' } }, r);
+if (savedDb !== undefined) process.env.DATABASE_URL = savedDb;
+check(r.code === 200 && r.payload && !('markets' in r.payload) && !('news' in r.payload) && !('flights' in r.payload), 'fallback /api/data response has no markets, news or flights keys');
+check(r.payload && Object.keys(r.payload.ciiScores || {}).length > 100 && Array.isArray(r.payload.confZones) && Array.isArray(r.payload.ships), 'fallback /api/data still carries CII scores, conflict zones and reference ships');
 
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log(`seed guard: ${markets.length} instruments carry no seeded price, news starts empty — all checks passed`);

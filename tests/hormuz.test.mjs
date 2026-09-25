@@ -198,6 +198,9 @@ check(res.headers['Cache-Control'] === 'no-store', 'a failure is never edge-cach
 mode = 'ok'; res = mkRes();
 await invest(req('/api/invest/hormuz-wire'), res);
 check(res.code === 200 && res.payload.ok && res.payload.headlines.length === 2 && /s-maxage=600/.test(res.headers['Cache-Control']), 'GET /api/invest/hormuz-wire served and cached ten minutes');
+mode = 'gdelt-html'; res = mkRes();
+await invest(req('/api/invest/hormuz-wire'), res);
+check(res.code === 200 && res.payload.ok && res.payload.headlines.length === 0 && res.headers['Cache-Control'] === 'no-store', 'a partial wire (GDELT down, oil up) is served but never edge-cached');
 
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log('hormuz: parsing, integrity, summary arithmetic, routes, wire and evidence — all checks passed');

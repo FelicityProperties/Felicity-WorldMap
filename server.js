@@ -57,7 +57,9 @@ for (const file of walk(apiDir)) {
     .join('/');
   const { default: handler } = await import(pathToFileURL(file).href);
   if (typeof handler !== 'function') continue;
-  app.all(route, (req, res) => handler(req, res));
+  // Express 4 does not catch async rejections; without the .catch a throw
+  // outside the handler's own try would take the dev server down.
+  app.all(route, (req, res, next) => Promise.resolve(handler(req, res)).catch(next));
   console.log(`  mounted ${route}`);
 }
 
