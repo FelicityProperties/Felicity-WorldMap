@@ -141,7 +141,7 @@ function renderShell() {
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
-      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, DAX, Nikkei 225, FTSE 100, CAC 40, Hang Seng, KOSPI, Nifty 50, Tadawul, DFM and 60+ more &mdash; switch market from the menu in the heatmap's own header">Heatmaps <span class="invest-view-btn__sub">60+ markets</span></button>
+      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, Nasdaq 100, Dow, DAX, IBEX 35, FTSE MIB, Swiss SMI, ASX 200, Hang Seng Tech, Sensex, Abu Dhabi ADX 15 and 100+ more datasets across 35 markets">Heatmaps <span class="invest-view-btn__sub">35 markets</span></button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
     </div>
@@ -333,7 +333,7 @@ function renderList() {
 const MARKET_VIEWS = {
   heatmap: {
     title: 'Market Heatmaps',
-    sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. To switch market, open the menu in the widget\u2019s own top-left header \u2014 it lists TradingView\u2019s full set of indices and countries (DAX, Nikkei, FTSE, CAC, Hang Seng and more).',
+    sub: 'Every constituent grouped by sector, sized by market cap, coloured by today\u2019s move. Pick a market above the map \u2014 the chips carry every dataset TradingView serves to embedded heatmaps, read from its own bundle; the markets it withholds are listed rather than faked.',
     mount: host => mountHeatmapPicker(host),   // remembers the last chip across re-mounts
   },
   crypto: {

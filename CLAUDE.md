@@ -357,21 +357,29 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   geometry, the country-name table, topojson-client and Leaflet 1.9.4 are
   vendored under `assets/geo/` and `js/vendor/` with their licences. Do
   not reintroduce a CDN for anything the map needs to draw at all.
-- **Heatmap `dataSource` codes are unknown and guessing them fails
-  silently.** TradingView documents only `SPX500` and `ASX200`; any other
-  code — `DAX`, `NIKKEI225`, `AllDE`, index-style, country-style — is
-  replaced by the S&P 500 with no error. Three attempts shipped guessed
-  keys and the owner reported the same S&P 500 three times. The chips in
-  `HEATMAP_MARKETS` (`js/tv-widgets.js`) therefore carry **only the two
-  documented codes**, `isDataSetEnabled` stays `true`, and the page tells
-  the reader to switch markets from the widget's own top-left menu, which
-  is the one control TradingView guarantees. Never add a chip whose code
-  has not been seen working on the deployed site. To learn the real codes,
-  open `/api/invest/tv-datasets` on the deployed site: `lib/tv-datasets.js`
-  fetches the embed page and its script bundles (the sandbox cannot; the
-  function can) and returns the quoted UPPERCASE tokens found around
-  `SPX500`/`ASX200`. Read them, confirm each in the widget header, then
-  add the chip.
+- **Heatmap datasets: embeds get a shorter menu than tradingview.com, and
+  anything outside it is drawn as the S&P 500 with no error.** Three
+  deploys of guessed codes (and of real codes such as `CAC40` and `NI225`
+  that only the site menu holds) all drew the S&P. The facts were read out
+  of TradingView's own widget bundle by `GET /api/invest/tv-datasets`
+  (`lib/tv-datasets.js`: embed page → webpack runtime chunk map → every
+  lazy chunk → the `DataSets` enum, the code→index label table, both
+  dataset menus, and the s3 loader script; the sandbox cannot reach any of
+  it, the deployed function can). What it established, Sep 2026:
+  `_getWidgetDatasetsMenuItems()` is the embed list (Germany, Spain,
+  Italy, Switzerland, Nordics, Poland, Greece, Israel, Australia, Hang
+  Seng Tech/CEI, Sensex, Indonesia, Pakistan, Gulf via ADX only, Egypt,
+  Morocco, Nigeria, the Americas); **withheld from embeds**: UK, France,
+  Euro Stoxx, Netherlands, Belgium, Japan, Hang Seng main, Nifty, Korea,
+  Singapore, Taiwan, Thailand, Turkey, Saudi, DFM, China. The embed entry
+  point also rewrites every Korean dataset and `UK100` to `SPX500`. The
+  loader's `_validateSettings` only checks width/height, so a bad
+  dataset is never reported. `TV_EMBED_DATASETS` in `js/tv-widgets.js`
+  is that embed list verbatim; every chip in `HEATMAP_MARKETS` must be in
+  it (`tests/heatmap.test.mjs`), `TV_EMBED_WITHHELD` is printed on the
+  page so nobody hunts for a chip that cannot exist, and the widget's own
+  menu stays enabled. Re-run the discovery endpoint before touching the
+  table — TradingView changes the list.
 - **Broadcasts embed by channel**, via YouTube's own
   `/embed/live_stream?channel=<id>` resolver, with the broadcaster's live
   page and the YouTube channel linked under every frame. The old
