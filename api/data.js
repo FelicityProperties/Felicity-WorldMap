@@ -1,9 +1,19 @@
-// Vercel Serverless Function — serves dashboard data from Neon or hardcoded fallback,
+// Vercel EDGE Function — serves dashboard data from Neon or hardcoded fallback,
 // and the World Map's live layers:
 //
 //   GET /api/data                 countries / conflict zones / reference ships (Neon or fallback)
 //   GET /api/data?layer=flights   live ADS-B aircraft positions (OpenSky), edge-cached 20 min
 //   GET /api/data?layer=events    24h conflict-news locations (GDELT GEO), edge-cached 15 min
+//   GET /api/data?layer=diag      one probe per upstream from this runtime, never cached
+//
+// Why the Edge runtime: from the Node serverless runtime (AWS us-east-1,
+// region iad1) TCP connections to opensky-network.org and
+// api.gdeltproject.org never open — UND_ERR_CONNECT_TIMEOUT on every try
+// while a Yahoo control answers in 62 ms (diag, 2026-09-27). Both hosts
+// are IPv4-only, so it is not an IPv6 route; they drop that cloud range.
+// The Edge runtime egresses from a different network. If the diag still
+// times out from here, the hosts are unreachable from Vercel altogether
+// and the layers need a fetcher that runs elsewhere.
 //
 // The layers live here rather than in their own file because Hobby caps
 // serverless functions at twelve. A failed upstream returns ok:false with
@@ -13,19 +23,34 @@
 import { fetchFlights, fetchEvents, FLIGHTS_SOURCE, EVENTS_SOURCE } from '../lib/live-layers.js';
 import { fetchReason } from '../lib/fetch-reason.js';
 
-const FALLBACK = null; // Will be populated below if DB is unavailable
+export const config = { runtime: 'edge' };
 
-async function handleLayer(layer, res) {
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function json(body, status = 200, cache = 'no-store') {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': cache },
+  });
+}
+
+// Edge functions must start responding within 25s on Hobby; four probes
+// at 5s each stay inside that with the control host included.
+const DIAG_TIMEOUT_MS = 5000;
+
+async function handleLayer(layer) {
   try {
     if (layer === 'flights') {
       const data = await fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET });
-      res.setHeader('Cache-Control', 's-maxage=1200, stale-while-revalidate=600');
-      return res.status(200).json(data);
+      return json(data, 200, 's-maxage=1200, stale-while-revalidate=600');
     }
     if (layer === 'events') {
       const data = await fetchEvents();
-      res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=900');
-      return res.status(200).json(data);
+      return json(data, 200, 's-maxage=900, stale-while-revalidate=900');
     }
     if (layer === 'diag') {
       // Answers "why does the map say no feed?" from the function's own
@@ -42,47 +67,38 @@ async function handleLayer(layer, res) {
       for (const [name, u] of targets) {
         const t0 = Date.now();
         const c = new AbortController();
-        const timer = setTimeout(() => c.abort(), 8000);
+        const timer = setTimeout(() => c.abort(), DIAG_TIMEOUT_MS);
         try {
           const r = await fetch(u, { signal: c.signal, headers: { Accept: '*/*', 'User-Agent': 'FelicityIntelligence/1.0 (+https://felicity-world-map.vercel.app)' } });
           const body = await r.text();
           out.push({ target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120) });
         } catch (e) {
-          out.push({ target: name, ms: Date.now() - t0, error: fetchReason(e, 8000) });
+          out.push({ target: name, ms: Date.now() - t0, error: fetchReason(e, DIAG_TIMEOUT_MS) });
         } finally {
           clearTimeout(timer);
         }
       }
-      res.setHeader('Cache-Control', 'no-store');
-      return res.status(200).json({ ok: true, at: new Date().toISOString(), region: process.env.VERCEL_REGION || null, hasOpenSkyCreds: !!(process.env.OPENSKY_CLIENT_ID && process.env.OPENSKY_CLIENT_SECRET), results: out });
+      return json({ ok: true, runtime: 'edge', at: new Date().toISOString(), region: process.env.VERCEL_REGION || null, hasOpenSkyCreds: !!(process.env.OPENSKY_CLIENT_ID && process.env.OPENSKY_CLIENT_SECRET), results: out });
     }
-    return res.status(404).json({ ok: false, error: `Unknown layer: ${layer}` });
+    return json({ ok: false, error: `Unknown layer: ${layer}` }, 404);
   } catch (e) {
     console.warn(`[data/${layer}]`, e.message);
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ ok: false, error: e.message, source: layer === 'flights' ? FLIGHTS_SOURCE : EVENTS_SOURCE });
+    return json({ ok: false, error: e.message, source: layer === 'flights' ? FLIGHTS_SOURCE : EVENTS_SOURCE });
   }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export default async function handler(request) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 200, headers: CORS });
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(request.url);
   const layer = url.searchParams.get('layer');
-  if (layer) return handleLayer(layer, res);
+  if (layer) return handleLayer(layer);
 
   const connectionString = process.env.DATABASE_URL;
 
   // If no DATABASE_URL, return fallback data so the site always works
-  if (!connectionString) {
-    res.setHeader('Cache-Control', 's-maxage=300');
-    return res.status(200).json(getFallbackData());
-  }
+  if (!connectionString) return json(getFallbackData(), 200, 's-maxage=300');
 
   try {
     const { neon } = await import('@neondatabase/serverless');
@@ -99,10 +115,7 @@ export default async function handler(req, res) {
     ]);
 
     // If DB is empty (tables exist but no rows), return fallback
-    if (!countries.length) {
-      res.setHeader('Cache-Control', 's-maxage=60');
-      return res.status(200).json(getFallbackData());
-    }
+    if (!countries.length) return json(getFallbackData(), 200, 's-maxage=60');
 
     const ciiScores = {};
     const regionMap = {};
@@ -111,19 +124,17 @@ export default async function handler(req, res) {
       if (c.region) regionMap[c.name] = c.region;
     });
 
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
-    return res.status(200).json({
+    return json({
       source: 'neon',
       ciiScores,
       regionMap,
       ships: shipsData.map(s => ({ name: s.name, type: s.type, lat: parseFloat(s.lat), lng: parseFloat(s.lng), speed: s.speed, dest: s.destination })),
       confZones: conflictsData.map(c => ({ name: c.name, lat: parseFloat(c.lat), lng: parseFloat(c.lng), sev: c.severity })),
-    });
+    }, 200, 's-maxage=60, stale-while-revalidate=300');
   } catch (error) {
     console.error('Database error:', error.message);
     // The reference set still renders, but a database failure is not cached
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json(getFallbackData());
+    return json(getFallbackData());
   }
 }
 
@@ -161,8 +172,3 @@ function getFallbackData() {
   };
 }
 
-// OpenSky and GDELT GEO regularly take longer than the platform's default
-// function limit; the upstream timeouts above are 12s, so the function
-// must be allowed to outlive them or the caller sees a platform 504
-// instead of the reason.
-export const config = { maxDuration: 30 };

@@ -55,11 +55,25 @@ for (const file of walk(apiDir)) {
     .split(/[\\/]/)
     .map(seg => seg.replace(/^\[(.+)\]$/, ':$1'))
     .join('/');
-  const { default: handler } = await import(pathToFileURL(file).href);
+  const mod = await import(pathToFileURL(file).href);
+  const handler = mod.default;
   if (typeof handler !== 'function') continue;
   // Express 4 does not catch async rejections; without the .catch a throw
   // outside the handler's own try would take the dev server down.
-  app.all(route, (req, res, next) => Promise.resolve(handler(req, res)).catch(next));
+  if (mod.config?.runtime === 'edge') {
+    // Edge functions take a Request and return a Response
+    app.all(route, (req, res, next) => {
+      const body = ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body ?? {});
+      const request = new Request(`http://${req.headers.host || 'localhost'}${req.originalUrl}`, { method: req.method, headers: req.headers, body });
+      Promise.resolve(handler(request)).then(async r => {
+        res.status(r.status);
+        r.headers.forEach((v, k) => res.setHeader(k, v));
+        res.send(Buffer.from(await r.arrayBuffer()));
+      }).catch(next);
+    });
+  } else {
+    app.all(route, (req, res, next) => Promise.resolve(handler(req, res)).catch(next));
+  }
   console.log(`  mounted ${route}`);
 }
 

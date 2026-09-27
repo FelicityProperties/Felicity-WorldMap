@@ -223,7 +223,7 @@ Or connect your GitHub repo in the Vercel dashboard — it will auto-deploy on p
 ```
 Browser  →  Static HTML/CSS/JS (Vercel CDN)
              ↓ fetch('/api/data')
-         →  Vercel Serverless Function (api/data.js)
+         →  Vercel Edge Function (api/data.js)
              ↓ SQL queries
          →  Neon PostgreSQL
 ```

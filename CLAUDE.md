@@ -349,12 +349,20 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   else: that is Node's wording for a connection that never completed,
   with the reason (ENOTFOUND, ECONNRESET, connect timeout, certificate)
   hidden in `error.cause`. `lib/fetch-reason.js` now appends the cause to
-  every `timedFetch` error in `lib/`, `api/data.js` carries
-  `maxDuration: 30` so a 12s upstream timeout is not cut off by the
-  platform's 10s default, and **`GET /api/data?layer=diag`** tries
-  OpenSky, GDELT GEO, GDELT DOC and a Yahoo control from the function
-  itself and reports status or reason per target — run it first whenever
-  the map says no feed. Events are places the
+  every `timedFetch` error in `lib/`, and **`GET /api/data?layer=diag`**
+  tries OpenSky, GDELT GEO, GDELT DOC and a Yahoo control from the
+  function itself and reports status or reason per target — run it first
+  whenever the map says no feed. Its first run (2026-09-27, region iad1,
+  Node runtime) settled it: `UND_ERR_CONNECT_TIMEOUT` on OpenSky and on
+  **both** GDELT endpoints, Yahoo in 62 ms. Both hosts are IPv4-only, so
+  it is not an IPv6 route: they drop Vercel's AWS egress. That also means
+  the Hormuz wire's headlines (GDELT DOC) never worked from production.
+  `api/data.js` therefore runs on the **Edge runtime** (`config.runtime =
+  'edge'`, a Request in and a Response out; `server.js` adapts it), which
+  egresses from a different network. `tests/live-layers.test.mjs` and
+  `tests/seed.test.mjs` call it with a `Request`. If the diag still times
+  out from the edge, the layers need a fetcher that runs elsewhere; do not
+  paper over it with a longer timeout. Events are places the
   press is writing about, sized by article count — not verified incidents.
   Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
   dot, no clock, no Refresh: there is no free, licensed AIS feed. The

@@ -31,11 +31,10 @@ const apiSrc = await import('node:fs').then(fs => fs.readFileSync(new URL('../ap
 check(!/price:\s*\d/.test(apiSrc) && !/time:\s*"\d+[mh]"/.test(apiSrc), '/api/data carries no seeded price or headline age');
 check(!/call:\s*"/.test(apiSrc) && !/FROM flights/.test(apiSrc), '/api/data carries no authored flights');
 const { default: dataHandler } = await import('../api/data.js');
-const r = { code: 0, payload: null, headers: {}, setHeader(k, v) { this.headers[k] = v; }, end() {} };
-r.status = c => { r.code = c; return r; }; r.json = p => { r.payload = p; return r; };
 const savedDb = process.env.DATABASE_URL; delete process.env.DATABASE_URL;
-await dataHandler({ method: 'GET', url: '/api/data', headers: { host: 'localhost' } }, r);
+const resp = await dataHandler(new Request('http://localhost/api/data'));
 if (savedDb !== undefined) process.env.DATABASE_URL = savedDb;
+const r = { code: resp.status, payload: await resp.json() };
 check(r.code === 200 && r.payload && !('markets' in r.payload) && !('news' in r.payload) && !('flights' in r.payload), 'fallback /api/data response has no markets, news or flights keys');
 check(r.payload && Object.keys(r.payload.ciiScores || {}).length > 100 && Array.isArray(r.payload.confZones) && Array.isArray(r.payload.ships), 'fallback /api/data still carries CII scores, conflict zones and reference ships');
 
