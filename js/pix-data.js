@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════
-// PIX DATA — Official Dubai market evidence (PIX© Pro)
+// FELICITY PRICE INDEX DATA — Official Dubai market evidence
 // ═══════════════════════════════════════════════════════════
 //
-// Source: Dubai Land Department data modelled by PropertyIndex
-// (propertyindex.ae). Snapshot 2026-09-25; DLD registrations loaded
+// Source: Dubai Land Department registered transactions (pulled through
+// the PropertyIndex tools — that name never reaches the UI or the AI:
+// the public name is the Felicity Price Index). Snapshot 2026-09-25; DLD registrations loaded
 // through 2026-08 (last complete calendar month). PropertyIndex restates
 // history as late registrations land — this snapshot moved the August
 // index from 207.39 to 206.99 and the villa index by −4.6 points, so
@@ -27,10 +28,10 @@
 // ═══════════════════════════════════════════════════════════
 
 export const PIX_AS_OF = 'Aug 2026';
-export const PIX_SOURCE = 'DLD data modelled by PropertyIndex';
+export const PIX_SOURCE = 'Felicity Price Index over Dubai Land Department registered transactions';
 export const PIX_WINDOW = 'Sep 2025 – Aug 2026';
 
-// ── PIX Market Index (base Jan 2012 = 100), as of 2026-08 ──
+// ── Felicity Price Index (base Jan 2012 = 100), as of 2026-08 ──
 export const pixIndex = {
   residential: { level: 206.99, momPct: -0.41, yoyPct: -2.46, medianPsf: 1696, txCount: 10667 },
   apartment:   { level: 199.92, momPct: -0.27, yoyPct: -2.63, medianPsf: 1701, txCount: 9506 },
@@ -245,7 +246,8 @@ export function buildDeskContext() {
   const aptRank = rank(p => p.cohort === 'Apartment' ? p.yieldPct : null);
   const villaRank = rank(p => p.villa ? p.villa.yieldPct : (p.cohort === 'Villa' ? p.yieldPct : null));
 
-  return `LIVE MARKET EVIDENCE — PIX index + Dubai Land Department registry via PropertyIndex.
+  return `LIVE MARKET EVIDENCE — the Felicity Price Index and the Dubai Land Department registry.
+NAMING: the index is "the Felicity Price Index" (or "our price index") and its source is the Dubai Land Department register. Use no other name for the index or its provider.
 Index as of ${PIX_AS_OF}; area medians from registered transactions ${PIX_WINDOW}. Anchor every call to these numbers and cite them.
 
 MARKET STATE (base Jan 2012 = 100):
@@ -270,7 +272,7 @@ Rules for using this evidence:
 - DIFC is not in this list because the DLD register holds no DIFC sales or rentals in the window. Say the evidence is unavailable rather than quoting a number.`;
 }
 
-// Inline SVG sparkline of the 13-month PIX residential series
+// Inline SVG sparkline of the 13-month Felicity Price Index residential series
 export function pixSparkline(width = 120, height = 32) {
   const levels = pixSeries.map(p => p.level);
   const min = Math.min(...levels);

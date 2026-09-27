@@ -5,10 +5,20 @@
 **Never invent, estimate, or infer Dubai real-estate numbers. Ever.**
 
 All Dubai market figures — prices, PSF, rents, yields, transaction counts,
-market direction, signals — MUST come from **PropertyIndex (PIX)**, which
-serves official **Dubai Land Department** registered-transaction evidence.
-The account has **PIX© Pro**, so prices, sizes, PSF, rents, yields, tiers,
+market direction, signals — MUST come from the **PropertyIndex tools**, which
+serve official **Dubai Land Department** registered-transaction evidence.
+The account has the Pro plan, so prices, sizes, PSF, rents, yields, tiers,
 and signal magnitudes are all unlocked.
+
+**Naming — standing instruction from the owner (Sep 2026):** the product
+name for this evidence is the **Felicity Price Index**. "PIX" and
+"PropertyIndex" must never appear in the UI, in a prompt, in an email or
+in anything the AI says — `tests/brand.test.mjs` scans every file a
+browser or the model can see and both AI evidence blocks. The `pix` prefix
+in file and variable names (`js/pix-data.js`, `pixAreas`, `PIX_AS_OF`) is
+internal and stays; the evidence URLs keep their host because they are the
+audit trail, and are labelled "evidence ↗". This document names the tools
+because it has to; it is the only place the vendor name belongs.
 
 When asked for Dubai market data:
 
@@ -34,7 +44,7 @@ When asked for Dubai market data:
 
 | File | Contents | Refresh |
 |---|---|---|
-| `js/pix-data.js` | PIX market index, 13-month series, per-area registry medians (PSF, price, rent, gross yield), villa cohorts | Monthly — DLD closes by calendar month |
+| `js/pix-data.js` | Felicity Price Index levels, 13-month series, per-area registry medians (PSF, price, rent, gross yield), villa cohorts | Monthly — DLD closes by calendar month |
 | `js/pix-signals.js` | Real detected market signals (top sales, record PSF, yield leaders, discount trades) with detection dates | Weekly or on request |
 
 Both files carry `*_AS_OF` constants. **Update them whenever you refresh**,
@@ -48,7 +58,7 @@ hardcode market numbers into a prompt.
 
 ### Refresh procedure
 
-When the user says "refresh the PIX data":
+When the user says "refresh the price index data" (or the old "refresh the PIX data"):
 
 1. `get_market_index` for residential / apartment / villa (13+ months).
 2. `propertyindex_query` on `sales` grouped by `community` (+ `property_type`)
@@ -114,7 +124,7 @@ the prompt's fault, not the model's:
    told the model to "use exact numbers: GDP growth %, inflation rate,
    debt-to-GDP" with no data feed at all, and to "cite actual DLD
    transaction volumes" with no DLD evidence injected. It now says plainly
-   that no country feed exists, and carries the PIX blocks for the Dubai
+   that no country feed exists, and carries the price-index blocks for the Dubai
    side.
 3. **It ranked by eye.** It called Dubai South's 4.8% "the highest villa
    yield in our entire register"; JVC's 5.2% was two lines up. Ranking is a
@@ -153,8 +163,8 @@ upstreams; only a real send covers the model.
 `demandStrength`, `investorOutlook`, `opportunityScore` and the prose
 descriptions. These are **Felicity desk assessments, not registry data**.
 They are fine to keep — an intelligence product is allowed a view — but they
-must never be presented as measured evidence, and any numeric field that PIX
-can source should be migrated to PIX.
+must never be presented as measured evidence, and any numeric field the
+register can source should be migrated to the Felicity Price Index files.
 
 **A desk opinion may not contain a number the register does not hold.**
 `js/prompts.js` once rendered the Overview's Active Calls with "JVC yield

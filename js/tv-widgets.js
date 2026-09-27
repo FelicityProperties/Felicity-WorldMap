@@ -8,7 +8,7 @@
 //
 // These are TradingView's own official embeds. Their data lives inside
 // the iframe and never feeds our calculations — the platform's own
-// numbers still come from Finnhub, Yahoo, CoinGecko and PropertyIndex.
+// numbers still come from Finnhub, Yahoo, CoinGecko and the Felicity Price Index.
 // ═══════════════════════════════════════════════════════════
 
 const TV_BASE = 'https://s3.tradingview.com/external-embedding/embed-widget-';

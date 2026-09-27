@@ -3,7 +3,7 @@
 // No country data feed exists here — no GDP, inflation, ratings or flows
 // are fetched — so the prompt must not demand "exact figures"; that only
 // produces confident numbers from memory. The country read is a labelled
-// desk assessment. The Dubai side, by contrast, is real: the PIX evidence
+// desk assessment. The Dubai side, by contrast, is real: the Felicity Price Index evidence
 // blocks are injected so any area figure comes from the register.
 
 import { buildDeskContext } from '../js/pix-data.js';

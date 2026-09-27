@@ -4,7 +4,7 @@
 //
 // The Active Calls are the desk's positioned opinions. An intelligence
 // product is allowed a view — but every NUMBER inside a call is pulled
-// from the PIX registry files at load time and carries a `reg` marker,
+// from the Felicity Price Index registry files at load time and carries a `reg` marker,
 // so a call can never quote a figure the register does not hold. An
 // earlier version hard-coded "JVC yield 7.2% vs prime 4.8%" and "DIFC
 // rents up 18% YoY"; the register said 6.1% and 3.4%, and holds no DIFC
@@ -23,7 +23,7 @@
 import { pixAreas, pixIndex, PIX_AS_OF, fmtCount, fmtPrice } from './pix-data.js';
 import { pixSignals, PIX_SIGNALS_AS_OF } from './pix-signals.js';
 
-const reg = '<span class="metric-src metric-src--reg" title="Registered DLD evidence via PropertyIndex">reg</span>';
+const reg = '<span class="metric-src metric-src--reg" title="Registered Dubai Land Department evidence · Felicity Price Index">reg</span>';
 const A = name => pixAreas[name] || {};
 const sig = (entity, type) => pixSignals.find(s => s.entity === entity && s.type === type);
 const pct = v => v != null ? `${v.toFixed(1)}%${reg}` : 'n/a';

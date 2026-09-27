@@ -47,12 +47,13 @@ returns GDELT GEO locations of conflict-related news in the last 24 hours
 (15-minute cache). Ships stay a labelled reference set — no free AIS feed
 exists.
 
-## Dubai Market Data (PIX / PropertyIndex)
+## Dubai Market Data (the Felicity Price Index)
 
 `js/pix-data.js` holds a snapshot of official **Dubai Land Department**
-evidence modelled by [PropertyIndex](https://www.propertyindex.ae):
+registered-transaction evidence, published as the **Felicity Price Index**
+(the `pix` prefix in file and variable names is internal and never shown):
 
-- **PIX Market Index** — residential / apartment / villa levels, YoY, MoM,
+- **Felicity Price Index** — residential / apartment / villa levels, YoY, MoM,
   median PSF, monthly transaction counts, plus a 13-month trend series.
 - **Per-area registry medians** for all 19 tracked areas — median registered
   sale PSF, median registered price, median registered annual rent, and a
@@ -68,8 +69,8 @@ Felicity desk estimate used only where the registry has no rental evidence
 in the window (currently Jumeirah, DIFC, Dubai Islands).
 
 **Refreshing:** the snapshot is manual and dated. DLD data closes by calendar
-month, so monthly is the natural cadence — ask Claude to "refresh the PIX
-data" and it will re-query PropertyIndex and regenerate `js/pix-data.js`
+month, so monthly is the natural cadence — ask Claude to "refresh the price index
+data" and it will re-query the registry tools and regenerate `js/pix-data.js`
 and `js/pix-signals.js`. Update `PIX_AS_OF`, `PIX_WINDOW` and
 `PIX_SIGNALS_AS_OF` when you do.
 

@@ -9,7 +9,7 @@ import {
 } from './pix-data.js';
 import { safeUrl } from './safe.js';
 
-// Registry yield where PropertyIndex has evidence, else the desk estimate
+// Registry yield where the register has evidence, else the desk estimate
 function effectiveYield(area) {
   const p = pixAreas[area.name];
   return (p && p.yieldPct != null) ? p.yieldPct : area.rentalYield;
@@ -25,7 +25,7 @@ export function initDubaiIntel() {
   initFilters();
 }
 
-// ── PIX Market Index strip (official DLD-derived evidence) ──
+// ── Felicity Price Index strip (official DLD-derived evidence) ──
 function renderPixStrip() {
   const section = document.getElementById('section-dubai');
   const controls = section ? section.querySelector('.dubai-controls') : null;
@@ -49,7 +49,7 @@ function renderPixStrip() {
   const html = `
     <div class="pix-strip" id="pix-strip">
       <div class="pix-strip__head">
-        <div class="pix-strip__title">PIX Market Index <span class="pix-strip__badge">Official Evidence</span></div>
+        <div class="pix-strip__title">Felicity Price Index <span class="pix-strip__badge">Official Evidence</span></div>
         <div class="pix-strip__spark">${pixSparkline(140, 34)}<span class="pix-strip__spark-label">13-mo trend</span></div>
       </div>
       <div class="pix-strip__grid">
@@ -57,7 +57,7 @@ function renderPixStrip() {
         ${seg('Apartments', pixIndex.apartment)}
         ${seg('Villas', pixIndex.villa)}
       </div>
-      <div class="pix-strip__source">Source: ${PIX_SOURCE} · index as of ${PIX_AS_OF} (base Jan 2012 = 100) · area medians from registered transactions ${PIX_WINDOW} · gross yields exclude service charges and voids · <a href="https://www.propertyindex.ae" target="_blank" rel="noopener">propertyindex.ae ↗</a></div>
+      <div class="pix-strip__source">Source: ${PIX_SOURCE} · index as of ${PIX_AS_OF} (base Jan 2012 = 100) · area medians from registered transactions ${PIX_WINDOW} · gross yields exclude service charges and voids</div>
     </div>`;
 
   controls.insertAdjacentHTML('beforebegin', html);

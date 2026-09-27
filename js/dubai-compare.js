@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════
 //
 // Every number in the comparison is a registered-transaction median from
-// PropertyIndex (DLD evidence) already living in js/pix-data.js, and every
+// the Felicity Price Index (DLD evidence) already living in js/pix-data.js, and every
 // figure carries the same window and `reg` provenance as the area cards.
 // The one desk-opinion row (sentiment) is labelled as exactly that.
 //
@@ -70,11 +70,11 @@ function renderComparison(host, nameA, nameB) {
         <div class="dcmp__spacer"></div>
         <div class="dcmp__area">
           <span class="dcmp__area-name">${esc(nameA)}</span>
-          <a class="dcmp__area-link" href="${safeUrl(A.url)}" target="_blank" rel="noopener">PIX ↗</a>
+          <a class="dcmp__area-link" href="${safeUrl(A.url)}" target="_blank" rel="noopener" title="Registered evidence">evidence ↗</a>
         </div>
         <div class="dcmp__area">
           <span class="dcmp__area-name">${esc(nameB)}</span>
-          <a class="dcmp__area-link" href="${safeUrl(B.url)}" target="_blank" rel="noopener">PIX ↗</a>
+          <a class="dcmp__area-link" href="${safeUrl(B.url)}" target="_blank" rel="noopener" title="Registered evidence">evidence ↗</a>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ function renderComparison(host, nameA, nameB) {
         : ''}
 
       <div class="dcmp__foot">
-        <span class="dcmp__prov"><span class="dcmp__reg">reg</span> Registered DLD evidence via PropertyIndex ·
+        <span class="dcmp__prov"><span class="dcmp__reg">reg</span> Registered DLD evidence · Felicity Price Index ·
           ${esc(PIX_WINDOW)} · as of ${esc(PIX_AS_OF)}. Medians are cohort-matched — never apartment rents over villa prices.</span>
         <a class="dcmp__cta" href="${safeUrl(wa(`Hi Felicity, I'm weighing ${nameA} against ${nameB} — can we talk it through?`))}"
            target="_blank" rel="noopener">💬 Weigh these two with the desk</a>

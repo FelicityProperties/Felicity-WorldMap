@@ -326,7 +326,7 @@ function renderShips() {
   return header + cards;
 }
 
-// ── Dubai RE Signals — real PIX signals from the DLD register ──
+// ── Dubai RE Signals — real Felicity Price Index signals from the DLD register ──
 // A dated snapshot refreshed weekly, not a streaming feed: no pulsing
 // live dot and no Refresh button, the same rule as flights and ships.
 function renderSignals() {

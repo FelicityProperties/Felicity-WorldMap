@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
-// PIX SIGNALS — Real market signals from registered DLD evidence
+// FELICITY PRICE INDEX SIGNALS — Real market signals from registered DLD evidence
 // ═══════════════════════════════════════════════════════════
 //
-// Source: PropertyIndex signal engine over Dubai Land Department
-// registered transactions. Snapshot 2026-09-25; open signals detected
+// Source: signal engine over Dubai Land Department registered
+// transactions (PropertyIndex tools; public name Felicity Price Index). Snapshot 2026-09-25; open signals detected
 // through 2026-09-24.
 //
 // Every row below is an actual detected event with a real detection
@@ -34,7 +34,7 @@
 // ═══════════════════════════════════════════════════════════
 
 export const PIX_SIGNALS_AS_OF = '2026-09-24';
-export const PIX_SIGNALS_SOURCE = 'PropertyIndex signal engine over DLD registered transactions';
+export const PIX_SIGNALS_SOURCE = 'Felicity Price Index signal feed over DLD registered transactions';
 
 export const SIGNAL_TYPES = {
   top_sale:       { label: 'Top Sale',       tone: 'bullish' },
@@ -270,7 +270,7 @@ export function buildSignalContext() {
       return `  - ${x.entity} (${x.area || 'Dubai'}), ${x.detectedOn}: ${c.headline}. ${c.detail}`;
     }).join('\n');
 
-  return `LIVE MARKET SIGNALS — detected by the PropertyIndex signal engine over DLD registered transactions, through ${PIX_SIGNALS_AS_OF}. These are real registered events. Cite them by name and date; never invent a comparable anecdote.
+  return `LIVE MARKET SIGNALS — the Felicity Price Index signal feed, detected over DLD registered transactions through ${PIX_SIGNALS_AS_OF}. Refer to it as "our signal feed" or "the Felicity Price Index signals"; use no other name for it or its provider. These are real registered events. Cite them by name and date; never invent a comparable anecdote.
 
 TOP REGISTERED SALES:
 ${group('top_sale')}

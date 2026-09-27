@@ -1,6 +1,6 @@
 // Exercises the real /api/brief?test=1 and /api/desk/ask code paths with
 // only the external HTTP calls (Anthropic, Resend, Yahoo, Finnhub) replaced
-// by recorders. Prompt assembly from the refreshed PIX files, the live macro
+// by recorders. Prompt assembly from the refreshed Felicity Price Index files, the live macro
 // block, JSON parsing, email render, owner-only routing and the response
 // shape are all the real code.
 import { writeFileSync } from 'node:fs';
@@ -91,7 +91,7 @@ check(sys.includes('US 10-year Treasury yield: 4.12% (+4 bp vs prior close)') &&
 check(sys.includes('[Reuters] Fed holds rates'), 'headline feed rendered');
 check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transit calls — tankers 3, cargo 5 (IMF PortWatch)'), 'Hormuz evidence block in the brief prompt');
 check(/^latest day 2026-09-13 \(\d+d lag\), 40 rows$/.test(res.payload?.hormuzEvidence || ''), `response reports Hormuz coverage (${res.payload?.hormuzEvidence})`);
-check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 206.99') && sys.includes('through 2026-09-24'), 'PIX evidence is the August set');
+check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 206.99') && sys.includes('through 2026-09-24'), 'Felicity Price Index evidence is the August set');
 check(sys.includes('YIELD RANKINGS') && /Villas: JVC 5\.2% > Town Square 5\.1% > Dubai South 4\.8%/.test(sys), 'villa yield ranking computed correctly');
 check(/Apartments: Mohammed Bin Rashid City 6\.5% > Meydan 6\.3% > JVC 6\.1%/.test(sys), 'apartment yield ranking computed correctly');
 check(!sys.includes("Last time X happened, Y moved Z%'"), 'invented-analog instruction removed');

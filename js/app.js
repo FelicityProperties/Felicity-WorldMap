@@ -290,7 +290,7 @@ function initSidebarToggle() {
   }
 }
 
-// ── Signals Section — real PIX signals from registered DLD evidence ──
+// ── Signals Section — real Felicity Price Index signals from registered DLD evidence ──
 let signalFilter = 'all';
 
 function initSignals() {
@@ -310,8 +310,7 @@ function initSignals() {
           ${Object.entries(SIGNAL_TYPES).map(([k, v]) => btn(k, v.label)).join('')}
         </div>
         <div class="signal-source">
-          Live from the DLD register · detected through ${PIX_SIGNALS_AS_OF} ·
-          <a href="https://www.propertyindex.ae" target="_blank" rel="noopener">PropertyIndex ↗</a>
+          Felicity Price Index signal feed · DLD register · detected through ${PIX_SIGNALS_AS_OF}
         </div>
       </div>
     `);
@@ -361,7 +360,7 @@ function renderSignalCards(grid) {
         <div class="signal-evidence">
           <span class="signal-evidence__badge">DLD</span>
           <span>Detected ${escapeHtml(s.detectedOn)}</span>
-          <a href="${safeUrl(signalUrl(s))}" target="_blank" rel="noopener" title="View on PropertyIndex">↗</a>
+          <a href="${safeUrl(signalUrl(s))}" target="_blank" rel="noopener" title="Registered evidence for this community">evidence ↗</a>
         </div>
       </div>
     `;

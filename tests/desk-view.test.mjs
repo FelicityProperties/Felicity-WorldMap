@@ -1,5 +1,5 @@
 // Every number in the Overview's Active Calls must be a registry figure
-// from the PIX files; the Historical Playbook must carry no percentages.
+// from the Felicity Price Index files; the Historical Playbook must carry no percentages.
 const root = new URL('../', import.meta.url).href;
 const { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE } = await import(root + 'js/prompts.js');
 const { buildDeskContext, pixAreas, pixIndex } = await import(root + 'js/pix-data.js');

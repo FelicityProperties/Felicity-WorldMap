@@ -91,6 +91,7 @@
 }
 
 .site-footer__links a,
+.site-footer__links .site-footer__src,
 .site-footer__links button {
   display: inline-flex;
   align-items: baseline;
@@ -179,6 +180,7 @@
   .site-footer__tagline,
   .site-footer__integrity { max-width: none; }
   .site-footer__links a,
+  .site-footer__links .site-footer__src,
   .site-footer__links button { min-height: 34px; align-items: center; }
   .site-footer__bottom { flex-direction: column; gap: var(--space-3); }
   .site-footer__copyright { white-space: normal; }
