@@ -377,14 +377,14 @@ function updateStatusCounts() {
   if (fc) {
     const fStale = !layerMeta.flights.ok && flights.length ? 'stale · ' : '';
     fc.textContent = layerMeta.flights.ok || flights.length ? `${fStale}${flights.length.toLocaleString('en-US')} aircraft` : 'aircraft: no feed';
-    fc.title = layerMeta.flights.ok ? `OpenSky ADS-B · fetched ${layerMeta.flights.fetchedAt || ''}` : `OpenSky: ${layerMeta.flights.error || 'not fetched yet'}`;
+    fc.title = layerMeta.flights.ok ? `OpenSky ADS-B · fetched ${layerMeta.flights.fetchedAt || ''}${layerMeta.flights.relay ? ' · relayed' : ''}` : `OpenSky: ${layerMeta.flights.error || 'not fetched yet'}`;
   }
   if (sc) sc.textContent = ships.length + ' ref. vessels';
   if (cc) cc.textContent = confZones.length + ' conflicts';
   if (ec) {
     const eStale = !layerMeta.events.ok && events.length ? 'stale · ' : '';
     ec.textContent = layerMeta.events.ok || events.length ? `${eStale}${events.length} event locations` : 'events: no feed';
-    ec.title = layerMeta.events.ok ? `GDELT GEO 24h · fetched ${layerMeta.events.fetchedAt || ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
+    ec.title = layerMeta.events.ok ? `GDELT GEO 24h · fetched ${layerMeta.events.fetchedAt || ''}${layerMeta.events.relay ? ' · relayed' : ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
   }
   updateCountryCount();
 }

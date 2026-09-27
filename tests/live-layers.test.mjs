@@ -85,14 +85,38 @@ const call = async (u, method = 'GET') => {
   return { code: r.status, payload: text ? JSON.parse(text) : null, headers: { 'Cache-Control': r.headers.get('Cache-Control') } };
 };
 let res = await call('/api/data?layer=flights');
-check(res.code === 200 && res.payload.ok && res.payload.flights.length === 2 && /s-maxage=1200/.test(res.headers['Cache-Control']), 'flights layer served and cached 20 min');
+check(res.code === 200 && res.payload.ok && res.payload.flights.length === 2 && /s-maxage=300/.test(res.headers['Cache-Control']), 'flights layer served and cached 5 min');
 res = await call('/api/data?layer=events');
-check(res.code === 200 && res.payload.ok && res.payload.events.length === 2 && /s-maxage=900/.test(res.headers['Cache-Control']), 'events layer served and cached 15 min');
+check(res.code === 200 && res.payload.ok && res.payload.events.length === 2 && /s-maxage=300/.test(res.headers['Cache-Control']), 'events layer served and cached 5 min');
 mode = 'opensky-429';
 res = await call('/api/data?layer=flights');
 check(res.code === 200 && res.payload.ok === false && /rate limit/.test(res.payload.error) && res.headers['Cache-Control'] === 'no-store' && res.payload.source?.name === 'OpenSky Network', 'layer failure is honest and never cached');
 res = await call('/api/data?layer=nope');
 check(res.code === 404, 'unknown layer is a 404');
+
+// Relay ingest: token gate, kind gate, payload gate; no store without a database
+const post = async (u, body, token) => {
+  const r = await data(new Request('http://localhost' + u, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) }));
+  return { code: r.status, payload: await r.json() };
+};
+delete process.env.LIVE_LAYERS_TOKEN;
+res = await post('/api/data?layer=ingest&kind=flights', { ok: true, fetchedAt: 'x' }, 'abc');
+check(res.code === 503, 'ingest refuses when no token is configured');
+process.env.LIVE_LAYERS_TOKEN = 'secret-token';
+res = await post('/api/data?layer=ingest&kind=flights', { ok: true, fetchedAt: 'x' }, 'wrong-token1');
+check(res.code === 401, 'ingest rejects a wrong token');
+res = await post('/api/data?layer=ingest&kind=flights', { ok: true, fetchedAt: 'x' });
+check(res.code === 401, 'ingest rejects a missing token');
+res = await post('/api/data?layer=ingest&kind=nope', { ok: true, fetchedAt: 'x' }, 'secret-token');
+check(res.code === 400, 'ingest rejects an unknown kind');
+res = await post('/api/data?layer=ingest&kind=flights', { ok: false, error: 'boom' }, 'secret-token');
+check(res.code === 400, 'ingest rejects a failed fetch as a payload');
+delete process.env.DATABASE_URL;
+res = await post('/api/data?layer=ingest&kind=flights', { ok: true, fetchedAt: '2026-09-27T18:00:00.000Z', flights: [] }, 'secret-token');
+check(res.code === 503 && res.payload.stored === false, 'ingest reports honestly when there is no database');
+res = await call('/api/data?layer=ingest');
+check(res.code === 405, 'GET on ingest is a 405');
+delete process.env.LIVE_LAYERS_TOKEN;
 delete process.env.DATABASE_URL;
 res = await call('/api/data');
 check(res.code === 200 && res.payload.source === 'fallback' && res.payload.ciiScores && Array.isArray(res.payload.ships), 'plain /api/data still serves the fallback dashboard payload');

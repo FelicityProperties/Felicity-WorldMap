@@ -38,7 +38,10 @@ export async function fetchLiveFlights() {
     if (!Array.isArray(d.flights)) throw new Error('payload had no flights array');
     flights.length = 0;
     flights.push(...d.flights);
-    Object.assign(layerMeta.flights, { ok: true, fetchedAt: d.fetchedAt, asOf: d.asOf, error: null, source: d.source, auth: d.auth, count: d.count, received: d.received, onGround: d.onGround, noPosition: d.noPosition });
+    // A relayed copy carries the relay's own fetch time; one flagged stale
+    // (older than the relay window and the direct fetch failed) shows as
+    // STALE with its positions standing, never as LIVE.
+    Object.assign(layerMeta.flights, { ok: !d.stale, fetchedAt: d.fetchedAt, asOf: d.asOf, error: d.stale ? (d.staleReason || 'relay copy is old') : null, source: d.source, auth: d.auth, count: d.count, received: d.received, onGround: d.onGround, noPosition: d.noPosition, relay: d.servedFrom === 'relay', relayAgeMin: d.relayAgeMin ?? null });
     return true;
   } catch (e) {
     // Previous real positions stand; the meta says the refresh failed
@@ -53,7 +56,7 @@ export async function fetchLiveEvents() {
     if (!Array.isArray(d.events)) throw new Error('payload had no events array');
     events.length = 0;
     events.push(...d.events);
-    Object.assign(layerMeta.events, { ok: true, fetchedAt: d.fetchedAt, error: null, source: d.source, count: d.count, window: d.window });
+    Object.assign(layerMeta.events, { ok: !d.stale, fetchedAt: d.fetchedAt, error: d.stale ? (d.staleReason || 'relay copy is old') : null, source: d.source, count: d.count, window: d.window, relay: d.servedFrom === 'relay', relayAgeMin: d.relayAgeMin ?? null });
     return true;
   } catch (e) {
     Object.assign(layerMeta.events, { ok: false, error: e.message });

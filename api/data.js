@@ -2,8 +2,9 @@
 // and the World Map's live layers:
 //
 //   GET /api/data                 countries / conflict zones / reference ships (Neon or fallback)
-//   GET /api/data?layer=flights   live ADS-B aircraft positions (OpenSky), edge-cached 20 min
-//   GET /api/data?layer=events    24h conflict-news locations (GDELT GEO), edge-cached 15 min
+//   GET /api/data?layer=flights   live ADS-B aircraft positions (OpenSky, via the relay), edge-cached 5 min
+//   GET /api/data?layer=events    24h conflict-news locations (GDELT GEO, via the relay), edge-cached 5 min
+//   POST /api/data?layer=ingest&kind=…   the GitHub Actions relay pushes a fetched payload (bearer token)
 //   GET /api/data?layer=diag      one probe per upstream from this runtime, never cached
 //
 // Why the Edge runtime: from the Node serverless runtime (AWS us-east-1,
@@ -22,13 +23,14 @@
 
 import { fetchFlights, fetchEvents, FLIGHTS_SOURCE, EVENTS_SOURCE } from '../lib/live-layers.js';
 import { fetchReason } from '../lib/fetch-reason.js';
+import { readLayer, writeLayer, tokenMatches, KINDS } from '../lib/live-store.js';
 
 export const config = { runtime: 'edge' };
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 function json(body, status = 200, cache = 'no-store') {
@@ -42,15 +44,54 @@ function json(body, status = 200, cache = 'no-store') {
 // at 5s each stay inside that with the control host included.
 const DIAG_TIMEOUT_MS = 5000;
 
-async function handleLayer(layer) {
+// A relayed copy younger than this is served as-is; older, a direct fetch
+// is attempted first and the copy is the fallback (marked stale).
+const RELAY_FRESH_MIN = 45;
+
+async function serveRelayed(kind, direct, cache) {
+  const stored = await readLayer(kind);
+  if (stored && stored.ageMin <= RELAY_FRESH_MIN) {
+    return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin }, 200, cache);
+  }
   try {
+    const data = await direct();
+    return json(data, 200, cache);
+  } catch (e) {
+    if (stored) {
+      // Older than the window and the direct fetch failed too: still real
+      // data, still dated by its own fetch time, and flagged so the page
+      // says STALE rather than LIVE. Never cached.
+      return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin, stale: true, staleReason: e.message });
+    }
+    throw e;
+  }
+}
+
+async function handleLayer(layer, request) {
+  try {
+    if (layer === 'ingest') {
+      // The GitHub Actions relay pushes a fetched payload here.
+      if (request.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+      const expected = process.env.LIVE_LAYERS_TOKEN;
+      if (!expected) return json({ ok: false, error: 'LIVE_LAYERS_TOKEN not configured on the server' }, 503);
+      const given = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+      if (!tokenMatches(given, expected)) return json({ ok: false, error: 'unauthorised' }, 401);
+      const kind = new URL(request.url).searchParams.get('kind') || '';
+      if (!KINDS.has(kind)) return json({ ok: false, error: `unknown kind ${kind}` }, 400);
+      let payload;
+      try { payload = await request.json(); } catch { return json({ ok: false, error: 'body is not JSON' }, 400); }
+      if (!payload || payload.ok !== true || typeof payload.fetchedAt !== 'string') return json({ ok: false, error: 'payload must be a successful fetch with a fetchedAt' }, 400);
+      const r = await writeLayer(kind, payload);
+      return json({ ok: r.stored, ...r }, r.stored ? 200 : 503);
+    }
     if (layer === 'flights') {
-      const data = await fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET });
-      return json(data, 200, 's-maxage=1200, stale-while-revalidate=600');
+      // `return await`: a bare return would hand the promise past this catch
+      return await serveRelayed('flights',
+        () => fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET }),
+        's-maxage=300, stale-while-revalidate=300');
     }
     if (layer === 'events') {
-      const data = await fetchEvents();
-      return json(data, 200, 's-maxage=900, stale-while-revalidate=900');
+      return await serveRelayed('events', () => fetchEvents(), 's-maxage=300, stale-while-revalidate=300');
     }
     if (layer === 'diag') {
       // Answers "why does the map say no feed?" from the function's own
@@ -89,11 +130,11 @@ async function handleLayer(layer) {
 
 export default async function handler(request) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 200, headers: CORS });
-  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
-
   const url = new URL(request.url);
   const layer = url.searchParams.get('layer');
-  if (layer) return handleLayer(layer);
+  if (layer === 'ingest') return handleLayer(layer, request);
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+  if (layer) return handleLayer(layer, request);
 
   const connectionString = process.env.DATABASE_URL;
 

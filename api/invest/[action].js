@@ -20,6 +20,7 @@
 import { findAsset } from '../../js/invest-data.js';
 import { fetchHormuz, fetchHormuzWire, saveSnapshot, loadSnapshot, HORMUZ_SOURCE, WIRE_SOURCE } from '../../lib/hormuz.js';
 import { discoverDatasets } from '../../lib/tv-datasets.js';
+import { readLayer } from '../../lib/live-store.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -791,6 +792,19 @@ async function handleHormuzWire(req, res) {
   if (!checkRateLimit(limitKey(req, 'hormuz-wire'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
   try {
     const data = await fetchHormuzWire({ timeoutMs: 8000 });
+    // GDELT drops connections from Vercel's networks, so the headlines
+    // normally arrive through the GitHub Actions relay (lib/live-store.js).
+    // A relayed set is served with ITS fetch time; the page shows the age.
+    if (data.headlinesError) {
+      const stored = await readLayer('hormuz-headlines');
+      if (stored && Array.isArray(stored.payload?.headlines) && stored.payload.headlines.length) {
+        data.headlines = stored.payload.headlines;
+        data.headlinesFrom = 'relay';
+        data.headlinesFetchedAt = stored.fetchedAt;
+        data.headlinesDirectError = data.headlinesError;
+        data.headlinesError = null;
+      }
+    }
     // `ok` means at least one source answered; only a COMPLETE pull is
     // cached, or a GDELT hiccup would blank the headlines for twenty minutes.
     const complete = data.ok && !data.headlinesError && Object.values(data.quotes || {}).every(q => q && q.ok);

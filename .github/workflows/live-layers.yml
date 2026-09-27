@@ -1,0 +1,32 @@
+# Relays the live map layers (OpenSky aircraft, GDELT conflict-news
+# locations, GDELT Hormuz headlines) into the site's store every 20
+# minutes. Vercel's networks cannot open a connection to either host;
+# GitHub's runners can. See lib/live-store.js for the why.
+#
+# Secrets: LIVE_LAYERS_TOKEN (same value as the Vercel env var),
+# optionally OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET.
+name: live-layers
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: live-layers
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe, fetch and push
+        env:
+          LIVE_LAYERS_TOKEN: ${{ secrets.LIVE_LAYERS_TOKEN }}
+          OPENSKY_CLIENT_ID: ${{ secrets.OPENSKY_CLIENT_ID }}
+          OPENSKY_CLIENT_SECRET: ${{ secrets.OPENSKY_CLIENT_SECRET }}
+        run: node scripts/live-layers-push.mjs

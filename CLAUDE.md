@@ -328,7 +328,7 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   arithmetic instead. Deterministic drift is the same lie. Removed.
 - **Aircraft are live now; ships are not.** `lib/live-layers.js` pulls
   OpenSky Network ADS-B state vectors (`/api/data?layer=flights`, edge-
-  cached 20 minutes — anonymous OpenSky allows 400 credits/day and a global
+  cached 5 minutes, relayed every 20 — anonymous OpenSky allows 400 credits/day and a global
   pull costs 4; set `OPENSKY_CLIENT_ID`/`OPENSKY_CLIENT_SECRET` for a
   free account's 4,000) and GDELT GEO conflict-news locations for the last
   24 hours (`?layer=events`, 15 minutes). `js/live-layers.js` fills the
@@ -357,12 +357,28 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   **both** GDELT endpoints, Yahoo in 62 ms. Both hosts are IPv4-only, so
   it is not an IPv6 route: they drop Vercel's AWS egress. That also means
   the Hormuz wire's headlines (GDELT DOC) never worked from production.
-  `api/data.js` therefore runs on the **Edge runtime** (`config.runtime =
-  'edge'`, a Request in and a Response out; `server.js` adapts it), which
-  egresses from a different network. `tests/live-layers.test.mjs` and
-  `tests/seed.test.mjs` call it with a `Request`. If the diag still times
-  out from the edge, the layers need a fetcher that runs elsewhere; do not
-  paper over it with a longer timeout. Events are places the
+  `api/data.js` was moved to the **Edge runtime** (`config.runtime =
+  'edge'`, a Request in and a Response out; `server.js` adapts it) and
+  the diag was re-run from bom1: **same result** — both hosts drop every
+  Vercel network. So the feeds are fetched from where they are accepted:
+  **`.github/workflows/live-layers.yml`** runs
+  `scripts/live-layers-push.mjs` on a GitHub runner every 20 minutes; it
+  probes the three upstreams (the run log is the diagnostic), fetches
+  aircraft, event locations and Hormuz headlines through the same `lib/`
+  code, and pushes each successful payload to `POST
+  /api/data?layer=ingest&kind=…` with `LIVE_LAYERS_TOKEN` (a GitHub
+  secret and a Vercel env var, same value). `lib/live-store.js` keeps one
+  row per kind in Postgres. `/api/data?layer=flights|events` serves the
+  relayed copy when it is under 45 minutes old, marked `servedFrom:
+  'relay'` and dated by the runner's fetch time (the sidebar says
+  "relayed"); older, it tries the direct fetch and falls back to the copy
+  flagged `stale: true`, uncached, so the page says STALE. The Hormuz
+  wire does the same for headlines (`headlinesFrom: 'relay'`). Nothing
+  is invented between pushes. `tests/live-layers.test.mjs` covers the
+  ingest gates (no token → 503, wrong → 401, bad kind → 400, failed
+  fetch as payload → 400, no database → 503). A `return` of a promise
+  inside a `try` bypasses its `catch` — the wrapper is `return await`ed;
+  the test caught the 500 that would otherwise have shipped. Events are places the
   press is writing about, sized by article count — not verified incidents.
   Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
   dot, no clock, no Refresh: there is no free, licensed AIS feed. The
