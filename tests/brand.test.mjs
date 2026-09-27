@@ -23,10 +23,13 @@ function walk(dir, out = []) {
 const files = [...walk(join(root, 'js')), ...walk(join(root, 'api')), ...walk(join(root, 'lib')), join(root, 'index.html')];
 const stripComments = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/<!--[\s\S]*?-->/g, '');
 const forbidden = /\bPIX\b|PIX©|PropertyIndex/;
+// The vendor host may sit in data fields as provenance but never in markup
+const vendorHref = /href=[^>]*propertyindex\.ae|propertyindex\.ae[^\n]*<\/a>/;
 for (const f of files) {
   const src = stripComments(readFileSync(f, 'utf8'));
   const m = src.match(forbidden);
   check(!m, `${f.replace(root, '')} mentions "${m && m[0]}" outside a comment`);
+  check(!vendorHref.test(src), `${f.replace(root, '')} renders a link to the vendor`);
 }
 
 // What the model is handed

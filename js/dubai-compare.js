@@ -70,11 +70,9 @@ function renderComparison(host, nameA, nameB) {
         <div class="dcmp__spacer"></div>
         <div class="dcmp__area">
           <span class="dcmp__area-name">${esc(nameA)}</span>
-          <a class="dcmp__area-link" href="${safeUrl(A.url)}" target="_blank" rel="noopener" title="Registered evidence">evidence ↗</a>
         </div>
         <div class="dcmp__area">
           <span class="dcmp__area-name">${esc(nameB)}</span>
-          <a class="dcmp__area-link" href="${safeUrl(B.url)}" target="_blank" rel="noopener" title="Registered evidence">evidence ↗</a>
         </div>
       </div>
 

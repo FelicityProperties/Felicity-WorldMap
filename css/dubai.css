@@ -482,12 +482,6 @@
   color: var(--text-muted);
 }
 
-.pix-evidence__link {
-  color: var(--accent-primary);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  flex-shrink: 0;
-}
 
 @media (max-width: 767px) {
   .pix-strip__grid {
@@ -668,15 +662,6 @@
   color: var(--accent-primary);
 }
 
-.dcmp__area-link {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.dcmp__area-link:hover { color: var(--accent-primary); }
 
 .dcmp__row { border-bottom: 1px solid var(--border-subtle); }
 .dcmp__row:last-of-type { border-bottom: none; }

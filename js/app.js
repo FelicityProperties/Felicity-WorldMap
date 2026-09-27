@@ -8,7 +8,7 @@ import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
 import { loadFromAPI } from './data.js';
-import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge, signalUrl } from './pix-signals.js';
+import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
 import { initHero, refreshAlertBanner, markNewsUnavailable } from './hero.js';
 import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
@@ -360,7 +360,6 @@ function renderSignalCards(grid) {
         <div class="signal-evidence">
           <span class="signal-evidence__badge">DLD</span>
           <span>Detected ${escapeHtml(s.detectedOn)}</span>
-          <a href="${safeUrl(signalUrl(s))}" target="_blank" rel="noopener" title="Registered evidence for this community">evidence ↗</a>
         </div>
       </div>
     `;

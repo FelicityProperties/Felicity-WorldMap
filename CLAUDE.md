@@ -16,9 +16,11 @@ name for this evidence is the **Felicity Price Index**. "PIX" and
 in anything the AI says — `tests/brand.test.mjs` scans every file a
 browser or the model can see and both AI evidence blocks. The `pix` prefix
 in file and variable names (`js/pix-data.js`, `pixAreas`, `PIX_AS_OF`) is
-internal and stays; the evidence URLs keep their host because they are the
-audit trail, and are labelled "evidence ↗". This document names the tools
-because it has to; it is the only place the vendor name belongs.
+internal and stays. The per-area `url` fields in `js/pix-data.js` are
+provenance for the refresh procedure and are **never rendered** — the
+owner had the "evidence ↗" links removed because they opened the vendor's
+site. This document names the tools because it has to; it is the only
+place the vendor name belongs.
 
 When asked for Dubai market data:
 

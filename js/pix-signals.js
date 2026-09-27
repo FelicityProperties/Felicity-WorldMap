@@ -248,13 +248,6 @@ export function signalAge(detectedOn, now = new Date()) {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-// The engine's community_slug is the canonical /dubai/<slug> node
-export function signalUrl(s) {
-  return s.community
-    ? `https://www.propertyindex.ae/dubai/${s.community}`
-    : 'https://www.propertyindex.ae';
-}
-
 // Compact one-line summary used by the map sidebar
 export function signalTone(s) {
   return SIGNAL_TYPES[s.type]?.tone || 'neutral';
