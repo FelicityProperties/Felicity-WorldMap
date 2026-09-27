@@ -344,7 +344,17 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   until the real fetch replaced them — or forever when it failed. The copy
   is gone, `api/data.js` no longer reads or ships `markets`, `news`,
   `flights` or `dubaiSignals` at all, and `tests/seed.test.mjs` calls the
-  handler without a database and asserts those keys are absent. Events are places the
+  handler without a database and asserts those keys are absent. The
+  first real outage then read **"NO FEED — fetch failed"** and nothing
+  else: that is Node's wording for a connection that never completed,
+  with the reason (ENOTFOUND, ECONNRESET, connect timeout, certificate)
+  hidden in `error.cause`. `lib/fetch-reason.js` now appends the cause to
+  every `timedFetch` error in `lib/`, `api/data.js` carries
+  `maxDuration: 30` so a 12s upstream timeout is not cut off by the
+  platform's 10s default, and **`GET /api/data?layer=diag`** tries
+  OpenSky, GDELT GEO, GDELT DOC and a Yahoo control from the function
+  itself and reports status or reason per target — run it first whenever
+  the map says no feed. Events are places the
   press is writing about, sized by article count — not verified incidents.
   Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
   dot, no clock, no Refresh: there is no free, licensed AIS feed. The

@@ -11,6 +11,7 @@
 // for everyone for twenty minutes.
 
 import { fetchFlights, fetchEvents, FLIGHTS_SOURCE, EVENTS_SOURCE } from '../lib/live-layers.js';
+import { fetchReason } from '../lib/fetch-reason.js';
 
 const FALLBACK = null; // Will be populated below if DB is unavailable
 
@@ -25,6 +26,35 @@ async function handleLayer(layer, res) {
       const data = await fetchEvents();
       res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=900');
       return res.status(200).json(data);
+    }
+    if (layer === 'diag') {
+      // Answers "why does the map say no feed?" from the function's own
+      // vantage point: each upstream is tried once with a short timeout and
+      // the HTTP status or the connection-level reason is reported. Never
+      // cached; a fixed reference host shows whether egress works at all.
+      const targets = [
+        ['opensky', 'https://opensky-network.org/api/states/all?lamin=24&lomin=54&lamax=26&lomax=56'],
+        ['gdelt-geo', 'https://api.gdeltproject.org/api/v2/geo/geo?query=airstrike&mode=PointData&format=GeoJSON&maxpoints=5'],
+        ['gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1'],
+        ['control', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],
+      ];
+      const out = [];
+      for (const [name, u] of targets) {
+        const t0 = Date.now();
+        const c = new AbortController();
+        const timer = setTimeout(() => c.abort(), 8000);
+        try {
+          const r = await fetch(u, { signal: c.signal, headers: { Accept: '*/*', 'User-Agent': 'FelicityIntelligence/1.0 (+https://felicity-world-map.vercel.app)' } });
+          const body = await r.text();
+          out.push({ target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120) });
+        } catch (e) {
+          out.push({ target: name, ms: Date.now() - t0, error: fetchReason(e, 8000) });
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({ ok: true, at: new Date().toISOString(), region: process.env.VERCEL_REGION || null, hasOpenSkyCreds: !!(process.env.OPENSKY_CLIENT_ID && process.env.OPENSKY_CLIENT_SECRET), results: out });
     }
     return res.status(404).json({ ok: false, error: `Unknown layer: ${layer}` });
   } catch (e) {
@@ -130,3 +160,9 @@ function getFallbackData() {
     ],
   };
 }
+
+// OpenSky and GDELT GEO regularly take longer than the platform's default
+// function limit; the upstream timeouts above are 12s, so the function
+// must be allowed to outlive them or the caller sees a platform 504
+// instead of the reason.
+export const config = { maxDuration: 30 };
