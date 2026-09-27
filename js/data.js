@@ -171,7 +171,7 @@ export const news = [];
 // hardcoded corridor set dressed as traffic.
 export const flights = [];
 
-// Live 24-hour conflict-news locations (GDELT GEO), same module.
+// Live conflict-event locations (GDELT 2.0 events, last 2h), same module.
 export const events = [];
 
 // The former reference corridor set, kept for the record and no longer

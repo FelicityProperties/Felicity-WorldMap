@@ -139,7 +139,7 @@ function startPolling() {
     refreshAlertBanner();
   });
 
-  // Aircraft (OpenSky) and 24h event locations (GDELT) for the World Map.
+  // Aircraft (OpenSky) and conflict-event locations (GDELT 2.0) for the World Map.
   // Redraw the layers whether the fetch succeeded or not: on failure the
   // status counts and sidebar header change to say so.
   startLiveLayersRefresh(layer => {

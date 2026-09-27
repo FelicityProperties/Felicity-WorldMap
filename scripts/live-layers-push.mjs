@@ -46,7 +46,7 @@ async function push(kind, payload) {
 
 console.log('── probes ──');
 await probe('opensky', 'https://opensky-network.org/api/states/all?lamin=24&lomin=54&lamax=26&lomax=56');
-await probe('gdelt-geo', 'https://api.gdeltproject.org/api/v2/geo/geo?query=airstrike&mode=PointData&format=GeoJSON&maxpoints=5');
+await probe('gdelt-export', 'http://data.gdeltproject.org/gdeltv2/lastupdate.txt');
 await probe('gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1');
 await probe('google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en');
 

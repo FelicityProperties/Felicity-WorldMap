@@ -16,7 +16,7 @@ import { flights, events } from './data.js';
 
 export const layerMeta = {
   flights: { ok: false, fetchedAt: null, asOf: null, error: 'not fetched yet', source: null, auth: null, count: 0 },
-  events:  { ok: false, fetchedAt: null, error: 'not fetched yet', source: null, count: 0, window: '24h' },
+  events:  { ok: false, fetchedAt: null, error: 'not fetched yet', source: null, count: 0, window: '2h' },
 };
 
 async function pull(layer) {

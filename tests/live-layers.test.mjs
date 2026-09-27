@@ -1,7 +1,8 @@
-// World Map live layers: OpenSky state vectors and GDELT GEO features are
+// World Map live layers: OpenSky state vectors and GDELT 2.0 event rows are
 // parsed by documented index/shape, schema drift fails loudly, and the
 // /api/data?layer= routes cache success but never a failure.
-import { parseStates, parseGeo, fetchFlights, fetchEvents } from '../lib/live-layers.js';
+import { parseStates, fetchFlights, fetchEvents, parseLastUpdate, exportStamps, unzipSingle, parseEventRows, aggregateEvents } from '../lib/live-layers.js';
+import { deflateRawSync } from 'node:zlib';
 
 const fails = [];
 const check = (cond, msg) => { if (!cond) fails.push(msg); };
@@ -25,20 +26,33 @@ check(parsed.time === 1789390000, 'feed timestamp carried');
 let err = null; try { parseStates({ nope: [] }); } catch (e) { err = e.message; }
 check(/schema changed/.test(err || ''), 'OpenSky schema drift fails loudly');
 
-// ── GDELT GEO ──
-const geo = {
-  type: 'FeatureCollection',
-  features: [
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [56.26, 26.57] }, properties: { name: 'Strait Of Hormuz, Oman (general), Oman', count: 143, html: '<a href="https://example.com/x" target="_blank">Tanker <b>hit</b> near Hormuz</a><br><a href="https://example.com/y">second</a>' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: ['bad', 1] }, properties: { name: 'nowhere' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [35.0, 48.5] }, properties: { name: 'Kyiv', count: '12' } },
-  ],
+// ── GDELT 2.0 event export ──
+const row = (id, root, lat, lng, name, mentions, url) => { const c = new Array(61).fill(''); c[0] = id; c[28] = root; c[31] = String(mentions); c[33] = '3'; c[34] = '-4.2'; c[51] = '4'; c[52] = name; c[53] = 'IR'; c[56] = String(lat); c[57] = String(lng); c[59] = '20260927190000'; c[60] = url; return c.join('\t'); };
+const tsv = [
+  row('1', '19', 26.57, 56.26, 'Strait Of Hormuz, Oman', 12, 'https://example.com/a'),
+  row('2', '19', 26.571, 56.262, 'Strait Of Hormuz, Oman', 30, 'https://example.com/b'),   // same place after rounding, more mentions
+  row('3', '04', 48.5, 35.0, 'Kyiv', 99, 'https://example.com/c'),                          // not a material-conflict root
+  row('4', '18', 0, 0, 'nowhere', 5, ''),                                                     // no usable location
+  row('5', '20', 15.5, 32.5, 'Khartoum, Sudan', 7, 'javascript:alert(1)'),                  // bad url dropped, event kept
+  'short\trow',
+].join('\n');
+const zipOf = (text, method) => {
+  const body = method === 8 ? deflateRawSync(Buffer.from(text)) : Buffer.from(text);
+  const name = Buffer.from('x.CSV');
+  const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(method, 8); h.writeUInt32LE(body.length, 18); h.writeUInt32LE(text.length, 22); h.writeUInt16LE(name.length, 26);
+  return Buffer.concat([h, name, body]);
 };
-const events = parseGeo(geo);
-check(events.length === 2 && events[0].lat === 26.57 && events[0].lng === 56.26 && events[0].count === 143 && events[0].url === 'https://example.com/x' && events[0].title === 'Tanker hit near Hormuz', `GEO features parsed, [lng,lat] swapped, lead article extracted (${JSON.stringify(events[0])})`);
-check(events[1].count === 12 && events[1].url === '' && events[1].title === '', 'feature without html yields no link, count coerced');
-err = null; try { parseGeo({ type: 'Nope' }); } catch (e) { err = e.message; }
-check(/schema changed/.test(err || ''), 'GDELT schema drift fails loudly');
+check(await unzipSingle(zipOf('hello\tworld', 0)) === 'hello\tworld' && await unzipSingle(zipOf(tsv, 8)) === tsv, 'zip entry read, stored and deflated');
+err = null; try { await unzipSingle(Buffer.from('<html>blocked</html>')); } catch (e) { err = e.message; }
+check(/not a zip/.test(err || ''), 'a non-zip answer fails loudly');
+const pr = parseEventRows(tsv);
+check(pr.rows === 6 && pr.malformed === 1 && pr.events.length === 3 && pr.events[2].url === '' && pr.events[0].geoType === 4, `event rows parsed by documented column (${pr.rows} rows, ${pr.malformed} malformed, ${pr.events.length} conflict events)`);
+const agg = aggregateEvents(pr.events);
+check(agg.length === 2 && agg[0].name === 'Strait Of Hormuz, Oman' && agg[0].count === 42 && agg[0].events === 2 && agg[0].url === 'https://example.com/b' && agg[1].count === 7, `places aggregated by rounded location, most-mentioned article kept (${JSON.stringify(agg[0])})`);
+check(parseLastUpdate('123 abc http://data.gdeltproject.org/gdeltv2/20260927190000.export.CSV.zip\n456 def http://data.gdeltproject.org/gdeltv2/20260927190000.mentions.CSV.zip') === '20260927190000', 'lastupdate.txt parsed');
+err = null; try { parseLastUpdate('<html>nope</html>'); } catch (e) { err = e.message; }
+check(/schema changed/.test(err || ''), 'lastupdate schema drift fails loudly');
+check(exportStamps('20260927000000', 3).join() === '20260927000000,20260926234500,20260926233000', 'export stamps step back 15 minutes across midnight');
 
 // ── Fetchers + route, with a recorded fetch ──
 const calls = [];
@@ -50,9 +64,13 @@ globalThis.fetch = async (u, opts) => {
     if (mode === 'opensky-429') return { ok: false, status: 429 };
     return { ok: true, status: 200, json: async () => states };
   }
-  if (u.includes('gdeltproject.org')) {
+  if (u.includes('lastupdate.txt')) {
     if (mode === 'gdelt-html') return { ok: true, status: 200, text: async () => '<html>slow down</html>' };
-    return { ok: true, status: 200, text: async () => JSON.stringify(geo) };
+    return { ok: true, status: 200, text: async () => '1 a http://data.gdeltproject.org/gdeltv2/20260927190000.export.CSV.zip' };
+  }
+  if (u.includes('.export.CSV.zip')) {
+    if (u.includes('20260927184500')) return { ok: false, status: 404 };            // a slot GDELT skipped
+    return { ok: true, status: 200, arrayBuffer: async () => zipOf(tsv, 8) };
   }
   throw new Error('unexpected fetch ' + u);
 };
@@ -70,10 +88,10 @@ err = null; try { await fetchFlights(); } catch (e) { err = e.message; }
 check(/rate limit reached/.test(err || ''), 'OpenSky 429 explained');
 mode = 'ok';
 const evs = await fetchEvents();
-check(evs.ok && evs.count === 2 && evs.window === '24h' && /airstrike/.test(evs.query), 'fetchEvents');
+check(evs.ok && evs.count === 2 && evs.filesFetched === 7 && evs.filesMissing === 1 && evs.window === '105m' && evs.rowsMalformed === 7 && evs.events[0].count === 42 * 7, `fetchEvents reads the newest files, skips a missing slot, reports its accounting (${evs.filesFetched} files, window ${evs.window})`);
 mode = 'gdelt-html';
 err = null; try { await fetchEvents(); } catch (e) { err = e.message; }
-check(/non-JSON/.test(err || ''), 'GDELT HTML answer is a named failure');
+check(/schema changed/.test(err || ''), 'GDELT HTML answer is a named failure');
 
 // Route
 mode = 'ok';

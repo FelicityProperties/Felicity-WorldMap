@@ -100,7 +100,7 @@ async function handleLayer(layer, request) {
       // cached; a fixed reference host shows whether egress works at all.
       const targets = [
         ['opensky', 'https://opensky-network.org/api/states/all?lamin=24&lomin=54&lamax=26&lomax=56'],
-        ['gdelt-geo', 'https://api.gdeltproject.org/api/v2/geo/geo?query=airstrike&mode=PointData&format=GeoJSON&maxpoints=5'],
+        ['gdelt-export', 'http://data.gdeltproject.org/gdeltv2/lastupdate.txt'],
         ['gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1'],
         ['google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en'],
         ['control', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],

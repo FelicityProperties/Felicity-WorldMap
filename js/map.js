@@ -255,7 +255,7 @@ export function renderDynLayers() {
   cMarkers = [];
   eMarkers = [];
 
-  // Live conflict-news locations (GDELT, last 24h) — sized by article count
+  // Live conflict-event locations (GDELT 2.0 events, last 2h) — sized by mention count
   if (layerState.events) {
     events.forEach(e => {
       const n = e.count || 1;
@@ -264,7 +264,7 @@ export function renderDynLayers() {
         renderer: canvas, radius: r, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.22, weight: 1,
       }).addTo(map);
       const link = e.url ? `<br><a href="${safeUrl(e.url)}" target="_blank" rel="noopener" style="color:#00d4ff">${escapeHtml(e.title || 'Lead article')} ↗</a>` : '';
-      m.bindPopup(`<b>${escapeHtml(e.name)}</b><br>${n} article${n === 1 ? '' : 's'} in the last 24h · GDELT${link}`);
+      m.bindPopup(`<b>${escapeHtml(e.name)}</b><br>${n} mention${n === 1 ? '' : 's'} of ${Number(e.events) || 1} conflict event${Number(e.events) === 1 ? '' : 's'} in the last ${escapeHtml(layerMeta.events.window || '2h')} · GDELT${link}`);
       m.bindTooltip(`${escapeHtml(e.name)} · ${n}`, { direction: 'top' });
       eMarkers.push(m);
     });
@@ -384,7 +384,7 @@ function updateStatusCounts() {
   if (ec) {
     const eStale = !layerMeta.events.ok && events.length ? 'stale · ' : '';
     ec.textContent = layerMeta.events.ok || events.length ? `${eStale}${events.length} event locations` : 'events: no feed';
-    ec.title = layerMeta.events.ok ? `GDELT GEO 24h · fetched ${layerMeta.events.fetchedAt || ''}${layerMeta.events.relay ? ' · relayed' : ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
+    ec.title = layerMeta.events.ok ? `GDELT 2.0 events, last ${layerMeta.events.window || '2h'} · fetched ${layerMeta.events.fetchedAt || ''}${layerMeta.events.relay ? ' · relayed' : ''}` : `GDELT: ${layerMeta.events.error || 'not fetched yet'}`;
   }
   updateCountryCount();
 }

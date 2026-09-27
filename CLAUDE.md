@@ -378,7 +378,22 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   ingest gates (no token → 503, wrong → 401, bad kind → 400, failed
   fetch as payload → 400, no database → 503). A `return` of a promise
   inside a `try` bypasses its `catch` — the wrapper is `return await`ed;
-  the test caught the 500 that would otherwise have shipped. Events are places the
+  the test caught the 500 that would otherwise have shipped.
+  **What the relay's own probes established (run logs, 2026-09-27):**
+  OpenSky answers a GitHub runner in under a second with a full global
+  pull (11,000+ aircraft); Google News RSS answers in 0.7 s; GDELT's DOC
+  API rate-limits the shared runner address (429, dropped connects) and
+  the **GEO 2.0 API answers 404 everywhere — it is gone**. So the Strait
+  headlines come from the Google News search feed (`fetchHormuzHeadlines`,
+  GDELT DOC as the fallback, the page names whichever answered) and the
+  event layer reads the **GDELT 2.0 Event export files** on
+  `data.gdeltproject.org` (plain zipped TSVs every 15 minutes): the
+  newest eight (2 hours), material-conflict CAMEO roots 18/19/20 with an
+  action location, aggregated by place with mention counts and the
+  most-mentioned source article. The zip is read with Web APIs only
+  (`DecompressionStream`) so the same code runs on the Edge runtime. The
+  payload carries `filesFetched`, `filesMissing`, `rowsMalformed` — a
+  slot GDELT skipped is counted, not invented. Events are places the
   press is writing about, sized by article count — not verified incidents.
   Ships remain a **fixed reference set** with a `REFERENCE` badge, no live
   dot, no clock, no Refresh: there is no free, licensed AIS feed. The
