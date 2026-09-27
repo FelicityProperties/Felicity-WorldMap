@@ -40,9 +40,9 @@ function json(body, status = 200, cache = 'no-store') {
   });
 }
 
-// Edge functions must start responding within 25s on Hobby; four probes
-// at 5s each stay inside that with the control host included.
-const DIAG_TIMEOUT_MS = 5000;
+// Edge functions must start responding within 25s on Hobby; five probes
+// at 4s each stay inside that with the control host included.
+const DIAG_TIMEOUT_MS = 4000;
 
 // A relayed copy younger than this is served as-is; older, a direct fetch
 // is attempted first and the copy is the fallback (marked stale).
@@ -102,6 +102,7 @@ async function handleLayer(layer, request) {
         ['opensky', 'https://opensky-network.org/api/states/all?lamin=24&lomin=54&lamax=26&lomax=56'],
         ['gdelt-geo', 'https://api.gdeltproject.org/api/v2/geo/geo?query=airstrike&mode=PointData&format=GeoJSON&maxpoints=5'],
         ['gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1'],
+        ['google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en'],
         ['control', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],
       ];
       const out = [];

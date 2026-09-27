@@ -5,7 +5,7 @@
 import {
   buildQueryUrl, parseDate, normaliseRows, summarise, fetchHormuz, fetchHormuzWire,
   renderHormuzEvidence, renderHormuzUnavailable, addDays, daysBetween, oneYearBefore,
-  parseSeenDate, parseHeadlines,
+  parseSeenDate, parseHeadlines, parseRssHeadlines,
 } from '../lib/hormuz.js';
 
 const fails = [];
@@ -115,6 +115,15 @@ globalThis.fetch = async (u, opts) => {
     const sym = decodeURIComponent(u.split('/chart/')[1].split('?')[0]);
     return { ok: true, status: 200, json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: PRICES[sym], chartPreviousClose: PRICES[sym] * 0.92, regularMarketTime: 1789380000 } }] } }) };
   }
+  if (u.includes('news.google.com')) {
+    if (mode === 'gdelt-html') return { ok: false, status: 503, text: async () => 'unavailable' };
+    return { ok: true, status: 200, text: async () => `<?xml version="1.0"?><rss version="2.0"><channel><title>x</title>
+      <item><title><![CDATA[Tankers <b>queue</b> at Hormuz as insurers pull cover - Example News]]></title><link>https://example.com/a</link><pubDate>Thu, 25 Sep 2026 10:15:00 GMT</pubDate><source url="https://example.com">Example News</source></item>
+      <item><title>Tankers queue at Hormuz as insurers pull cover - Mirror</title><link>https://example.com/a2</link><pubDate>Thu, 25 Sep 2026 10:00:00 GMT</pubDate><source url="https://mirror.example">Mirror</source></item>
+      <item><title>bad url</title><link>javascript:alert(1)</link><pubDate>Thu, 25 Sep 2026 10:00:00 GMT</pubDate></item>
+      <item><title>Brent jumps 8&#37; on pipeline shutdown - Example Org</title><link>https://example.com/b</link><pubDate>garbage</pubDate><source url="https://example.org">Example Org</source></item>
+    </channel></rss>` };
+  }
   if (u.includes('gdeltproject.org')) {
     if (mode === 'gdelt-html') return { ok: true, status: 200, text: async () => '<html>rate limited</html>' };
     return { ok: true, status: 200, text: async () => JSON.stringify({ articles: [
@@ -167,11 +176,13 @@ check(!renderHormuzUnavailable('PortWatch schema changed — missing n_total; fi
 check(parseSeenDate('20260925T101500Z') === '2026-09-25T10:15:00.000Z' && parseSeenDate('garbage') === null, 'GDELT seendate parsing');
 mode = 'ok'; calls.length = 0;
 const w = await fetchHormuzWire();
-check(w.ok && w.headlines.length === 2 && w.headlines[0].title === 'Tankers queue at Hormuz as insurers pull cover' && w.headlines[1].seenAt === null, `wire headlines parsed, deduped, tags stripped, bad url dropped (${w.headlines.length})`);
+check(w.ok && w.headlines.length === 2 && w.headlines[0].title === 'Tankers queue at Hormuz as insurers pull cover' && w.headlines[0].seenAt === '2026-09-25T10:15:00.000Z' && w.headlines[0].domain === 'Example News' && w.headlines[1].title === 'Brent jumps 8% on pipeline shutdown' && w.headlines[1].seenAt === null && w.headlinesVia === 'Google News RSS', `wire headlines parsed from the Google feed, deduped, tags and source suffix stripped, bad url dropped (${w.headlines.length})`);
 check(w.quotes.BRENT.ok && w.quotes.BRENT.price === 109.61 && w.quotes.WTI.ok && Math.abs(w.quotes.BRENT.changePct - 8.7) < 0.1, 'wire quotes from Yahoo');
 mode = 'gdelt-html';
 const w2 = await fetchHormuzWire();
-check(w2.ok && w2.headlines.length === 0 && /non-JSON/.test(w2.headlinesError) && w2.quotes.BRENT.ok, 'GDELT non-JSON reported, quotes still served');
+check(w2.ok && w2.headlines.length === 0 && /Google News HTTP 503/.test(w2.headlinesError) && /non-JSON/.test(w2.headlinesError) && w2.quotes.BRENT.ok, 'both headline sources failing is reported in full, quotes still served');
+let rerr = null; try { parseRssHeadlines('<html>blocked</html>'); } catch (e) { rerr = e.message; }
+check(/not RSS/.test(rerr || ''), 'a non-RSS answer fails loudly');
 check(parseHeadlines({ articles: [] }).length === 0, 'empty article list is empty, not an error');
 let perr = null; try { parseHeadlines({ nope: 1 }); } catch (e) { perr = e.message; }
 check(/schema changed/.test(perr || ''), 'GDELT schema change fails loudly');

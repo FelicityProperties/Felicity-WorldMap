@@ -48,17 +48,28 @@ console.log('── probes ──');
 await probe('opensky', 'https://opensky-network.org/api/states/all?lamin=24&lomin=54&lamax=26&lomax=56');
 await probe('gdelt-geo', 'https://api.gdeltproject.org/api/v2/geo/geo?query=airstrike&mode=PointData&format=GeoJSON&maxpoints=5');
 await probe('gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1');
+await probe('google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en');
 
 console.log('── feeds ──');
+// GDELT answers a shared runner address with 429s and dropped connects
+// some of the time; a couple of spaced retries recover most runs.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function attempt(run, tries, gapMs) {
+  let last;
+  for (let i = 1; i <= tries; i++) {
+    try { return await run(); } catch (e) { last = e; if (i < tries) { console.log(`      retry ${i}/${tries - 1} after: ${e.message}`); await sleep(gapMs); } }
+  }
+  throw last;
+}
 const jobs = [
-  ['flights', () => fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET, timeoutMs: 25000 })],
-  ['events', () => fetchEvents({ timeoutMs: 25000 })],
-  ['hormuz-headlines', () => fetchHormuzHeadlines({ timeoutMs: 25000 })],
+  ['flights', () => fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET, timeoutMs: 25000 }), 1],
+  ['events', () => fetchEvents({ timeoutMs: 25000 }), 3],
+  ['hormuz-headlines', () => fetchHormuzHeadlines({ timeoutMs: 25000 }), 2],
 ];
 let okCount = 0;
-for (const [kind, run] of jobs) {
+for (const [kind, run, tries] of jobs) {
   try {
-    const payload = await run();
+    const payload = await attempt(run, tries, 15000);
     const n = payload.count ?? payload.headlines?.length ?? '?';
     console.log(`fetch ${kind.padEnd(16)} ok · ${n} items · fetchedAt ${payload.fetchedAt}`);
     if (await push(kind, payload)) okCount++;

@@ -799,6 +799,7 @@ async function handleHormuzWire(req, res) {
       const stored = await readLayer('hormuz-headlines');
       if (stored && Array.isArray(stored.payload?.headlines) && stored.payload.headlines.length) {
         data.headlines = stored.payload.headlines;
+        data.headlinesVia = stored.payload.via || data.headlinesVia;
         data.headlinesFrom = 'relay';
         data.headlinesFetchedAt = stored.fetchedAt;
         data.headlinesDirectError = data.headlinesError;
