@@ -827,8 +827,10 @@ export default async function handler(req, res) {
       // 40s overall budget: the function's maxDuration is 60s and the page
       // plus its bundles are fetched one after another.
       const found = await discoverDatasets({ timeoutMs: 10000, budgetMs: 40000 });
-      const usable = found.scripts.some(s => !s.error);
-      res.setHeader('Cache-Control', usable ? 's-maxage=3600' : 'no-store');
+      // Only a complete run is worth an hour at the edge; a run cut short by
+      // the time budget or a failed bundle must be re-runnable at once.
+      const complete = found.unfetched === 0 && found.scripts.every(s => !s.error) && found.loader && !found.loader.error;
+      res.setHeader('Cache-Control', complete ? 's-maxage=3600' : 'no-store');
       return res.status(200).json(found);
     } catch (e) { res.setHeader('Cache-Control', 'no-store'); return res.status(200).json({ ok: false, error: e.message }); }
   }

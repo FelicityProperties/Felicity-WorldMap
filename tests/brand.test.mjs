@@ -14,7 +14,8 @@ const check = (cond, msg) => { if (!cond) fails.push(msg); };
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
-    if (/node_modules|vendor|\.git/.test(p)) continue;
+    const rel = p.slice(root.length);
+    if (/(^|\/)(node_modules|vendor|\.git)(\/|$)/.test(rel)) continue;
     if (statSync(p).isDirectory()) walk(p, out); else if (/\.(js|html|mjs)$/.test(name)) out.push(p);
   }
   return out;

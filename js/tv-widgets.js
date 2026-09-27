@@ -11,6 +11,8 @@
 // numbers still come from Finnhub, Yahoo, CoinGecko and the Felicity Price Index.
 // ═══════════════════════════════════════════════════════════
 
+import { escapeHtml } from './safe.js';
+
 const TV_BASE = 'https://s3.tradingview.com/external-embedding/embed-widget-';
 
 const THEME = {
@@ -198,11 +200,11 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
       ${HEATMAP_MARKETS.map(g => `
         <div class="hm-picker__group">
           <span class="hm-picker__region">${g.region}</span>
-          ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${m.key}" title="${m.evidence}">${m.label}</button>`).join('')}
+          ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${escapeHtml(m.key)}" title="${escapeHtml(m.evidence)}">${escapeHtml(m.label)}</button>`).join('')}
         </div>`).join('')}
       <div class="hm-picker__group hm-picker__group--menu">
         <span class="hm-picker__region">Not served to embeds</span>
-        <span class="hm-picker__hint">TradingView withholds ${TV_EMBED_WITHHELD.join(', ')} from embedded heatmaps and draws the S&amp;P 500 in their place, so there is no chip for them. The widget's own menu (top-left header) lists the same ${TV_EMBED_DATASETS.length} datasets as the chips. For a withheld market, <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>.</span>
+        <span class="hm-picker__hint">TradingView withholds ${escapeHtml(TV_EMBED_WITHHELD.join(', '))} from embedded heatmaps and draws the S&amp;P 500 in their place, so there is no chip for them. The chips are the ${HEATMAP_KEYS.length} most-used of the ${TV_EMBED_DATASETS.length} datasets it does serve; the widget's own menu (top-left header) lists all of them. For a withheld market, <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>.</span>
       </div>
     </div>
     <div class="hm-picker__note" id="${hostId}-note"></div>
