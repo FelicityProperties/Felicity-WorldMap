@@ -21,6 +21,7 @@ import { findAsset } from '../../js/invest-data.js';
 import { fetchHormuz, fetchHormuzWire, saveSnapshot, loadSnapshot, HORMUZ_SOURCE, WIRE_SOURCE } from '../../lib/hormuz.js';
 import { discoverDatasets } from '../../lib/tv-datasets.js';
 import { readLayer } from '../../lib/live-store.js';
+import { yahooPrevClose } from '../../lib/market-evidence.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -102,10 +103,14 @@ async function quoteYahoo(symbol) {
         7000, { 'User-Agent': UA }
       );
       if (!r.ok) continue;
-      const meta = (await r.json())?.chart?.result?.[0]?.meta;
+      const result = (await r.json())?.chart?.result?.[0];
+      const meta = result?.meta;
       if (!meta) continue;
       const price = meta.regularMarketPrice ?? meta.previousClose;
-      const prev = meta.chartPreviousClose ?? meta.previousClose ?? price;
+      // Yesterday's close from the series, not `chartPreviousClose` (that is
+      // the close before the 5-day window — a week-old reference that made
+      // every daily move on the cockpit wrong).
+      const prev = yahooPrevClose(result) ?? price;
       if (price == null) continue;
       return {
         price,
@@ -114,6 +119,9 @@ async function quoteYahoo(symbol) {
         changePct: prev ? ((price - prev) / prev) * 100 : 0,
         high: meta.regularMarketDayHigh ?? null,
         low: meta.regularMarketDayLow ?? null,
+        asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null,
+        name: meta.shortName || meta.longName || null,
+        exchange: meta.exchangeName || null,
       };
     } catch { /* try next host */ }
   }

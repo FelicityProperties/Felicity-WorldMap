@@ -847,7 +847,7 @@ async function loadQuote(asset) {
     block.innerHTML = `
       <div class="invest-detail__price">${isYield(asset) ? fmtYield(q.price) : fmtPrice(q.price, asset.class)}</div>
       <div class="invest-detail__chg invest-detail__chg--${cls}">${isYield(asset) ? fmtBp(q.change) : fmtPct(q.changePct)}</div>
-      <div class="invest-detail__src">live · ${esc(d.source || asset.source)}</div>
+      <div class="invest-detail__src">live · ${esc(d.source || asset.source)}${q.asOf ? ` · as of ${esc(new Date(q.asOf).toISOString().slice(11, 16))} UTC` : ''}${q.name ? ` · ${esc(q.name)}` : ''}</div>
       ${q.marketCap != null ? `<div class="invest-detail__extra">Mkt cap ${fmtBig(q.marketCap)}</div>` : ''}
     `;
     renderList();

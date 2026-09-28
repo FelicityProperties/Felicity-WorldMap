@@ -4,6 +4,8 @@
 // so the browser never depends on flaky third-party CORS proxies.
 // Returns [{sym, name, price, chg, type}] JSON with no-store caching.
 
+import { yahooPrevClose } from '../lib/market-evidence.js';
+
 const YAHOO_SYMBOLS = [
   // Indices
   { sym: 'DXY', yahoo: 'DX-Y.NYB', name: 'US Dollar Index', type: 'index' },
@@ -107,10 +109,13 @@ async function fetchYahooBatch() {
     const res = await fetchWithTimeout(url, 6000, { 'User-Agent': UA });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const meta = data?.chart?.result?.[0]?.meta;
+    const result = data?.chart?.result?.[0];
+    const meta = result?.meta;
     if (!meta) throw new Error('No chart data');
     const price = meta.regularMarketPrice || meta.previousClose;
-    const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+    // The prior session's close from the series; chartPreviousClose is the
+    // close before the window and made the daily move wrong.
+    const prevClose = yahooPrevClose(result) || price;
     const chg = prevClose ? Math.round(((price - prevClose) / prevClose) * 10000) / 100 : 0;
     return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg };
   }));
