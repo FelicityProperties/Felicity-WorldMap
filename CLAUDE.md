@@ -407,7 +407,12 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   `FOREXCOM:NSXUSD`, `CAPITALCOM:DXY`, `CAPITALCOM:VIX`, `CAPITALCOM:UK100`,
   `CAPITALCOM:J225`) and the exchange-listed T-note future `CBOT:ZN1!` for
   the 10-year. Treat any tape symbol showing "!" the same way — switch
-  provider, do not remove the instrument.
+  provider, do not remove the instrument. **Oil on the tape is the
+  exchange front-month future** (`NYMEX:CL1!`, `NYMEX:BB1!` — the NYMEX
+  Brent contract settles on ICE Brent), not `TVC:UKOIL`/`TVC:USOIL`: those
+  are CFDs and the owner caught Brent sitting away from the price Google,
+  Yahoo (`BZ=F`) and our own Hormuz panel show. A CFD is a broker's
+  price, not the contract.
 - **The World Map's basemap and geometry are ours to serve.** CARTO's
   basemap tiles began printing "API KEY REQUIRED" across every tile, which
   blanked the map; the choropleth also depended on jsDelivr, unpkg and a

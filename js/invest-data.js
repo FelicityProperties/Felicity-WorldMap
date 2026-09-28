@@ -102,9 +102,9 @@ const FOREX = [
 
 // ── Commodities ──
 const COMMODITIES = [
-  { symbol: 'WTI',   name: 'WTI Crude Oil',   yahoo: 'CL=F', tv: 'TVC:USOIL',
+  { symbol: 'WTI',   name: 'WTI Crude Oil',   yahoo: 'CL=F', tv: 'NYMEX:CL1!',
     drivers: 'OPEC+ quota policy, US shale supply response, global demand, inventory draws.' },
-  { symbol: 'BRENT', name: 'Brent Crude Oil', yahoo: 'BZ=F', tv: 'TVC:UKOIL',
+  { symbol: 'BRENT', name: 'Brent Crude Oil', yahoo: 'BZ=F', tv: 'NYMEX:BB1!',
     drivers: 'The seaborne global benchmark — more exposed to Middle East supply risk than WTI.' },
   { symbol: 'NG',    name: 'Natural Gas',     yahoo: 'NG=F', tv: 'NYMEX:NG1!',
     drivers: 'Weather-driven demand, LNG export capacity, storage levels. Structurally volatile.' },

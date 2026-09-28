@@ -66,8 +66,12 @@ export function mountTickerTape(host) {
       { proName: 'FOREXCOM:NSXUSD',   title: 'Nasdaq 100' },
       { proName: 'CAPITALCOM:DXY',    title: 'Dollar Index' },
       { proName: 'TVC:GOLD',          title: 'Gold' },
-      { proName: 'TVC:USOIL',         title: 'WTI Crude' },
-      { proName: 'TVC:UKOIL',         title: 'Brent Crude' },
+      // Oil is the exchange front-month future, not TradingView's CFD
+      // (TVC:UKOIL/USOIL): the owner compared the tape with Google and the
+      // CFD sat away from the ICE/NYMEX contract everyone else quotes.
+      // NYMEX BB settles on ICE Brent, so it tracks BZ=F to the cent.
+      { proName: 'NYMEX:CL1!',        title: 'WTI Crude fut.' },
+      { proName: 'NYMEX:BB1!',        title: 'Brent Crude fut.' },
       { proName: 'COINBASE:BTCUSD',   title: 'Bitcoin' },
       { proName: 'COINBASE:ETHUSD',   title: 'Ethereum' },
       { proName: 'FX:EURUSD',         title: 'EUR/USD' },
