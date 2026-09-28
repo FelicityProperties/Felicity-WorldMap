@@ -407,12 +407,15 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   `FOREXCOM:NSXUSD`, `CAPITALCOM:DXY`, `CAPITALCOM:VIX`, `CAPITALCOM:UK100`,
   `CAPITALCOM:J225`) and the exchange-listed T-note future `CBOT:ZN1!` for
   the 10-year. Treat any tape symbol showing "!" the same way — switch
-  provider, do not remove the instrument. **Oil on the tape is the
-  exchange front-month future** (`NYMEX:CL1!`, `NYMEX:BB1!` — the NYMEX
-  Brent contract settles on ICE Brent), not `TVC:UKOIL`/`TVC:USOIL`: those
-  are CFDs and the owner caught Brent sitting away from the price Google,
-  Yahoo (`BZ=F`) and our own Hormuz panel show. A CFD is a broker's
-  price, not the contract.
+  provider, do not remove the instrument — **unless the only providers
+  left are CFDs and we already show the instrument from a real feed.**
+  Oil is that case: `TVC:UKOIL`/`TVC:USOIL` are broker CFDs and the owner
+  caught Brent sitting away from the ICE front-month that Google, Yahoo
+  (`BZ=F`) and our own Hormuz panel quote; the exchange contracts
+  (`NYMEX:CL1!`, `NYMEX:BB1!`) render the red "!" in embeds. So oil is
+  **off the TradingView tape** and lives only on the topbar ticker, which
+  is fed by Yahoo's futures. One number per instrument per screen; never
+  a broker's price beside the contract's.
 - **The World Map's basemap and geometry are ours to serve.** CARTO's
   basemap tiles began printing "API KEY REQUIRED" across every tile, which
   blanked the map; the choropleth also depended on jsDelivr, unpkg and a
