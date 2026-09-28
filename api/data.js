@@ -103,10 +103,12 @@ async function handleLayer(layer, request) {
         ['gdelt-export', 'http://data.gdeltproject.org/gdeltv2/lastupdate.txt'],
         ['gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1'],
         ['google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en'],
-        // Candidate ICE Brent source: Stooq's continuous Brent future (cb.f) as CSV
-        ['stooq-com-wti', 'https://stooq.com/q/l/?s=cl.f&f=sd2t2ohlcv&h&e=csv'],
-        ['stooq-pl-brent', 'https://stooq.pl/q/l/?s=cb.f&f=sd2t2ohlcv&h&e=csv'],
-        ['control', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],
+        // Which Brent contract is which: the continuous symbol against the
+        // month-specific November and December contracts (and WTI's for scale)
+        ['yahoo-bz-cont', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],
+        ['yahoo-bz-nov26', 'https://query1.finance.yahoo.com/v8/finance/chart/BZX26.NYM?range=1d&interval=1d'],
+        ['yahoo-bz-dec26', 'https://query1.finance.yahoo.com/v8/finance/chart/BZZ26.NYM?range=1d&interval=1d'],
+        ['yahoo-cl-cont', 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=1d&interval=1d'],
       ];
       const out = [];
       for (const [name, u] of targets) {
@@ -116,7 +118,13 @@ async function handleLayer(layer, request) {
         try {
           const r = await fetch(u, { signal: c.signal, headers: { Accept: '*/*', 'User-Agent': 'FelicityIntelligence/1.0 (+https://felicity-world-map.vercel.app)' } });
           const body = await r.text();
-          out.push({ target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120) });
+          const entry = { target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120) };
+          // A Yahoo chart answer: pull the fields that identify the contract
+          try {
+            const meta = JSON.parse(body)?.chart?.result?.[0]?.meta;
+            if (meta) entry.quote = { symbol: meta.symbol, name: meta.shortName || meta.longName || null, price: meta.regularMarketPrice ?? null, volume: meta.regularMarketVolume ?? null, time: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null };
+          } catch { /* not JSON */ }
+          out.push(entry);
         } catch (e) {
           out.push({ target: name, ms: Date.now() - t0, error: fetchReason(e, DIAG_TIMEOUT_MS) });
         } finally {
