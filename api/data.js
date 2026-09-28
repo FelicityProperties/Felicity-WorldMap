@@ -40,9 +40,9 @@ function json(body, status = 200, cache = 'no-store') {
   });
 }
 
-// Edge functions must start responding within 25s on Hobby; six probes
-// at 3.5s each stay inside that with the control host included.
-const DIAG_TIMEOUT_MS = 3500;
+// Edge functions must start responding within 25s on Hobby; seven probes
+// at 3s each stay inside that with the control host included.
+const DIAG_TIMEOUT_MS = 3000;
 
 // A relayed copy younger than this is served as-is; older, a direct fetch
 // is attempted first and the copy is the fallback (marked stale).
@@ -104,7 +104,8 @@ async function handleLayer(layer, request) {
         ['gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1'],
         ['google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en'],
         // Candidate ICE Brent source: Stooq's continuous Brent future (cb.f) as CSV
-        ['stooq-brent', 'https://stooq.com/q/l/?s=cb.f&f=sd2t2ohlcv&h&e=csv'],
+        ['stooq-com-wti', 'https://stooq.com/q/l/?s=cl.f&f=sd2t2ohlcv&h&e=csv'],
+        ['stooq-pl-brent', 'https://stooq.pl/q/l/?s=cb.f&f=sd2t2ohlcv&h&e=csv'],
         ['control', 'https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?range=1d&interval=1d'],
       ];
       const out = [];
