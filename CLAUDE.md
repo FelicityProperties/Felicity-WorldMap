@@ -407,15 +407,12 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   `FOREXCOM:NSXUSD`, `CAPITALCOM:DXY`, `CAPITALCOM:VIX`, `CAPITALCOM:UK100`,
   `CAPITALCOM:J225`) and the exchange-listed T-note future `CBOT:ZN1!` for
   the 10-year. Treat any tape symbol showing "!" the same way — switch
-  provider, do not remove the instrument — **unless the only providers
-  left are CFDs and we already show the instrument from a real feed.**
-  Oil is that case: `TVC:UKOIL`/`TVC:USOIL` are broker CFDs and the owner
-  caught Brent sitting away from the ICE front-month that Google, Yahoo
-  (`BZ=F`) and our own Hormuz panel quote; the exchange contracts
-  (`NYMEX:CL1!`, `NYMEX:BB1!`) render the red "!" in embeds. So oil is
-  **off the TradingView tape** and lives only on the topbar ticker, which
-  is fed by Yahoo's futures. One number per instrument per screen; never
-  a broker's price beside the contract's.
+  provider, do not remove the instrument. Oil on the tape is
+  `TVC:UKOIL`/`TVC:USOIL` (TradingView's CFDs): the exchange contracts
+  (`NYMEX:CL1!`, `NYMEX:BB1!`) render the red "!" in embeds, and when the
+  owner compared the tape with Bloomberg during the contract mix-up below,
+  the tape was right and our Yahoo quote was wrong. Oil was briefly taken
+  off the tape on the wrong diagnosis; the owner asked for it back.
   **Then the futures price itself was wrong, and it was Yahoo's roll.**
   Bloomberg TV showed Brent 108.47 (+3.98%) while the card showed 100.69
   (−3.5%) with the same Friday close, 104.32. The diag (`yahoo-bz-*`

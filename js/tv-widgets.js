@@ -66,12 +66,13 @@ export function mountTickerTape(host) {
       { proName: 'FOREXCOM:NSXUSD',   title: 'Nasdaq 100' },
       { proName: 'CAPITALCOM:DXY',    title: 'Dollar Index' },
       { proName: 'TVC:GOLD',          title: 'Gold' },
-      // No oil here on purpose. TradingView serves no exchange oil contract
-      // to embeds (NYMEX:CL1!/BB1! rendered the red "!"), and its TVC:UKOIL /
-      // USOIL are broker CFDs that the owner caught sitting away from the
-      // ICE front-month everyone else quotes. Brent and WTI are on the
-      // topbar ticker from Yahoo's futures (BZ=F, CL=F) — one number, the
-      // contract's own, rather than two that disagree on the same screen.
+      // Oil: TradingView serves no exchange oil contract to embeds
+      // (NYMEX:CL1!/BB1! render the red "!"), so these are its CFDs. They
+      // track the exchange front month — the owner checked UKOIL against
+      // Bloomberg during the Sep 2026 contract mix-up and it was right; our
+      // own Yahoo quotes were the ones on the wrong contract, since fixed.
+      { proName: 'TVC:USOIL',         title: 'WTI Crude' },
+      { proName: 'TVC:UKOIL',         title: 'Brent Crude' },
       { proName: 'COINBASE:BTCUSD',   title: 'Bitcoin' },
       { proName: 'COINBASE:ETHUSD',   title: 'Ethereum' },
       { proName: 'FX:EURUSD',         title: 'EUR/USD' },
