@@ -5,6 +5,7 @@
 // Returns [{sym, name, price, chg, type}] JSON with no-store caching.
 
 import { yahooPrevClose } from '../lib/market-evidence.js';
+import { yahooCandidates } from '../lib/futures.js';
 
 const YAHOO_SYMBOLS = [
   // Indices
@@ -73,7 +74,9 @@ async function fetchCrypto() {
 
 // Yahoo's batch quote endpoint — one request for all symbols.
 async function fetchYahooBatch() {
-  const symbols = YAHOO_SYMBOLS.map(s => s.yahoo).join(',');
+  // Oil as its front-month contract (lib/futures.js), keyed back to the item
+  const asked = YAHOO_SYMBOLS.map(s => ({ ...s, ask: yahooCandidates(s.yahoo)[0] }));
+  const symbols = asked.map(s => s.ask.symbol).join(',');
   const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
 
   for (const host of hosts) {
@@ -88,15 +91,15 @@ async function fetchYahooBatch() {
       const byYahoo = {};
       quotes.forEach(q => { byYahoo[q.symbol] = q; });
 
-      return YAHOO_SYMBOLS.map(item => {
-        const q = byYahoo[item.yahoo];
+      return asked.map(item => {
+        const q = byYahoo[item.ask.symbol] || byYahoo[item.yahoo];
         if (!q) return null;
         const price = q.regularMarketPrice ?? q.previousClose;
         if (price == null) return null;
         const chg = q.regularMarketChangePercent != null
           ? Math.round(q.regularMarketChangePercent * 100) / 100
           : 0;
-        return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg };
+        return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg, contract: byYahoo[item.ask.symbol] ? item.ask.contract : null };
       }).filter(Boolean);
     } catch (e) {
       console.warn(`[api/markets] Yahoo batch via ${host} failed:`, e.message);
@@ -105,7 +108,8 @@ async function fetchYahooBatch() {
 
   // Fallback: per-symbol chart endpoint (slower but more tolerant)
   const results = await Promise.allSettled(YAHOO_SYMBOLS.map(async item => {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(item.yahoo)}?interval=1d&range=2d`;
+    const cand = yahooCandidates(item.yahoo)[0];
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cand.symbol)}?interval=1d&range=2d`;
     const res = await fetchWithTimeout(url, 6000, { 'User-Agent': UA });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -117,7 +121,7 @@ async function fetchYahooBatch() {
     // close before the window and made the daily move wrong.
     const prevClose = yahooPrevClose(result) || price;
     const chg = prevClose ? Math.round(((price - prevClose) / prevClose) * 10000) / 100 : 0;
-    return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg };
+    return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg, contract: cand.contract };
   }));
   return results.filter(r => r.status === 'fulfilled').map(r => r.value);
 }

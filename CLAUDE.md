@@ -416,6 +416,23 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   **off the TradingView tape** and lives only on the topbar ticker, which
   is fed by Yahoo's futures. One number per instrument per screen; never
   a broker's price beside the contract's.
+  **Then the futures price itself was wrong, and it was Yahoo's roll.**
+  Bloomberg TV showed Brent 108.47 (+3.98%) while the card showed 100.69
+  (−3.5%) with the same Friday close, 104.32. The diag (`yahoo-bz-*`
+  probes, 2026-09-28) settled it: Yahoo's continuous `BZ=F` was already
+  identical to the December contract (100.96) while November — the front
+  month until its last trade on 30 Sep, and what Bloomberg and TradingView
+  quote — stood at 108.49. Seven and a half dollars of backwardation, and
+  the site was on the wrong side of it. WTI was fine only because its
+  front month was not in expiry week. **Oil is now quoted as the
+  exchange's front-month contract resolved from the calendar**
+  (`lib/futures.js`: Brent last trades on the last business day of M−2,
+  WTI three business days before the 25th of M−1; weekends only, holidays
+  not modelled), asked for as `BZX26.NYM`-style symbols in all three
+  Yahoo readers with the continuous symbol as the fallback, and every
+  card prints the contract month. `tests/futures.test.mjs` pins the
+  roll dates. Never quote a continuous futures symbol as "the price" —
+  the vendor decides when it rolls, the exchange decides the front month.
 - **The World Map's basemap and geometry are ours to serve.** CARTO's
   basemap tiles began printing "API KEY REQUIRED" across every tile, which
   blanked the map; the choropleth also depended on jsDelivr, unpkg and a

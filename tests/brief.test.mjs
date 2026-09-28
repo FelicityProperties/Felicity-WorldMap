@@ -26,11 +26,13 @@ globalThis.fetch = async (url, opts) => {
   if (url.includes('finance.yahoo.com')) {
     if (yahooDown) throw new Error('ECONNRESET');
     if (url.includes('/v7/finance/quote')) {
+      // A front-month contract (BZX26.NYM) answers as its root (BZ=F)
+      const root = s => s.replace(/^(BZ|CL)[A-Z]\d\d\.NYM$/, '$1=F');
       const syms = decodeURIComponent(url.split('symbols=')[1]).split(',');
-      const result = syms.filter(s => !batchOmits.includes(s)).map(s => ({ symbol: s, regularMarketPrice: PRICES[s], regularMarketPreviousClose: PRICES[s] * 0.99, regularMarketTime: 1789380000 }));
+      const result = syms.filter(s => !batchOmits.includes(root(s))).map(s => ({ symbol: s, regularMarketPrice: PRICES[root(s)], regularMarketPreviousClose: PRICES[root(s)] * 0.99, regularMarketTime: 1789380000 }));
       return { ok: true, status: 200, json: async () => ({ quoteResponse: { result } }) };
     }
-    const sym = decodeURIComponent(url.split('/chart/')[1].split('?')[0]);
+    const sym = decodeURIComponent(url.split('/chart/')[1].split('?')[0]).replace(/^(BZ|CL)[A-Z]\d\d\.NYM$/, '$1=F');
     if (sym === 'GC=F' && goldRateLimited-- > 0) return { ok: false, status: 429 };
     const price = PRICES[sym];
     if (price == null) return { ok: false, status: 404 };

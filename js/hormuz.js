@@ -160,7 +160,7 @@ function renderWire() {
   const quote = (k) => {
     const v = q[k];
     if (!v || !v.ok) return `<div class="hz-quote hz-quote--na"><span class="hz-quote__label">${esc(v?.label || k)}</span><span class="hz-quote__na">unavailable</span></div>`;
-    return `<div class="hz-quote"><span class="hz-quote__label">${esc(v.label)}</span>
+    return `<div class="hz-quote"><span class="hz-quote__label">${esc(v.label)}${v.contract ? ` <em>${esc(v.contract)}</em>` : ''}</span>
       <span class="hz-quote__price">USD ${n2(v.price)}<em>/bbl</em></span>
       <span class="hz-quote__chg ${tone(v.changePct)}">${signed2(v.changePct)}</span></div>`;
   };
@@ -178,7 +178,7 @@ function renderWire() {
         <div class="hz-wire__status">${status}</div>
       </div>
       <div class="hz-quotes">${quote('BRENT')}${quote('WTI')}
-        <div class="hz-quotes__src">Front-month futures · Yahoo Finance delayed quotes · USD per barrel</div>
+        <div class="hz-quotes__src">Front-month futures by the exchange's expiry rule · Yahoo Finance delayed quotes · USD per barrel</div>
       </div>
       ${heads.length ? `<ul class="hz-heads">${heads.map(h => `
         <li><a href="${safeUrl(h.url)}" target="_blank" rel="noopener">${esc(h.title)}</a>

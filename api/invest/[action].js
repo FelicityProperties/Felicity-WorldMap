@@ -22,6 +22,7 @@ import { fetchHormuz, fetchHormuzWire, saveSnapshot, loadSnapshot, HORMUZ_SOURCE
 import { discoverDatasets } from '../../lib/tv-datasets.js';
 import { readLayer } from '../../lib/live-store.js';
 import { yahooPrevClose } from '../../lib/market-evidence.js';
+import { yahooCandidates } from '../../lib/futures.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -96,10 +97,13 @@ async function quoteFinnhub(symbol, key) {
 }
 
 async function quoteYahoo(symbol) {
-  for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
+  // Oil: the exchange's front-month contract first (lib/futures.js) — Yahoo's
+  // continuous symbol rolls early and quoted December while the market was
+  // still on November, $7.50 away. The continuous symbol is the fallback.
+  for (const cand of yahooCandidates(symbol)) for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
     try {
       const r = await timedFetch(
-        `https://${host}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`,
+        `https://${host}/v8/finance/chart/${encodeURIComponent(cand.symbol)}?interval=1d&range=5d`,
         7000, { 'User-Agent': UA }
       );
       if (!r.ok) continue;
@@ -122,6 +126,7 @@ async function quoteYahoo(symbol) {
         asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null,
         name: meta.shortName || meta.longName || null,
         exchange: meta.exchangeName || null,
+        contract: cand.contract,
       };
     } catch { /* try next host */ }
   }

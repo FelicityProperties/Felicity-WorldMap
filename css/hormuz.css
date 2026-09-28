@@ -388,3 +388,4 @@
   .hz-grid { grid-template-columns: 1fr; }
   .hz-wire__status { text-align: left; }
 }
+.hz-quote__label em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }

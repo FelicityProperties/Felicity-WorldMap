@@ -112,7 +112,7 @@ const PRICES = { 'BZ=F': 109.61, 'CL=F': 104.76 };
 globalThis.fetch = async (u, opts) => {
   calls.push(u);
   if (u.includes('finance.yahoo.com')) {
-    const sym = decodeURIComponent(u.split('/chart/')[1].split('?')[0]);
+    const sym = decodeURIComponent(u.split('/chart/')[1].split('?')[0]).replace(/^(BZ|CL)[A-Z]\d\d\.NYM$/, '$1=F');
     return { ok: true, status: 200, json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: PRICES[sym], chartPreviousClose: PRICES[sym] * 0.92, regularMarketTime: 1789380000 } }] } }) };
   }
   if (u.includes('news.google.com')) {
