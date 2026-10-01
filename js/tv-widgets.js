@@ -96,10 +96,9 @@ export function mountHeatmap(host, dataSource = 'SPX500') {
     blockColor: 'change',
     symbolUrl: '',
     hasTopBar: true,
-    // The widget's own dataset menu is the ONE control that reliably reaches
-    // every market: TradingView documents only two dataSource codes (SPX500,
-    // ASX200) and silently draws the S&P 500 for any code it does not know,
-    // which is what every guessed code did. Keep the menu on.
+    // Keep the widget's own dataset menu on: it lists every dataset the
+    // embed serves (TV_EMBED_DATASETS below). A code outside that list is
+    // silently drawn as the S&P 500.
     isDataSetEnabled: true,
     isZoomEnabled: true,
     hasSymbolTooltip: true,

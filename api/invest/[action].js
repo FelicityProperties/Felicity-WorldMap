@@ -810,7 +810,8 @@ async function handleHormuzWire(req, res) {
     // A relayed set is served with ITS fetch time; the page shows the age.
     if (data.headlinesError) {
       const stored = await readLayer('hormuz-headlines');
-      if (stored && Array.isArray(stored.payload?.headlines) && stored.payload.headlines.length) {
+      // Six hours at most: older press is not "the newest headlines"
+      if (stored && stored.ageMin <= 360 && Array.isArray(stored.payload?.headlines) && stored.payload.headlines.length) {
         data.headlines = stored.payload.headlines;
         data.headlinesVia = stored.payload.via || data.headlinesVia;
         data.headlinesFrom = 'relay';

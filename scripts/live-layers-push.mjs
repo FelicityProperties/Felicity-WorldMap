@@ -9,6 +9,15 @@
 // connection-level reason, so the run log doubles as the diagnostic. A
 // feed that fails is reported and skipped — nothing stale is re-pushed
 // and nothing is invented. Exit code is non-zero if every feed failed.
+//
+//   LOOP_MINUTES  keep cycling for this long (default 0 = one cycle).
+//   CYCLE_MINUTES gap between cycles (default 20).
+//
+// Why a loop: GitHub fired the "every 20 minutes" schedule only every 3–7
+// hours on this repo (Sep–Oct 2026), so a relayed copy was stale most of
+// the day. One run now cycles for ~5h45m and the workflow then dispatches
+// its own successor; the schedule is only a watchdog. 20-minute cycles
+// keep OpenSky inside its anonymous 400 credits/day (4 per global pull).
 
 import { fetchFlights, fetchEvents } from '../lib/live-layers.js';
 import { fetchHormuzHeadlines } from '../lib/hormuz.js';
@@ -50,7 +59,6 @@ await probe('gdelt-export', 'http://data.gdeltproject.org/gdeltv2/lastupdate.txt
 await probe('gdelt-doc', 'https://api.gdeltproject.org/api/v2/doc/doc?query=%22Strait%20of%20Hormuz%22&mode=ArtList&format=json&maxrecords=1');
 await probe('google-news', 'https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en');
 
-console.log('── feeds ──');
 // GDELT answers a shared runner address with 429s and dropped connects
 // some of the time; a couple of spaced retries recover most runs.
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -66,15 +74,33 @@ const jobs = [
   ['events', () => fetchEvents({ timeoutMs: 25000 }), 3],
   ['hormuz-headlines', () => fetchHormuzHeadlines({ timeoutMs: 25000 }), 2],
 ];
-let okCount = 0;
-for (const [kind, run, tries] of jobs) {
-  try {
-    const payload = await attempt(run, tries, 15000);
-    const n = payload.count ?? payload.headlines?.length ?? '?';
-    console.log(`fetch ${kind.padEnd(16)} ok · ${n} items · fetchedAt ${payload.fetchedAt}`);
-    if (await push(kind, payload)) okCount++;
-  } catch (e) {
-    console.log(`fetch ${kind.padEnd(16)} FAILED ${e.message}`);
+
+async function cycle(n) {
+  console.log(`── cycle ${n} · ${new Date().toISOString()} ──`);
+  let ok = 0;
+  for (const [kind, run, tries] of jobs) {
+    try {
+      const payload = await attempt(run, tries, 15000);
+      const count = payload.count ?? payload.headlines?.length ?? '?';
+      console.log(`fetch ${kind.padEnd(16)} ok · ${count} items · fetchedAt ${payload.fetchedAt}`);
+      if (await push(kind, payload)) ok++;
+    } catch (e) {
+      console.log(`fetch ${kind.padEnd(16)} FAILED ${e.message}`);
+    }
   }
+  return ok;
 }
-if (!okCount) { console.log('no feed relayed'); process.exit(TOKEN ? 1 : 0); }
+
+const loopMs = Math.max(0, Number(process.env.LOOP_MINUTES || 0)) * 60000;
+const cycleMs = Math.max(5, Number(process.env.CYCLE_MINUTES || 20)) * 60000;
+const until = Date.now() + loopMs;
+let n = 0, everOk = 0;
+do {
+  const started = Date.now();
+  everOk += await cycle(++n);
+  const wait = cycleMs - (Date.now() - started);
+  if (Date.now() + wait >= until) break;
+  await sleep(Math.max(0, wait));
+} while (true);
+if (!everOk) { console.log('no feed relayed'); process.exit(TOKEN ? 1 : 0); }
+console.log(`done · ${n} cycle(s)`);

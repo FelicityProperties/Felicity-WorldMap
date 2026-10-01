@@ -1,32 +1,46 @@
-# Relays the live map layers (OpenSky aircraft, GDELT conflict-news
-# locations, GDELT Hormuz headlines) into the site's store every 20
-# minutes. Vercel's networks cannot open a connection to either host;
-# GitHub's runners can. See lib/live-store.js for the why.
+# Relays the live map layers (OpenSky aircraft, GDELT conflict events,
+# Hormuz headlines) into the site's store. Vercel's networks cannot open a
+# connection to OpenSky or GDELT; GitHub's runners can (lib/live-store.js).
+#
+# GitHub fired a 20-minute schedule only every 3–7 hours on this repo, so
+# each run now loops for ~5h45m (a cycle every 20 minutes) and then
+# dispatches its own successor. The schedule below is only a watchdog that
+# restarts the chain if it ever breaks. Public repo: Actions minutes are free.
 #
 # Secrets: LIVE_LAYERS_TOKEN (same value as the Vercel env var),
 # optionally OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET.
 name: live-layers
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '17 */2 * * *'
   workflow_dispatch:
 concurrency:
   group: live-layers
   cancel-in-progress: false
 permissions:
   contents: read
+  actions: write
 jobs:
   relay:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Probe, fetch and push
+      - name: Probe, then fetch and push every 20 minutes
         env:
           LIVE_LAYERS_TOKEN: ${{ secrets.LIVE_LAYERS_TOKEN }}
           OPENSKY_CLIENT_ID: ${{ secrets.OPENSKY_CLIENT_ID }}
           OPENSKY_CLIENT_SECRET: ${{ secrets.OPENSKY_CLIENT_SECRET }}
+          LOOP_MINUTES: '340'
+          CYCLE_MINUTES: '20'
         run: node scripts/live-layers-push.mjs
+      # Only after a successful loop: a run that fails fast must not chain
+      # into a tight loop. A broken chain is restarted by the watchdog.
+      - name: Start the next run
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run live-layers.yml --repo "$GITHUB_REPOSITORY" --ref main

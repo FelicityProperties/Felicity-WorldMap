@@ -379,6 +379,17 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   fetch as payload → 400, no database → 503). A `return` of a promise
   inside a `try` bypasses its `catch` — the wrapper is `return await`ed;
   the test caught the 500 that would otherwise have shipped.
+  **GitHub's scheduler is not a clock.** The `*/20` schedule fired only
+  every 3–7 hours (runs 14–21, Sep 29 – Oct 1), so the relayed copy was
+  older than the 45-minute window most of the day and the map said STALE.
+  Each run now loops for 340 minutes (`LOOP_MINUTES`, a cycle every 20 —
+  inside OpenSky's anonymous 400 credits/day at 4 per global pull) and
+  then dispatches its own successor with `GITHUB_TOKEN` (workflow_dispatch
+  is the one event that token may trigger); the two-hourly schedule is a
+  watchdog for a broken chain. The successor starts only after a
+  successful loop, so a run that fails fast cannot chain into a tight
+  loop. The repo is public, so the minutes are free. Relayed Hormuz
+  headlines older than six hours are not served.
   **What the relay's own probes established (run logs, 2026-09-27):**
   OpenSky answers a GitHub runner in under a second with a full global
   pull (11,000+ aircraft); Google News RSS answers in 0.7 s; GDELT's DOC

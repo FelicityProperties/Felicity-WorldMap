@@ -184,7 +184,7 @@ function renderWire() {
         <li><a href="${safeUrl(h.url)}" target="_blank" rel="noopener">${esc(h.title)}</a>
           <span class="hz-heads__meta">${esc(h.domain)}${h.seenAt ? ' · ' + esc(relTime(h.seenAt)) : ''}</span></li>`).join('')}</ul>`
         : `<div class="hz-heads__none">No headlines returned${wire.headlinesError ? ` — ${esc(wire.headlinesError)}` : ''}.</div>`}
-      <div class="hz-panel__src">Headlines: ${esc(wire.headlinesVia || 'Google News RSS')}, online news mentioning "Strait of Hormuz", newest first · these are press reports, not verified events${wire.headlinesFrom === 'relay' ? ` · relayed copy fetched ${esc(hhmm(wire.headlinesFetchedAt))}` : ''}</div>
+      <div class="hz-panel__src">Headlines: ${esc(wire.headlinesVia || 'Google News RSS')}, online news mentioning "Strait of Hormuz", newest first · these are press reports, not verified events${wire.headlinesFrom === 'relay' ? ` · relayed copy fetched ${esc(String(wire.headlinesFetchedAt || '').slice(0, 10))} ${esc(hhmm(wire.headlinesFetchedAt))}` : ''}</div>
     </div>`;
 }
 

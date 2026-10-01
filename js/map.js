@@ -264,7 +264,10 @@ export function renderDynLayers() {
         renderer: canvas, radius: r, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.22, weight: 1,
       }).addTo(map);
       const link = e.url ? `<br><a href="${safeUrl(e.url)}" target="_blank" rel="noopener" style="color:#00d4ff">${escapeHtml(e.title || 'Lead article')} ↗</a>` : '';
-      m.bindPopup(`<b>${escapeHtml(e.name)}</b><br>${n} mention${n === 1 ? '' : 's'} of ${Number(e.events) || 1} conflict event${Number(e.events) === 1 ? '' : 's'} in the last ${escapeHtml(layerMeta.events.window || '2h')} · GDELT${link}`);
+      const k = Number(e.events) || 1;
+      const mentions = Number(n) || 1;
+      const windowLabel = layerMeta.events.ok ? `in the last ${escapeHtml(layerMeta.events.window || '2h')}` : `in the ${escapeHtml(layerMeta.events.window || '2h')} before ${escapeHtml(String(layerMeta.events.fetchedAt || '').slice(11, 16))} UTC (stale copy)`;
+      m.bindPopup(`<b>${escapeHtml(e.name)}</b><br>${mentions} mention${mentions === 1 ? '' : 's'} of ${k} conflict event${k === 1 ? '' : 's'} ${windowLabel} · GDELT${link}`);
       m.bindTooltip(`${escapeHtml(e.name)} · ${n}`, { direction: 'top' });
       eMarkers.push(m);
     });
