@@ -481,6 +481,26 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   News's channel id was wrong and never resolved; Bloomberg's handle was
   stale; CNBC and TRT World were added.
 
+### Owner analytics (`/analytics.html`)
+
+First-party and private by construction: `js/analytics.js` sends a
+beacon to `POST /api/data?layer=hit` on load, on each tab switch, and on
+leaving (visible seconds). `lib/analytics.js` stores tab, referrer
+**host**, Vercel edge geo (country/region/city), coarse device/browser/OS,
+and random first-party visitor and session ids in Postgres
+(`analytics_events`, created on demand, 400 days kept). It never stores
+the IP address, the raw user agent or the full referrer URL; bots,
+crawlers, link previews and headless browsers are dropped; Do-Not-Track
+and Global Privacy Control are honoured in the page; the beacon always
+answers 204 so a tracker fault is invisible to visitors. The dashboard
+reads `GET /api/data?layer=stats&range=24h|7d|30d|90d` with
+`Authorization: Bearer $ANALYTICS_KEY` — no key configured is a 503,
+wrong key a 401, no database a 503 with the reason, never an empty page.
+Opening the dashboard sets `fi_owner` in that browser so the owner's own
+visits are not counted. Every visitor-supplied value is escaped on the
+dashboard. `tests/analytics.test.mjs` pins all of it. It lives in
+`api/data.js` because Hobby caps functions at twelve.
+
 ### Polling stops when nobody is looking
 
 Markets (60s), news (3min) and the macro cards (60s) once polled forever,

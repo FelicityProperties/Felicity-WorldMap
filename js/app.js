@@ -23,6 +23,7 @@ import { startLiveMarketRefresh, stopLiveMarketRefresh, marketsLastLiveAt } from
 import { startLiveLayersRefresh, stopLiveLayersRefresh } from './live-layers.js';
 import { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
+import { initAnalytics, trackTab } from './analytics.js';
 
 // ── State ──
 let activeTab = 'overview';
@@ -30,6 +31,9 @@ let mapInitialized = false;
 
 // ── Boot ──
 async function boot() {
+  // First-party visit beacon (owner-only analytics); never blocks the page
+  initAnalytics(activeTab);
+
   // Try loading data from Neon via API (falls back to hardcoded)
   await loadFromAPI();
 
@@ -193,6 +197,7 @@ function switchTab(tabId) {
 
   const prevTab = activeTab;
   activeTab = tabId;
+  trackTab(tabId);
 
   // Leaving Invest must not strand a fullscreen market view's body lock
   if (prevTab === 'invest' && tabId !== 'invest') onInvestHidden();

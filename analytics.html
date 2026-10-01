@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Visitor Analytics · Felicity Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/analytics.css">
+</head>
+<body class="an">
+  <header class="an-top">
+    <div class="an-top__brand">
+      <span class="an-top__mark">◆</span>
+      <div>
+        <div class="an-top__title">Visitor Analytics</div>
+        <div class="an-top__sub">felicity-world-map.vercel.app · owner only · first-party, no IP addresses stored</div>
+      </div>
+    </div>
+    <div class="an-top__controls" id="an-controls" hidden>
+      <div class="an-range" id="an-range" role="tablist" aria-label="Time range">
+        <button data-range="24h">24 hours</button>
+        <button data-range="7d" class="is-on">7 days</button>
+        <button data-range="30d">30 days</button>
+        <button data-range="90d">90 days</button>
+      </div>
+      <button class="an-btn" id="an-refresh">Refresh</button>
+      <button class="an-btn an-btn--ghost" id="an-signout">Sign out</button>
+    </div>
+  </header>
+
+  <main class="an-main">
+    <section class="an-gate" id="an-gate" hidden>
+      <h1>Owner sign-in</h1>
+      <p>Enter the analytics key. It is kept in this browser only, and this browser's own visits stop being counted.</p>
+      <form id="an-form" autocomplete="off">
+        <input id="an-key" type="password" placeholder="Analytics key" aria-label="Analytics key" required>
+        <button class="an-btn" type="submit">Open dashboard</button>
+      </form>
+      <div class="an-gate__err" id="an-gate-err" role="alert"></div>
+    </section>
+
+    <section id="an-body" hidden>
+      <div class="an-status" id="an-status"></div>
+      <div class="an-kpis" id="an-kpis"></div>
+      <div class="an-card an-card--wide">
+        <div class="an-card__head"><h2>Traffic</h2><span class="an-legend"><i class="an-sw an-sw--pv"></i>Page views <i class="an-sw an-sw--v"></i>Visitors</span></div>
+        <div id="an-chart" class="an-chart"></div>
+      </div>
+      <div class="an-grid">
+        <div class="an-card"><div class="an-card__head"><h2>Countries</h2><span>visitors</span></div><div id="an-countries"></div></div>
+        <div class="an-card"><div class="an-card__head"><h2>Cities</h2><span>visitors</span></div><div id="an-cities"></div></div>
+        <div class="an-card"><div class="an-card__head"><h2>Where they came from</h2><span>visits</span></div><div id="an-refs"></div></div>
+        <div class="an-card"><div class="an-card__head"><h2>Tabs viewed</h2><span>views</span></div><div id="an-tabs"></div></div>
+        <div class="an-card"><div class="an-card__head"><h2>Devices</h2><span>visitors</span></div><div id="an-devices"></div></div>
+        <div class="an-card"><div class="an-card__head"><h2>Browsers &amp; systems</h2><span>visitors</span></div><div id="an-browsers"></div></div>
+      </div>
+      <div class="an-card an-card--wide">
+        <div class="an-card__head"><h2>Recent visits</h2><span>one row per session, newest first</span></div>
+        <div class="an-table-wrap"><table class="an-table" id="an-recent"></table></div>
+      </div>
+      <p class="an-foot">Counts exclude bots, crawlers and link previews, browsers that send Do-Not-Track or Global Privacy Control, and this browser. A visitor is one browser; the same person on two devices counts twice. Location is the country and city Vercel's network resolves for the connection, which can be the visitor's ISP or VPN exit rather than where they sit.</p>
+    </section>
+  </main>
+
+  <script type="module" src="js/analytics-dashboard.js"></script>
+</body>
+</html>

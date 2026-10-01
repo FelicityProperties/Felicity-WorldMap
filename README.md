@@ -16,6 +16,7 @@ A real-time global intelligence dashboard built to track macro events, market sh
 | `STRIPE_SECRET_KEY` | For payments | Stripe Checkout subscriptions |
 | `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook verification |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_INSTITUTIONAL` | For payments | Stripe Price IDs for the two plans |
+| `ANALYTICS_KEY` | **For analytics** | The owner's key for the private visitor dashboard at `/analytics.html`. Without it the stats endpoint refuses; visits are still recorded |
 | `LIVE_LAYERS_TOKEN` | **Recommended** | Shared secret for the live-layer relay. OpenSky and GDELT drop connections from Vercel's networks, so `.github/workflows/live-layers.yml` fetches aircraft, conflict-news locations and Hormuz headlines from a GitHub runner every 20 minutes and pushes them to `POST /api/data?layer=ingest`. Set the same value as a **GitHub Actions secret** and as a Vercel env var; without it the map says NO FEED |
 | `OPENSKY_CLIENT_ID`, `OPENSKY_CLIENT_SECRET` | No | OAuth2 client credentials from a free OpenSky account: raises the live-aircraft allowance from 400 to 4,000 credits/day (a global pull costs 4). Set them as GitHub Actions secrets too — the relay is what actually calls OpenSky |
 | `CRON_SECRET` | No | If set, `/api/brief` only accepts scheduled runs from Vercel Cron |

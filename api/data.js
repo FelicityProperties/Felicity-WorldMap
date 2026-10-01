@@ -5,6 +5,8 @@
 //   GET /api/data?layer=flights   live ADS-B aircraft positions (OpenSky, via the relay), edge-cached 5 min
 //   GET /api/data?layer=events    24h conflict-news locations (GDELT GEO, via the relay), edge-cached 5 min
 //   POST /api/data?layer=ingest&kind=…   the GitHub Actions relay pushes a fetched payload (bearer token)
+//   POST /api/data?layer=hit             a visit beacon (lib/analytics.js)
+//   GET  /api/data?layer=stats&range=7d  the owner's analytics (bearer ANALYTICS_KEY)
 //   GET /api/data?layer=diag      one probe per upstream from this runtime, never cached
 //
 // Why the Edge runtime: from the Node serverless runtime (AWS us-east-1,
@@ -24,6 +26,7 @@
 import { fetchFlights, fetchEvents, FLIGHTS_SOURCE, EVENTS_SOURCE } from '../lib/live-layers.js';
 import { fetchReason } from '../lib/fetch-reason.js';
 import { readLayer, writeLayer, tokenMatches, KINDS } from '../lib/live-store.js';
+import { buildEvent, recordEvent, readStats, RANGES } from '../lib/analytics.js';
 
 export const config = { runtime: 'edge' };
 
@@ -64,6 +67,39 @@ async function serveRelayed(kind, direct, cache) {
       return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin, stale: true, staleReason: e.message });
     }
     throw e;
+  }
+}
+
+// ── Analytics (lib/analytics.js) ──
+// A visit beacon from the site. Always answers 204 so a tracker failure is
+// invisible to the visitor; the reason is logged, never shown.
+async function handleHit(request) {
+  if (request.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+  const len = Number(request.headers.get('content-length') || 0);
+  if (len > 2048) return new Response(null, { status: 204, headers: CORS });
+  let body = null;
+  try { body = JSON.parse(await request.text()); } catch { /* skipped below */ }
+  const site = new URL(request.url).hostname;
+  const built = buildEvent(body, request.headers, site);
+  if (built.event) {
+    const r = await recordEvent(built.event);
+    if (!r.stored) console.warn('[analytics] hit not stored:', r.reason);
+  }
+  return new Response(null, { status: 204, headers: { ...CORS, 'Cache-Control': 'no-store' } });
+}
+
+// The owner's dashboard. Bearer ANALYTICS_KEY; nothing without it.
+async function handleStats(request) {
+  if (request.method !== 'GET') return json({ ok: false, error: 'GET only' }, 405);
+  const expected = process.env.ANALYTICS_KEY;
+  if (!expected) return json({ ok: false, error: 'ANALYTICS_KEY is not configured on the server' }, 503);
+  const given = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!tokenMatches(given, expected)) return json({ ok: false, error: 'unauthorised' }, 401);
+  const range = new URL(request.url).searchParams.get('range');
+  try {
+    return json(await readStats(RANGES[range] ? range : '7d'));
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 503);
   }
 }
 
@@ -144,6 +180,8 @@ export default async function handler(request) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 200, headers: CORS });
   const url = new URL(request.url);
   const layer = url.searchParams.get('layer');
+  if (layer === 'hit') return handleHit(request);
+  if (layer === 'stats') return handleStats(request);
   if (layer === 'ingest') return handleLayer(layer, request);
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
   if (layer) return handleLayer(layer, request);
