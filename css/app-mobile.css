@@ -1,0 +1,157 @@
+/* ═══════════════════════════════════════════════════════════
+   APP SHELL — phones and the installed app
+   Loaded after mobile.css. On phones the main nav becomes a native-style
+   bottom tab bar (Overview · Map · Invest · Dubai · More), the cramped
+   status strip goes, floating buttons sit above the tab bar, and no text
+   renders under 11px. Desktop is untouched.
+   ═══════════════════════════════════════════════════════════ */
+
+.nav-more { display: none; }
+.app-sheet { display: none; }
+
+@media (max-width: 767px) {
+  :root {
+    --tabbar-h: calc(58px + env(safe-area-inset-bottom, 0px));
+    --topbar-h: calc(48px + env(safe-area-inset-top, 0px));
+    --statusbar-h: 0px;
+  }
+
+  /* ── Shell: topbar · content · tab bar ── */
+  #app { grid-template-rows: var(--topbar-h) 1fr var(--tabbar-h); }
+  .topbar { grid-row: 1; padding-top: env(safe-area-inset-top, 0px); padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+  .tab-content { grid-row: 2; }
+  .statusbar { display: none !important; }
+
+  /* ── Bottom tab bar ── */
+  .nav {
+    grid-row: 3;
+    position: relative;
+    height: var(--tabbar-h);
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    border-bottom: none;
+    border-top: 1px solid var(--border-default);
+    background: rgba(8, 11, 18, 0.97);
+    overflow: hidden;
+    justify-content: space-around;
+    align-items: stretch;
+  }
+  .nav-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 58px;
+    min-height: 58px;
+    padding: 6px 2px 4px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    border-bottom: none !important;
+    position: relative;
+  }
+  .nav-btn__icon { width: 22px; height: 22px; }
+  .nav-btn__label { font-size: 11px !important; letter-spacing: 0; text-transform: none; font-weight: 500; white-space: nowrap; }
+  .nav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 28%; right: 28%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--accent-primary);
+  }
+  .nav-btn.active::after { display: none; }
+
+  /* Signals, Broadcasts and Hormuz live in the More sheet on phones */
+  .nav > .nav-btn[data-tab="signals"],
+  .nav > .nav-btn[data-tab="broadcasts"],
+  .nav > .nav-btn[data-tab="hormuz"] { display: none; }
+  .nav-more { display: flex; }
+
+  /* ── More sheet ── */
+  .app-sheet { display: block; position: fixed; inset: 0; z-index: 9000; pointer-events: none; }
+  .app-sheet__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); opacity: 0; transition: opacity 0.2s; }
+  .app-sheet__panel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-strong);
+    border-radius: 18px 18px 0 0;
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .app-sheet.is-open { pointer-events: auto; }
+  .app-sheet.is-open .app-sheet__scrim { opacity: 1; }
+  .app-sheet.is-open .app-sheet__panel { transform: none; }
+  .app-sheet__grab { width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); margin: 0 auto 14px; }
+  .app-sheet__title { font: 600 12px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 4px 4px 10px; }
+  .app-sheet__item {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    min-height: 56px; padding: 10px 12px; border-radius: 12px;
+    background: none; border: 0; color: var(--text-primary); text-align: left;
+    font: 500 16px var(--font-display);
+  }
+  .app-sheet__item:active, .app-sheet__item.is-active { background: var(--accent-glow); color: var(--accent-primary); }
+  .app-sheet__item svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--accent-primary); }
+  .app-sheet__item small { display: block; font-size: 13px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+  .app-sheet__install[hidden], .app-sheet__ios[hidden] { display: none; }
+  .app-sheet__ios { margin: 8px 4px 0; padding: 12px; border-radius: 12px; background: var(--bg-tertiary); color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+
+  /* ── Floating buttons: above the tab bar, never over the bar itself ── */
+  .floating-whatsapp { bottom: calc(var(--tabbar-h) + 14px) !important; right: 14px; width: 50px; height: 50px; }
+  .fbot-launcher { bottom: calc(var(--tabbar-h) + 74px) !important; right: 14px; }
+  .fbot-launcher__label { display: none; }
+  body.app-sheet-open .floating-whatsapp,
+  body.app-sheet-open .fbot-launcher { opacity: 0; pointer-events: none; }
+
+  /* ── World Map on a phone: 55% map, 45% list ──
+     The sidebar used to get ~107px (its list ~57px) under a map that took
+     the rest, so news and flights were unreadable. */
+  .tab-panel--map .map-wrap { flex: 0 0 55%; min-height: 0; }
+  .tab-panel--map .sidebar { flex: 1 1 0; min-height: 0; max-height: none; width: 100%; }
+  .tab-panel--map .sidebar__content { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* Pinch zooms the map; the +/- buttons only collide with the floating ones */
+  .tab-panel--map .leaflet-control-zoom { display: none; }
+  /* On the map tab the floating buttons sit over the map, not the list */
+  body[data-tab="worldmap"] .floating-whatsapp { bottom: calc(var(--tabbar-h) + (100dvh - var(--topbar-h) - var(--tabbar-h)) * 0.45 + 22px) !important; }
+  body[data-tab="worldmap"] .fbot-launcher { bottom: calc(var(--tabbar-h) + (100dvh - var(--topbar-h) - var(--tabbar-h)) * 0.45 + 82px) !important; }
+
+  /* ── Readable text: nothing under 11px on a phone ── */
+  .dubai-card__metric-label, .metric-src, .dubai-card__tag, .signal-list-card__trigger,
+  .signal-list-card__time, .signal-area-tag, .signal-list-card__sector, .signal-list-card__sentiment,
+  .signal-list-card__magnitude, .signal-evidence__badge, .dubai-card__sentiment, .dubai-card__score-label,
+  .pix-evidence__badge, .pix-evidence__stats, .desk-call-card__badge, .desk-playbook__event,
+  .invest-class-btn__n, .pix-cohort__label, .pix-cohort__stats, .pix-cohort__yield, .signal-filter-btn,
+  .signal-filter-btn__n, .live-badge, .topbar__clock, .site-footer__src-note, .fbot__sub, .fbot__reset,
+  .fbot__foot, .invest-view-btn, .broadcast-card__live, .macro-card__label, .macro-src, .macro-card__trend,
+  .desk-call-card__call, .desk-call-card__conviction-label, .desk-call-card__risk, .desk-call-card__risk-label,
+  .pix-chg, .desk-ask__suggestion, .overview-card__link, .layer-btn, .hz-unit, .hz-calc,
+  .hero__counter-label, .dubai-filter-btn, .hz-stat__label, .hz-stat__sub, .site-footer__col-title,
+  .pix-strip__seg-label, .pix-strip__seg-meta, .hz-range, .meta-item__label, .pix-evidence__scope,
+  .pix-evidence__note, .hz-quote__label, .hz-heads__meta, .hz-panel__src, .hero__badge, .hero__alert-badge,
+  .pricing-card__badge, .site-footer__copyright, .country-panel__action, .news-header__static,
+  .news-refresh-btn, .invest-profile-chip__label, .invest-view-btn__sub, .pix-strip__badge,
+  .pix-strip__spark-label, .pix-strip__source, .dcmp__vs, .signal-source, .hz-wire__status, .hz-live,
+  .hz-quote__chg, .hz-quote__na, .hz-quotes__src, .hz-src, .hz-strip__text, .hz-strip__link,
+  .hz-integrity, .hz-attrib, .news-header__ref, .news-header__live, .news-header__status,
+  .invest-row__name, .invest-row__chg, .invest-row__price, .invest-row__sym {
+    font-size: 11px !important;
+  }
+  .tab-panel th, .tab-panel td { font-size: 12px; }
+  .leaflet-control-attribution { font-size: 10px !important; }
+
+  /* Tap targets the audit found under 32px */
+  .layer-btn, .dubai-filter-btn, .signal-filter-btn, .hz-range button, .news-refresh-btn,
+  .broadcast-card a, .site-footer__links a { min-height: 40px; }
+}
+
+@media (max-width: 480px) {
+  /* The top bar is 426px wide at 390px; the clock is the one thing a phone
+     already shows */
+  .topbar__clock { display: none; }
+}
+
+/* Installed app: no rubber-band bounce revealing the page behind the shell */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior: none; }
+  body { -webkit-user-select: none; user-select: none; }
+  input, textarea, .tab-panel p, .tab-panel li, .tab-panel td, .desk-response, .fbot__msg { -webkit-user-select: text; user-select: text; }
+}

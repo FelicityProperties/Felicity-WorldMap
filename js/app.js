@@ -24,6 +24,7 @@ import { startLiveLayersRefresh, stopLiveLayersRefresh } from './live-layers.js'
 import { DESK_CALLS, DESK_CALLS_NOTE, HISTORICAL_ANALOGS, PLAYBOOK_NOTE, renderConvictionBadge, extractConviction } from './prompts.js';
 import { escapeHtml as safeEscape, safeUrl } from './safe.js';
 import { initAnalytics, trackTab } from './analytics.js';
+import { initAppShell } from './app-shell.js';
 
 // ── State ──
 let activeTab = 'overview';
@@ -81,6 +82,11 @@ async function boot() {
 
   // Overview card click navigation
   initOverviewCards();
+
+  // Installable-app behaviour: phone tab bar's More sheet, install prompt,
+  // service worker, ?tab= deep links (the manifest's shortcuts). After
+  // routing, so a deep link's nav click has a listener to land on.
+  initAppShell();
 
   // Layer control handlers
   initLayerControls();

@@ -501,6 +501,25 @@ visits are not counted. Every visitor-supplied value is escaped on the
 dashboard. `tests/analytics.test.mjs` pins all of it. It lives in
 `api/data.js` because Hobby caps functions at twelve.
 
+### Phones and the installed app
+
+On phones (≤767px, `css/app-mobile.css`, loaded last) the main nav is a
+bottom tab bar — Overview · World Map · Invest · Dubai Intel · More — and
+`js/app-shell.js` builds the More sheet (Signals, Broadcasts, Hormuz,
+Install). The status strip is hidden, floating buttons sit above the tab
+bar (and over the map, not its list, on the map tab, via
+`body[data-tab]`), the map tab splits 55% map / 45% list, and nothing
+renders under 11px. Desktop is untouched. The site is an installable app:
+`manifest.webmanifest` (PNG icons 192/512 + maskable, shortcuts that
+deep-link with `?tab=`), iPhone meta tags and a 180px touch icon, and
+`sw.js` — **network-first for the app shell only; it never intercepts
+`/api/`, third-party origins or the analytics page**, so an offline app
+opens and says NO FEED rather than showing an old price. `sw.js` is
+served no-cache so updates reach installed copies. `tests/app.test.mjs`
+pins the manifest, icon sizes and those service-worker rules. App-store
+listing is a wrapper on top of this (Play: Trusted Web Activity; App
+Store: Capacitor), not a rewrite.
+
 ### Polling stops when nobody is looking
 
 Markets (60s), news (3min) and the macro cards (60s) once polled forever,
