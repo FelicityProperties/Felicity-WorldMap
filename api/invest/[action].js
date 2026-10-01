@@ -818,6 +818,7 @@ async function handleHormuzWire(req, res) {
         data.headlinesFetchedAt = stored.fetchedAt;
         data.headlinesDirectError = data.headlinesError;
         data.headlinesError = null;
+        data.ok = true;      // the wire has something real to show
       }
     }
     // `ok` means at least one source answered; only a COMPLETE pull is

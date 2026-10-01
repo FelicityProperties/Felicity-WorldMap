@@ -72,6 +72,31 @@ async function fetchCrypto() {
   }
 }
 
+// One symbol from the chart endpoint. Oil tries its front-month contract,
+// then the continuous symbol; 5 days so a missing last bar still leaves a
+// prior session to measure the day's move against.
+async function chartQuote(item) {
+  let lastError = 'no candidate';
+  for (const cand of yahooCandidates(item.yahoo)) {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cand.symbol)}?interval=1d&range=5d`;
+      const res = await fetchWithTimeout(url, 6000, { 'User-Agent': UA });
+      if (!res.ok) { lastError = `HTTP ${res.status}`; continue; }
+      const result = (await res.json())?.chart?.result?.[0];
+      const meta = result?.meta;
+      if (!meta) { lastError = 'No chart data'; continue; }
+      const price = meta.regularMarketPrice || meta.previousClose;
+      if (!price) { lastError = 'No price'; continue; }
+      const prevClose = yahooPrevClose(result) || price;
+      const chg = prevClose ? Math.round(((price - prevClose) / prevClose) * 10000) / 100 : 0;
+      return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg, contract: cand.contract };
+    } catch (e) {
+      lastError = e.message;
+    }
+  }
+  throw new Error(lastError);
+}
+
 // Yahoo's batch quote endpoint — one request for all symbols.
 async function fetchYahooBatch() {
   // Oil as its front-month contract (lib/futures.js), keyed back to the item
@@ -91,7 +116,7 @@ async function fetchYahooBatch() {
       const byYahoo = {};
       quotes.forEach(q => { byYahoo[q.symbol] = q; });
 
-      return asked.map(item => {
+      const rows = asked.map(item => {
         const q = byYahoo[item.ask.symbol] || byYahoo[item.yahoo];
         if (!q) return null;
         const price = q.regularMarketPrice ?? q.previousClose;
@@ -100,29 +125,20 @@ async function fetchYahooBatch() {
           ? Math.round(q.regularMarketChangePercent * 100) / 100
           : 0;
         return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg, contract: byYahoo[item.ask.symbol] ? item.ask.contract : null };
-      }).filter(Boolean);
+      });
+      // A symbol the batch did not answer (an oil contract Yahoo's batch
+      // skipped) goes through the per-symbol path, which also tries the
+      // continuous symbol — never silently dropped.
+      const misses = YAHOO_SYMBOLS.filter((_, i) => !rows[i]);
+      const filled = misses.length ? await Promise.allSettled(misses.map(chartQuote)) : [];
+      return [...rows.filter(Boolean), ...filled.filter(r => r.status === 'fulfilled').map(r => r.value)];
     } catch (e) {
       console.warn(`[api/markets] Yahoo batch via ${host} failed:`, e.message);
     }
   }
 
   // Fallback: per-symbol chart endpoint (slower but more tolerant)
-  const results = await Promise.allSettled(YAHOO_SYMBOLS.map(async item => {
-    const cand = yahooCandidates(item.yahoo)[0];
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cand.symbol)}?interval=1d&range=2d`;
-    const res = await fetchWithTimeout(url, 6000, { 'User-Agent': UA });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const result = data?.chart?.result?.[0];
-    const meta = result?.meta;
-    if (!meta) throw new Error('No chart data');
-    const price = meta.regularMarketPrice || meta.previousClose;
-    // The prior session's close from the series; chartPreviousClose is the
-    // close before the window and made the daily move wrong.
-    const prevClose = yahooPrevClose(result) || price;
-    const chg = prevClose ? Math.round(((price - prevClose) / prevClose) * 10000) / 100 : 0;
-    return { sym: item.sym, name: item.name, type: item.type, price: Math.round(price * 100) / 100, chg, contract: cand.contract };
-  }));
+  const results = await Promise.allSettled(YAHOO_SYMBOLS.map(chartQuote));
   return results.filter(r => r.status === 'fulfilled').map(r => r.value);
 }
 

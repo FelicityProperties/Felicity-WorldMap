@@ -8,6 +8,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { markets } from './data.js';
+import { yahooCandidates } from '../lib/futures.js';
 
 const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
@@ -74,7 +75,9 @@ async function fetchCrypto() {
 // ── Fetch single Yahoo Finance symbol ──
 async function fetchYahooSymbol(item) {
   try {
-    const chartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(item.yahoo)}?interval=1d&range=2d`;
+    // Oil as its front-month contract (lib/futures.js); 5 days of bars so
+    // the prior session is in the series
+    const chartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooCandidates(item.yahoo)[0].symbol)}?interval=1d&range=5d`;
     const proxyUrl = CORS_PROXY + encodeURIComponent(chartUrl);
 
     const controller = new AbortController();
@@ -85,11 +88,22 @@ async function fetchYahooSymbol(item) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    const meta = data?.chart?.result?.[0]?.meta;
+    const result = data?.chart?.result?.[0];
+    const meta = result?.meta;
     if (!meta) throw new Error('No chart data');
 
     const price = meta.regularMarketPrice || meta.previousClose;
-    const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+    // The prior session from the series, one close per day; chartPreviousClose
+    // is the close before the window and made the daily move a multi-day one
+    const ts = result.timestamp || [];
+    const raw = result.indicators?.quote?.[0]?.close || [];
+    const dayOf = sec => new Date(sec * 1000).toISOString().slice(0, 10);
+    const today = meta.regularMarketTime ? dayOf(meta.regularMarketTime) : (ts.length ? dayOf(ts[ts.length - 1]) : null);
+    let prevClose = null;
+    for (let i = raw.length - 1; i >= 0 && today; i--) {
+      if (ts[i] && Number.isFinite(raw[i]) && dayOf(ts[i]) < today) { prevClose = raw[i]; break; }
+    }
+    if (prevClose == null) prevClose = meta.chartPreviousClose || meta.previousClose || price;
     const chg = prevClose ? Math.round(((price - prevClose) / prevClose) * 10000) / 100 : 0;
 
     return {

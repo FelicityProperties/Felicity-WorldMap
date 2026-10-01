@@ -29,7 +29,7 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));   // relay ingest payloads run to ~1 MB
 
 // ── CORS headers for API routes ──
 app.use('/api', (req, res, next) => {
@@ -64,7 +64,7 @@ for (const file of walk(apiDir)) {
     // Edge functions take a Request and return a Response
     app.all(route, (req, res, next) => {
       const body = ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body ?? {});
-      const request = new Request(`http://${req.headers.host || 'localhost'}${req.originalUrl}`, { method: req.method, headers: req.headers, body });
+      const request = new Request(`http://${req.headers.host || 'localhost'}${req.originalUrl}`, { method: req.method, headers: Object.fromEntries(Object.entries(req.headers).filter(([k]) => k !== 'content-length' && k !== 'transfer-encoding')), body });
       Promise.resolve(handler(request)).then(async r => {
         res.status(r.status);
         r.headers.forEach((v, k) => res.setHeader(k, v));
