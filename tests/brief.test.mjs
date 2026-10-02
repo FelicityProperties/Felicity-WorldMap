@@ -93,9 +93,18 @@ check(sys.includes('US 10-year Treasury yield: 4.12% (+4 bp vs prior close)') &&
 check(sys.includes('[Reuters] Fed holds rates'), 'headline feed rendered');
 check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transit calls — tankers 3, cargo 5 (IMF PortWatch)'), 'Hormuz evidence block in the brief prompt');
 check(/^latest day 2026-09-13 \(\d+d lag\), 40 rows$/.test(res.payload?.hormuzEvidence || ''), `response reports Hormuz coverage (${res.payload?.hormuzEvidence})`);
-check(sys.includes('Index as of Aug 2026') && sys.includes('Residential index 206.99') && sys.includes('through 2026-09-24'), 'Felicity Price Index evidence is the August set');
-check(sys.includes('YIELD RANKINGS') && /Villas: JVC 5\.2% > Town Square 5\.1% > Dubai South 4\.8%/.test(sys), 'villa yield ranking computed correctly');
-check(/Apartments: Mohammed Bin Rashid City 6\.5% > Meydan 6\.3% > JVC 6\.1%/.test(sys), 'apartment yield ranking computed correctly');
+check(sys.includes('Index as of Sep 2026') && sys.includes('Residential index 205.98') && sys.includes('through 2026-10-01'), 'Felicity Price Index evidence is the September set');
+// Rankings: the prompt's top three must be the registry's top three by
+// yield, computed here independently so a refresh cannot break the check
+{
+  const { pixAreas } = await import('../js/pix-data.js');
+  const top3 = pick => Object.entries(pixAreas).map(([n, p]) => [n, pick(p)]).filter(([, y]) => y != null)
+    .sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, y]) => `${n} ${y.toFixed(1)}%`).join(' > ');
+  const apt = top3(p => (p.cohort === 'Apartment' ? p.yieldPct : null));
+  const vil = top3(p => (p.villa ? p.villa.yieldPct : p.cohort === 'Villa' ? p.yieldPct : null));
+  check(sys.includes('YIELD RANKINGS') && sys.includes(`Villas: ${vil}`), `villa yield ranking computed correctly (${vil})`);
+  check(sys.includes(`Apartments: ${apt}`), `apartment yield ranking computed correctly (${apt})`);
+}
 check(!sys.includes("Last time X happened, Y moved Z%'"), 'invented-analog instruction removed');
 check(sys.includes('never with an invented percentage'), 'analog rule is evidence-bound');
 check(!/Name specific Dubai areas \([^)]*DIFC/.test(sys), 'DIFC not on the name-these list');
@@ -137,7 +146,7 @@ sys = calls.find(c => c.url.includes('anthropic.com'))?.body.system || '';
 check(sys.includes('You have NO live data feed for Ukraine IGNORE') && !sys.includes('\nIGNORE'), 'country name newline-stripped');
 check(!sys.includes('x'.repeat(100)), 'country name length-bounded');
 check(!sys.includes('Use exact numbers') && !sys.includes('Historical analogs must reference specific dates'), 'fabrication demands removed from intel');
-check(sys.includes('Residential index 206.99'), 'intel carries the Dubai registry evidence');
+check(sys.includes('Residential index 205.98'), 'intel carries the Dubai registry evidence');
 
 console.log(`system prompt (brief): ${anthropic.body.system.length} chars`);
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }

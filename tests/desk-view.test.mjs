@@ -38,7 +38,7 @@ for (const c of DESK_CALLS) {
   check(!/undefined|NaN|n\/a/.test(text), `${c.area}: no undefined/NaN/n-a in copy`);
   check(['LONG', 'SHORT', 'AVOID', 'ACCUMULATE', 'TRIM', 'HOLD'].includes(c.call) && c.conviction >= 1 && c.conviction <= 5, `${c.area}: valid call and conviction`);
 }
-check(/registered DLD medians \(Aug 2026\)/.test(DESK_CALLS_NOTE) && DESK_CALLS_NOTE.includes(PIX_SIGNALS_AS_OF), 'desk note dated from the data files');
+check(/registered DLD medians \(Sep 2026\)/.test(DESK_CALLS_NOTE) && DESK_CALLS_NOTE.includes(PIX_SIGNALS_AS_OF), 'desk note dated from the data files');
 
 for (const a of HISTORICAL_ANALOGS) {
   check(!/\d+\s*%/.test(a.impact + a.lesson), `${a.event}: playbook carries no percentages`);

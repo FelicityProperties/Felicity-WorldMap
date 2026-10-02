@@ -100,6 +100,20 @@ Things the Sep 2026 refresh learned, so the next one does not relearn them:
 - **Momentum flags parent projects and their buildings separately.**
   Keep the parent only, or the same registrations count twice.
 
+Things the Oct 2026 refresh (September data) learned:
+
+- **Filter rent PSF on `has_valid_rent_psf eq true`.** Without it the
+  `annual_rent_psf` median counts rows with no valid size as zero —
+  Jumeirah villas' 25th percentile came back 0 and the median dropped
+  from 69.3 to 58.4 AED/sqft, which would have cut its yield by a sixth.
+  Headline rent medians and rental counts come from the unfiltered query.
+- **History moved again:** August residential 206.99 → 206.93, villas
+  266.38 → 266.23. Re-pull, never append.
+- **Momentum lists phases beside parents** (Trussardi Residences and
+  Trussardi Residences Phase II) — keep one, as with buildings.
+- **Tests compute rankings from the data file**; never pin a ranking or a
+  yield literal in a test, or every refresh breaks it.
+
 ### The AI is only allowed numbers it was handed
 
 The first August test brief was audited line by line against the evidence.
