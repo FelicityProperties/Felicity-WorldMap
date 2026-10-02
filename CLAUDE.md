@@ -113,6 +113,16 @@ Things the Oct 2026 refresh (September data) learned:
   Trussardi Residences Phase II) — keep one, as with buildings.
 - **Tests compute rankings from the data file**; never pin a ranking or a
   yield literal in a test, or every refresh breaks it.
+- **Desk calls that cite a signal must read it from the feed.** The
+  September feed dropped The Fields' discount trade and JVC's record-PSF
+  prints, and two Overview calls kept asserting them in words. The JVC and
+  MBR calls now filter `pixSignals` by area and the MBR rank is computed;
+  `tests/desk-view.test.mjs` checks the call names exactly what the feed
+  holds. Re-read the calls after every signal refresh.
+- **The compare panel never differences across cohorts.** Jumeirah's
+  headline is its villa cohort; against an area with a villa cohort it
+  compares villa with villa (sales included), otherwise each cell is
+  labelled with its cohort and no delta is drawn.
 
 ### The AI is only allowed numbers it was handed
 
@@ -385,8 +395,12 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   row per kind in Postgres. `/api/data?layer=flights|events` serves the
   relayed copy when it is under 45 minutes old, marked `servedFrom:
   'relay'` and dated by the runner's fetch time (the sidebar says
-  "relayed"); older, it tries the direct fetch and falls back to the copy
-  flagged `stale: true`, uncached, so the page says STALE. The Hormuz
+  "relayed"), edge-cached only for the minutes it has left in that window
+  (`relayCacheHeader`, no stale-while-revalidate); older, it serves the
+  copy flagged `stale: true`, uncached, so the page says STALE. The
+  direct upstream fetch is tried only when nothing is stored — trying it
+  in front of a stale copy made every map load wait out OpenSky's
+  timeouts (up to 18 s) for a connection Vercel never gets. The Hormuz
   wire does the same for headlines (`headlinesFrom: 'relay'`). Nothing
   is invented between pushes. `tests/live-layers.test.mjs` covers the
   ingest gates (no token → 503, wrong → 401, bad kind → 400, failed

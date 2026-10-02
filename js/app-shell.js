@@ -89,9 +89,15 @@ function refreshInstallUI() {
   if (ios) ios.hidden = !(isIOS() && !isStandalone());
 }
 
-function openRequestedTab() {
+/** The tab named in ?tab= or #tab, if it exists; boot() reports it as the landing tab. */
+export function requestedTab() {
   const q = new URLSearchParams(location.search).get('tab') || location.hash.replace(/^#/, '');
-  if (q && /^[a-z]+$/.test(q) && document.querySelector(`.nav > .nav-btn[data-tab="${q}"]`)) goTab(q);
+  return q && /^[a-z]+$/.test(q) && document.querySelector(`.nav > .nav-btn[data-tab="${q}"]`) ? q : null;
+}
+
+function openRequestedTab() {
+  const q = requestedTab();
+  if (q) goTab(q);
 }
 
 export function initAppShell() {

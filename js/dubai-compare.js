@@ -62,6 +62,25 @@ function renderComparison(host, nameA, nameB) {
   if (!A || !B || !out) return;
 
   const dA = deskViewFor(nameA), dB = deskViewFor(nameB);
+
+  // Never divide or difference across cohorts. An area whose headline is
+  // its villa cohort (Jumeirah) is compared with the other area's villa
+  // cohort when it has one; otherwise each side is labelled and no delta
+  // is drawn.
+  const asCohort = (p, cohort) => p.cohort === cohort ? p : (cohort === 'Villa' && p.villa ? { ...p.villa, cohort: 'Villa' } : null);
+  let cA = A, cB = B;
+  if (A.cohort !== B.cohort) {
+    const pick = A.cohort === 'Villa' ? 'Villa' : B.cohort === 'Villa' ? 'Villa' : null;
+    if (pick && asCohort(A, pick) && asCohort(B, pick)) { cA = asCohort(A, pick); cB = asCohort(B, pick); }
+  }
+  const same = cA.cohort === cB.cohort;
+  // Value and rental totals are the headline cohort's, so they are not
+  // shown once a side has been switched to its villa cohort
+  const swapped = cA !== A || cB !== B;
+  const tag = c => ` <span class="dcmp__cohort">(${esc(c.cohort)})</span>`;
+  const cohortNote = [A.note && `${esc(nameA)}: ${esc(A.note)}`, B.note && `${esc(nameB)}: ${esc(B.note)}`,
+    !same && 'The two areas\' registered evidence is in different property types, so no difference is computed.',
+    same && swapped && `Both shown as villa cohorts so like is compared with like.`].filter(Boolean).join(' ');
   const wa = txt => `https://wa.me/971563520611?text=${encodeURIComponent(txt)}`;
 
   out.innerHTML = `
@@ -76,22 +95,23 @@ function renderComparison(host, nameA, nameB) {
         </div>
       </div>
 
-      ${row('Registered sales', `${fmtCount(A.sales)}`, `${fmtCount(B.sales)}`, 'last 12 months')}
-      ${row('Registered value', fmtAedBillions(A.valueAed), fmtAedBillions(B.valueAed))}
-      ${row('Registered rentals', fmtCount(A.rentals), fmtCount(B.rentals))}
-      ${row(`Median PSF <span class="dcmp__cohort">(${esc(A.cohort)})</span>`,
-            `AED ${fmtCount(A.psf)} ${deltaBadge(relPct(A.psf, B.psf), { higherIsBetter: false })}`,
-            `AED ${fmtCount(B.psf)}`,
-            'lower buys more')}
-      ${row('Median sale price', fmtPrice(A.price), fmtPrice(B.price))}
-      ${row('Median annual rent', fmtRent(A.rent), fmtRent(B.rent))}
+      ${row(`Registered sales${same ? ` <span class="dcmp__cohort">(${esc(cA.cohort)})</span>` : ''}`, `${fmtCount(cA.sales)}`, `${fmtCount(cB.sales)}`, 'last 12 months')}
+      ${swapped ? '' : row('Registered value', fmtAedBillions(A.valueAed), fmtAedBillions(B.valueAed))}
+      ${swapped ? '' : row('Registered rentals', fmtCount(A.rentals), fmtCount(B.rentals))}
+      ${cohortNote ? `<div class="dcmp__row dcmp__row--note"><div class="dcmp__label">Cohort</div><div class="dcmp__cell dcmp__cell--wide">${cohortNote}</div></div>` : ''}
+      ${row(`Median PSF ${same ? `<span class="dcmp__cohort">(${esc(cA.cohort)})</span>` : ''}`,
+            `AED ${fmtCount(cA.psf)}${same ? ` ${deltaBadge(relPct(cA.psf, cB.psf), { higherIsBetter: false })}` : tag(cA)}`,
+            `AED ${fmtCount(cB.psf)}${same ? '' : tag(cB)}`,
+            same ? 'lower buys more' : 'different cohorts — not compared')}
+      ${row('Median sale price', fmtPrice(cA.price) + (same ? '' : tag(cA)), fmtPrice(cB.price) + (same ? '' : tag(cB)))}
+      ${row('Median annual rent', fmtRent(cA.rent) + (same ? '' : tag(cA)), fmtRent(cB.rent) + (same ? '' : tag(cB)))}
       ${row('Gross yield',
-            A.yieldPct != null
-              ? `<strong class="dcmp__yield dcmp__yield--${yieldClass(A.yieldPct)}">${A.yieldPct.toFixed(1)}%</strong> ${ppBadge(A.yieldPct, B.yieldPct)}`
+            cA.yieldPct != null
+              ? `<strong class="dcmp__yield dcmp__yield--${yieldClass(cA.yieldPct)}">${cA.yieldPct.toFixed(1)}%</strong> ${same ? ppBadge(cA.yieldPct, cB.yieldPct) : tag(cA)}`
               : 'unavailable',
-            B.yieldPct != null ? `<strong class="dcmp__yield dcmp__yield--${yieldClass(B.yieldPct)}">${B.yieldPct.toFixed(1)}%</strong>` : 'unavailable',
+            cB.yieldPct != null ? `<strong class="dcmp__yield dcmp__yield--${yieldClass(cB.yieldPct)}">${cB.yieldPct.toFixed(1)}%</strong>${same ? '' : tag(cB)}` : 'unavailable',
             'cohort-matched')}
-      ${A.villa && B.villa
+      ${A.villa && B.villa && cA === A && cB === B
         ? row('Villa cohort PSF / yield',
               `AED ${fmtCount(A.villa.psf)} · ${A.villa.yieldPct != null ? A.villa.yieldPct.toFixed(1) + '%' : '—'}`,
               `AED ${fmtCount(B.villa.psf)} · ${B.villa.yieldPct != null ? B.villa.yieldPct.toFixed(1) + '%' : '—'}`)

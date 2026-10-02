@@ -25,6 +25,17 @@ const addNums = o => Object.values(o || {}).forEach(v => {
 Object.values(pixAreas).forEach(addNums);
 
 check(DESK_CALLS.length === 6, 'six active calls');
+// A call may only lean on a signal the feed still holds (the Sep refresh
+// dropped The Fields' discount trade and left the sentence asserting it)
+{
+  const { pixSignals } = await import('../js/pix-signals.js');
+  const mbrCall = DESK_CALLS.find(c => c.area.startsWith('MBR City')).thesis;
+  const mbrSigs = pixSignals.filter(s => s.area === 'MBR City' && ['below_trend', 'discount_trade'].includes(s.type));
+  check(mbrSigs.every(s => mbrCall.includes(s.entity)) && (mbrSigs.length > 0 || !/has touched it/.test(mbrCall)), 'MBR call names exactly the dislocation signals the feed holds');
+  const jvcCall = DESK_CALLS.find(c => c.area.startsWith('JVC'));
+  const jvcRecord = pixSignals.some(s => s.area === 'JVC' && s.type === 'record_psf');
+  check(jvcRecord || !/record-PSF/.test(jvcCall.risk), 'JVC risk mentions record-PSF printers only when the feed holds one');
+}
 for (const c of DESK_CALLS) {
   const text = `${c.thesis} ${c.risk}`.replace(/<[^>]+>/g, '');
   const nums = (text.match(/\d[\d,]*(?:\.\d+)?/g) || []).map(n => n.replace(/,/g, ''));

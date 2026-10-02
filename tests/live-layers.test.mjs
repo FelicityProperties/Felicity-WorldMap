@@ -109,6 +109,11 @@ check(res.code === 200 && res.payload.ok && res.payload.events.length === 2 && /
 mode = 'opensky-429';
 res = await call('/api/data?layer=flights');
 check(res.code === 200 && res.payload.ok === false && /rate limit/.test(res.payload.error) && res.headers['Cache-Control'] === 'no-store' && res.payload.source?.name === 'OpenSky Network', 'layer failure is honest and never cached');
+// A relayed copy is edge-cached only until it leaves the 45-minute window
+const { relayCacheHeader } = await import('../api/data.js');
+check(relayCacheHeader(0) === 's-maxage=300', 'a new relay copy caches 5 min');
+check(relayCacheHeader(43) === 's-maxage=120', 'a 43-minute copy caches only its 2 fresh minutes');
+check(relayCacheHeader(45) === 'no-store' && relayCacheHeader(60) === 'no-store', 'a copy at or past the window is never cached');
 res = await call('/api/data?layer=nope');
 check(res.code === 404, 'unknown layer is a 404');
 

@@ -38,7 +38,20 @@ const join = parts => parts.filter(Boolean).join('; ');
 const jvc = A('JVC'), mbr = A('Mohammed Bin Rashid City'), palm = A('Palm Jumeirah'),
       south = A('Dubai South'), hills = A('Dubai Hills Estate'), marina = A('Dubai Marina');
 const venice = sig('Azizi Venice 6', 'momentum');
-const fields = sig('The Fields', 'discount_trade');
+
+// What the signal feed currently holds for a district. Calls that lean on
+// signals read them here, so a refresh that drops a signal changes the
+// sentence instead of leaving it asserting evidence that is gone.
+const inArea = (area, ...types) => pixSignals.filter(s => s.area === area && types.includes(s.type));
+const jvcBelow = inArea('JVC', 'below_trend');
+const jvcRecord = inArea('JVC', 'record_psf');
+const mbrDislocation = inArea('MBR City', 'below_trend', 'discount_trade');
+const aptYieldRank = name => {
+  const ranked = Object.entries(pixAreas).filter(([, p]) => p.cohort === 'Apartment' && p.yieldPct != null).sort((a, b) => b[1].yieldPct - a[1].yieldPct);
+  return ranked.findIndex(([n]) => n === name) + 1;
+};
+const mbrRank = aptYieldRank('Mohammed Bin Rashid City');
+const ordinal = n => n === 1 ? 'Top of' : n === 2 ? 'Second in' : n === 3 ? 'Third in' : `Number ${n} in`;
 
 export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD medians (${PIX_AS_OF}); everything else is the desk's opinion, not evidence.`;
 
@@ -46,16 +59,20 @@ export const DESK_CALLS = [
   {
     area: 'JVC — off-plan secondary', call: 'AVOID', conviction: 4, horizon: '12 months', segment: 'Mid-market',
     thesis: `The registry median of ${psf(jvc.psf)} at ${pct(jvc.yieldPct)} gross yield looks healthy; the project tape does not. ${
-      join([below('Binghatti Royale'), below('Binghatti Onyx')]) || 'The signal feed shows persistent below-trend printing inside the district'
-    }. Dispersion that wide inside one district is a shakeout. Completed, cash-flowing stock is a different asset from second-hand off-plan paper here.`,
-    risk: 'The below-trend printers stop and the record-PSF printers in the same district set the tone.',
+      join(jvcBelow.map(s => below(s.entity))) || 'The current signal feed shows no below-trend printing inside the district, so this is the desk\'s structural view rather than a live signal'
+    }. Completed, cash-flowing stock is a different asset from second-hand off-plan paper here.`,
+    risk: jvcRecord.length
+      ? 'The below-trend printers stop and the record-PSF printers in the same district set the tone.'
+      : 'The below-trend printing stops and the district median holds its level through the correction.',
   },
   {
     area: 'MBR City — completed apartments', call: 'ACCUMULATE', conviction: 4, horizon: '18 months', segment: 'Mid-market',
-    thesis: `Top of the apartment yield ranking at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. The correction has touched it${
-      fields ? ` — The Fields registered ${Math.abs(fields.magnitudePct).toFixed(1)}% below cohort trend${reg}` : ''
-    } — but as a single trade, not a district-wide pattern. Highest registry yield in the set with the shallowest dislocation is the cleanest entry in a correcting market. Completed stock only.`,
-    risk: 'The correction broadens from single trades to persistent below-trend printing, as it has in JVC.',
+    thesis: `${ordinal(mbrRank)} the apartment yield ranking at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. ${
+      mbrDislocation.length
+        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own trend' : 'cohort trend'}${reg}`).join('; ')} — but not as a district-wide pattern.`
+        : 'The current signal feed holds no below-trend or discount trade in the district.'
+    } A high registry yield without persistent below-trend printing is the cleanest entry in a correcting market. Completed stock only.`,
+    risk: 'The correction broadens into persistent below-trend printing, as it has in JVC.',
   },
   {
     area: 'Palm Jumeirah villas', call: 'HOLD', conviction: 3, horizon: '36 months', segment: 'Ultra-luxury',

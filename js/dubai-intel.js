@@ -125,7 +125,7 @@ function villaRowHtml(p) {
   return `
         <div class="pix-cohort">
           <span class="pix-cohort__label">Villas</span>
-          <span class="pix-cohort__stats">${fmtCount(v.psf)}/sqft · ${fmtPrice(v.price)} · ${fmtRent(v.rent)} · <strong class="pix-cohort__yield pix-cohort__yield--${yieldClass(v.yieldPct)}">${y}</strong></span>
+          <span class="pix-cohort__stats">${fmtCount(v.psf)}/sqft · ${fmtPrice(v.price)} · ${fmtRent(v.rent)} · <strong class="pix-cohort__yield pix-cohort__yield--${yieldClass(v.yieldPct)}">${y}</strong><span class="metric-src metric-src--reg" title="Registered DLD evidence">reg</span></span>
         </div>`;
 }
 

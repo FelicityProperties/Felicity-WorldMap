@@ -1,7 +1,7 @@
 // Owner analytics: what a beacon may store, what it may not, and who may
 // read the numbers. No database here, so storage reports honestly and the
 // stats endpoint refuses rather than inventing an empty dashboard.
-import { buildEvent, parseUA, refHost, isBot } from '../lib/analytics.js';
+import { buildEvent, parseUA, refHost, isBot, fillSeries } from '../lib/analytics.js';
 import { readFileSync } from 'node:fs';
 
 const fails = [];
@@ -68,6 +68,13 @@ const page = readFileSync(new URL('../analytics.html', import.meta.url), 'utf8')
 check(/noindex/.test(page), 'dashboard is noindex');
 const dash = readFileSync(new URL('../js/analytics-dashboard.js', import.meta.url), 'utf8');
 check(/import \{ escapeHtml as esc \} from '\.\/safe\.js'/.test(dash) && !/\$\{v\.(city|ref|browser)\}/.test(dash), 'dashboard escapes visitor-supplied values');
+
+// The traffic series is a real time axis: quiet buckets are zeros, not gaps
+const fs = fillSeries([{ t: '2026-10-01T00:00:00.000Z', pageviews: '5', visitors: '3' }, { t: '2026-10-03T00:00:00.000Z', pageviews: 2, visitors: 4 }],
+  '2026-09-30T15:20:00.000Z', '2026-10-03T09:00:00.000Z', 'day');
+check(fs.length === 4 && fs[0].t === '2026-09-30T00:00:00.000Z' && fs[1].pageviews === 5 && fs[2].pageviews === 0 && fs[2].visitors === 0 && fs[3].visitors === 4, 'daily series fills the quiet day with zeros');
+const fh = fillSeries([], '2026-10-02T10:30:00.000Z', '2026-10-03T10:10:00.000Z', 'hour');
+check(fh.length === 25 && fh.every(p => p.pageviews === 0), 'a 24-hour range has one point per hour');
 
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log('analytics: beacons keep geo/device/tab only, drop bots, never store IPs; stats need the owner key — all checks passed');

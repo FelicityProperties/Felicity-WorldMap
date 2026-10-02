@@ -64,9 +64,11 @@ function bars(rows, label = r => esc(r.k), max = null) {
 }
 
 function chart(series, bucket) {
-  if (!series.length) return '<div class="an-empty">No visits in this range yet. The tracker starts counting from its first deploy.</div>';
+  if (!series.some(s => s.pageviews || s.visitors)) return '<div class="an-empty">No visits in this range yet. The tracker starts counting from its first deploy.</div>';
   const W = 900, H = 220, P = { l: 36, r: 10, t: 10, b: 26 };
-  const max = Math.max(...series.map(s => s.pageviews), 1);
+  // A bucket can hold more visitors than page views (their pageview fell in
+  // the bucket before), so the scale covers both series
+  const max = Math.max(...series.flatMap(s => [s.pageviews, s.visitors]), 1);
   const bw = (W - P.l - P.r) / series.length;
   const y = v => P.t + (H - P.t - P.b) * (1 - v / max);
   const label = t => bucket === 'hour' ? t.slice(11, 16) : t.slice(5, 10);

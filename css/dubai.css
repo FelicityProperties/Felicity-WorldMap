@@ -685,6 +685,8 @@
 }
 
 .dcmp__cohort { text-transform: none; letter-spacing: 0; }
+.dcmp__cell .dcmp__cohort { font-size: 10px; color: var(--text-muted); }
+.dcmp__cell--wide { grid-column: 2 / -1; font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.5; }
 
 .dcmp__cell {
   font-family: var(--font-mono);

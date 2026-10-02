@@ -25,7 +25,7 @@ function randomId() {
 
 function optedOut() {
   if (navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.globalPrivacyControl === true) return true;
-  return store('local')?.getItem('fi_owner') === '1';
+  try { return store('local')?.getItem('fi_owner') === '1'; } catch { return false; }
 }
 
 let ids = null;
@@ -38,9 +38,10 @@ function getIds() {
   const ls = store('local'), ss = store('session');
   let vid = ls?.getItem('fi_vid');
   const newVisitor = !vid;
-  if (!vid) { vid = randomId(); ls?.setItem('fi_vid', vid); }
+  // setItem throws when storage is full or refused (old Safari private mode)
+  if (!vid) { vid = randomId(); try { ls?.setItem('fi_vid', vid); } catch { /* id lives for this page only */ } }
   let sid = ss?.getItem('fi_sid');
-  if (!sid) { sid = randomId(); ss?.setItem('fi_sid', sid); }
+  if (!sid) { sid = randomId(); try { ss?.setItem('fi_sid', sid); } catch { /* same */ } }
   ids = { vid, sid, newVisitor };
   return ids;
 }
@@ -56,6 +57,11 @@ function send(payload) {
 
 /** Call once at startup with the tab that is showing. */
 export function initAnalytics(initialTab) {
+  // Runs first in boot(): nothing in here may throw into the app
+  try { start(initialTab); } catch { /* analytics must never break the page */ }
+}
+
+function start(initialTab) {
   if (optedOut()) return;
   lastTab = initialTab || null;
   send({ kind: 'pageview', tab: lastTab, ref: document.referrer || '', newVisitor: getIds().newVisitor });

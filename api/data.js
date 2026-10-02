@@ -43,31 +43,37 @@ function json(body, status = 200, cache = 'no-store') {
   });
 }
 
-// Edge functions must start responding within 25s on Hobby; seven probes
-// at 3s each stay inside that with the control host included.
+// Edge functions must start responding within 25s on Hobby; the probes run
+// in parallel, so the whole diag is bounded by one 3s timeout.
 const DIAG_TIMEOUT_MS = 3000;
 
-// A relayed copy younger than this is served as-is; older, a direct fetch
-// is attempted first and the copy is the fallback (marked stale).
+// A relayed copy younger than this is served as fresh. Older, it is served
+// flagged stale and uncached. A direct fetch is tried only when nothing is
+// stored at all: OpenSky and GDELT drop every Vercel connection, so trying
+// them in front of a stale copy only made each map load wait out the
+// timeouts (up to 18 s for flights) before showing the same copy.
 const RELAY_FRESH_MIN = 45;
+const RELAY_MAX_CACHE_S = 300;
+
+// The edge may keep a fresh copy only until it leaves the fresh window,
+// never past it (no stale-while-revalidate: that served 44-minute-old
+// copies as fresh until they were nearly an hour old).
+export function relayCacheHeader(ageMin) {
+  const left = Math.max(0, Math.min(RELAY_MAX_CACHE_S, (RELAY_FRESH_MIN - ageMin) * 60));
+  return left > 0 ? `s-maxage=${left}` : 'no-store';
+}
 
 async function serveRelayed(kind, direct, cache) {
   const stored = await readLayer(kind);
   if (stored && stored.ageMin <= RELAY_FRESH_MIN) {
-    return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin }, 200, cache);
+    return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin }, 200, relayCacheHeader(stored.ageMin));
   }
-  try {
-    const data = await direct();
-    return json(data, 200, cache);
-  } catch (e) {
-    if (stored) {
-      // Older than the window and the direct fetch failed too: still real
-      // data, still dated by its own fetch time, and flagged so the page
-      // says STALE rather than LIVE. Never cached.
-      return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin, stale: true, staleReason: e.message });
-    }
-    throw e;
+  if (stored) {
+    // Still real data, dated by its own fetch time, flagged so the page
+    // says STALE rather than LIVE. Never cached.
+    return json({ ...stored.payload, servedFrom: 'relay', relayAgeMin: stored.ageMin, stale: true, staleReason: `relay copy is ${stored.ageMin} min old (fresh window ${RELAY_FRESH_MIN} min)` });
   }
+  return json(await direct(), 200, cache);
 }
 
 // ── Analytics (lib/analytics.js) ──
@@ -124,10 +130,10 @@ async function handleLayer(layer, request) {
       // `return await`: a bare return would hand the promise past this catch
       return await serveRelayed('flights',
         () => fetchFlights({ clientId: process.env.OPENSKY_CLIENT_ID, clientSecret: process.env.OPENSKY_CLIENT_SECRET }),
-        's-maxage=300, stale-while-revalidate=300');
+        's-maxage=300');
     }
     if (layer === 'events') {
-      return await serveRelayed('events', () => fetchEvents(), 's-maxage=300, stale-while-revalidate=300');
+      return await serveRelayed('events', () => fetchEvents(), 's-maxage=300');
     }
     if (layer === 'diag') {
       // Answers "why does the map say no feed?" from the function's own
@@ -146,8 +152,7 @@ async function handleLayer(layer, request) {
         ['yahoo-bz-dec26', 'https://query1.finance.yahoo.com/v8/finance/chart/BZZ26.NYM?range=1d&interval=1d'],
         ['yahoo-cl-cont', 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=1d&interval=1d'],
       ];
-      const out = [];
-      for (const [name, u] of targets) {
+      const out = await Promise.all(targets.map(async ([name, u]) => {
         const t0 = Date.now();
         const c = new AbortController();
         const timer = setTimeout(() => c.abort(), DIAG_TIMEOUT_MS);
@@ -160,13 +165,13 @@ async function handleLayer(layer, request) {
             const meta = JSON.parse(body)?.chart?.result?.[0]?.meta;
             if (meta) entry.quote = { symbol: meta.symbol, name: meta.shortName || meta.longName || null, price: meta.regularMarketPrice ?? null, volume: meta.regularMarketVolume ?? null, time: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null };
           } catch { /* not JSON */ }
-          out.push(entry);
+          return entry;
         } catch (e) {
-          out.push({ target: name, ms: Date.now() - t0, error: fetchReason(e, DIAG_TIMEOUT_MS) });
+          return { target: name, ms: Date.now() - t0, error: fetchReason(e, DIAG_TIMEOUT_MS) };
         } finally {
           clearTimeout(timer);
         }
-      }
+      }));
       return json({ ok: true, runtime: 'edge', at: new Date().toISOString(), region: process.env.VERCEL_REGION || null, hasOpenSkyCreds: !!(process.env.OPENSKY_CLIENT_ID && process.env.OPENSKY_CLIENT_SECRET), results: out });
     }
     return json({ ok: false, error: `Unknown layer: ${layer}` }, 404);
