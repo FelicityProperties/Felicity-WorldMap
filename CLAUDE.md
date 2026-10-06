@@ -119,6 +119,19 @@ Things the Oct 2026 refresh (September data) learned:
   MBR calls now filter `pixSignals` by area and the MBR rank is computed;
   `tests/desk-view.test.mjs` checks the call names exactly what the feed
   holds. Re-read the calls after every signal refresh.
+- **A mid-month refresh still restates the closed month** (6 Oct:
+  September residential 205.98 → 205.95, Dubai South's apartment median
+  price 759K → 755K, most rental counts down by one or two). Re-pull
+  everything even when the index month has not changed.
+- **The signal feed carries more than one detection per project.** The
+  Crescent and Springs 4 each had two `psf_move` rows in opposite
+  directions; keep the newest. The engine also emitted a `discount_trade`
+  whose value sat 14% *above* its baseline (The Spirit, 1 Oct) — not a
+  discount, left out with a comment. Check the sign of every magnitude
+  against its type before writing it.
+- **Prose in the data files ages too.** "First villa gain after three
+  declines" became four once May was restated below April. Re-read the
+  `buildDeskContext()` narrative against the re-pulled series.
 - **The compare panel never differences across cohorts.** Jumeirah's
   headline is its villa cohort; against an area with a villa cohort it
   compares villa with villa (sales included), otherwise each cell is

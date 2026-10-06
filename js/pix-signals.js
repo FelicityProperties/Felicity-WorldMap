@@ -3,8 +3,8 @@
 // ═══════════════════════════════════════════════════════════
 //
 // Source: signal engine over Dubai Land Department registered
-// transactions (PropertyIndex tools; public name Felicity Price Index). Snapshot 2026-10-02; open signals detected
-// through 2026-10-01, DLD registrations loaded through September 2026.
+// transactions (PropertyIndex tools; public name Felicity Price Index). Snapshot 2026-10-06; open signals detected
+// through 2026-10-06, DLD registrations loaded through September 2026.
 //
 // Every row below is an actual detected event with a real detection
 // date, a real registered value, and (where the signal type defines
@@ -33,7 +33,7 @@
 //                  discount.
 // ═══════════════════════════════════════════════════════════
 
-export const PIX_SIGNALS_AS_OF = '2026-10-01';
+export const PIX_SIGNALS_AS_OF = '2026-10-06';
 export const PIX_SIGNALS_SOURCE = 'Felicity Price Index signal feed over DLD registered transactions';
 
 export const SIGNAL_TYPES = {
@@ -50,123 +50,144 @@ export const pixSignals = [
   // ── Top registered sales ──
   { type: 'top_sale', entity: 'Como Residences', area: 'Palm Jumeirah', community: 'palm-jumeirah',
     detectedOn: '2026-09-22', direction: 1, value: 71241800, baseline: null, psf: 6083.09, beds: '5 Bed' },
-  { type: 'top_sale', entity: 'District One West Phase I', area: 'MBR City', community: 'mohammed-bin-rashid-city',
-    detectedOn: '2026-09-19', direction: 1, value: 31500000, baseline: null, psf: 2942.07, beds: 'Villa' },
+  { type: 'top_sale', entity: 'Elysian Mansions', area: 'Tilal Al Ghaf', community: 'tilal-al-ghaf',
+    detectedOn: '2026-10-06', direction: 1, value: 38500000, baseline: 27500000, magnitudePct: 40.00, psf: 2309.65, beds: 'Villa' },
   { type: 'top_sale', entity: 'IL Primo', area: 'Downtown Dubai', community: 'downtown-dubai',
     detectedOn: '2026-09-29', direction: 1, value: 28000000, baseline: null, psf: 5409.20, beds: '4 Bed' },
-  { type: 'top_sale', entity: 'Elysian Mansions', area: 'Tilal Al Ghaf', community: 'tilal-al-ghaf',
-    detectedOn: '2026-09-26', direction: 1, value: 27500000, baseline: null, psf: 2772.65, beds: 'Villa' },
-  { type: 'top_sale', entity: 'Five Palm Jumeirah', area: 'Palm Jumeirah', community: 'palm-jumeirah',
-    detectedOn: '2026-09-18', direction: 1, value: 25000000, baseline: null, psf: 2031.63, beds: '5 Bed' },
   { type: 'top_sale', entity: 'Eden Hills', area: 'MBR City', community: 'mohammed-bin-rashid-city',
     detectedOn: '2026-09-30', direction: 1, value: 23900000, baseline: null, psf: 2627.77, beds: 'Villa' },
   { type: 'top_sale', entity: 'Palm Jebel Ali Frond E', area: 'Palm Jebel Ali', community: 'palm-jebel-ali',
     detectedOn: '2026-10-01', direction: 1, value: 22217000, baseline: null, psf: 3013.18, beds: 'Villa' },
+  { type: 'top_sale', entity: 'Mareva 2 The Oasis', area: 'The Oasis', community: 'the-oasis-by-emaar',
+    detectedOn: '2026-10-02', direction: 1, value: 21627888, baseline: null, psf: 2093.02, beds: 'Villa' },
   { type: 'top_sale', entity: 'Lime Tree Valley', area: 'Jumeirah Golf Estates', community: 'jumeirah-golf-estates',
     detectedOn: '2026-09-25', direction: 1, value: 17500000, baseline: null, psf: 1895.56, beds: 'Villa' },
+  { type: 'top_sale', entity: 'Chevalia Fields', area: 'Dubai Investment Park', community: 'dubai-investment-park-dip',
+    detectedOn: '2026-10-04', direction: 1, value: 9308888, baseline: null, psf: 1638.73, beds: 'Villa' },
 
   // ── New record price per square foot ──
-  { type: 'record_psf', entity: 'Azizi Riviera 1', area: 'Meydan', community: 'meydan',
-    detectedOn: '2026-09-29', direction: 1, value: 2714.84, baseline: 2303.71, magnitudePct: 17.85 },
+  { type: 'record_psf', entity: 'Springs 15', area: 'The Springs', community: 'the-springs',
+    detectedOn: '2026-10-02', direction: 1, value: 2531.02, baseline: 1924.22, magnitudePct: 31.53 },
   { type: 'record_psf', entity: 'Windsor Manor', area: 'Business Bay', community: 'business-bay',
     detectedOn: '2026-10-01', direction: 1, value: 1810.85, baseline: 1600.04, magnitudePct: 13.18 },
   { type: 'record_psf', entity: 'Springs 10', area: 'The Springs', community: 'the-springs',
     detectedOn: '2026-10-01', direction: 1, value: 1983.48, baseline: 1884.81, magnitudePct: 5.24 },
   { type: 'record_psf', entity: 'Paradise View 2', area: 'Majan', community: 'majan',
     detectedOn: '2026-09-22', direction: 1, value: 1700.01, baseline: 1600.00, magnitudePct: 6.25 },
+  { type: 'record_psf', entity: 'Foxhill 1', area: 'Motor City', community: 'motor-city',
+    detectedOn: '2026-10-06', direction: 1, value: 957.43, baseline: 890.44, magnitudePct: 7.52 },
   { type: 'record_psf', entity: 'Building 100', area: 'Discovery Gardens', community: 'discovery-gardens',
     detectedOn: '2026-09-30', direction: 1, value: 852.46, baseline: 807.85, magnitudePct: 5.52 },
-  { type: 'record_psf', entity: 'Foxhill 2', area: 'Motor City', community: 'motor-city',
-    detectedOn: '2026-09-30', direction: 1, value: 826.30, baseline: 798.65, magnitudePct: 3.46 },
-  { type: 'record_psf', entity: 'West Heights 3', area: 'Business Bay', community: 'business-bay',
-    detectedOn: '2026-09-26', direction: 1, value: 1866.16, baseline: 1820.65, magnitudePct: 2.50 },
+  { type: 'record_psf', entity: 'Marina Gate 2', area: 'Dubai Marina', community: 'dubai-marina',
+    detectedOn: '2026-10-02', direction: 1, value: 3548.84, baseline: 3407.69, magnitudePct: 4.14 },
+  { type: 'record_psf', entity: 'Reem Townhouses', area: 'Town Square', community: 'town-square',
+    detectedOn: '2026-10-06', direction: 1, value: 1532.56, baseline: 1484.93, magnitudePct: 3.21 },
 
   // ── Sales velocity: last 3 months against the prior 3 ──
   // Parent project nodes only — the engine also flags their individual
-  // buildings and phases (Trussardi Residences Phase II beside Trussardi
-  // Residences), which would double-count the same registrations.
+  // buildings and phases (Damac District Tower B beside Damac District,
+  // Azizi Venice 6 Building H beside Azizi Venice 6, Trussardi Residences
+  // Phase II beside Trussardi Residences), which would double-count the
+  // same registrations.
   { type: 'momentum', entity: 'Arancia Yards By Beyond', area: 'City of Arabia', community: 'city-of-arabia',
-    detectedOn: '2026-10-01', direction: 1, value: 239, baseline: 8, magnitudePct: 2887.5, streak: 1, psf: 1769.13 },
+    detectedOn: '2026-10-06', direction: 1, value: 239, baseline: 8, magnitudePct: 2887.5, streak: 5, psf: 1769.13 },
   { type: 'momentum', entity: 'Damac District', area: 'DAMAC Hills', community: 'damac-hills',
-    detectedOn: '2026-10-01', direction: 1, value: 298, baseline: 67, magnitudePct: 344.78, streak: 21, psf: 1788.36 },
+    detectedOn: '2026-10-06', direction: 1, value: 298, baseline: 67, magnitudePct: 344.78, streak: 25, psf: 1770.24 },
   { type: 'momentum', entity: 'Jebel Ali Village Townhouses', area: 'Jebel Ali', community: 'jebel-ali',
-    detectedOn: '2026-10-01', direction: 1, value: 45, baseline: 10, magnitudePct: 350, streak: 21, psf: 1570.67 },
+    detectedOn: '2026-10-06', direction: 1, value: 45, baseline: 10, magnitudePct: 350, streak: 25, psf: 1579.80 },
   { type: 'momentum', entity: 'Dubai Autodrome and Business Park', area: 'Motor City', community: 'motor-city',
-    detectedOn: '2026-10-01', direction: 1, value: 403, baseline: 131, magnitudePct: 207.63, streak: 1, psf: 1796.81 },
+    detectedOn: '2026-10-06', direction: 1, value: 403, baseline: 131, magnitudePct: 207.63, streak: 5, psf: 1686.40 },
+  { type: 'momentum', entity: 'Mudon Al Ranim 6', area: 'Mudon', community: 'mudon',
+    detectedOn: '2026-10-06', direction: 1, value: 31, baseline: 7, magnitudePct: 342.86, streak: 5, psf: 1730.51 },
   { type: 'momentum', entity: 'Trussardi Residences', area: 'Al Furjan', community: 'al-furjan',
-    detectedOn: '2026-10-01', direction: 1, value: 33, baseline: 8, magnitudePct: 312.5, streak: 1, psf: 1554.19 },
+    detectedOn: '2026-10-06', direction: 1, value: 33, baseline: 8, magnitudePct: 312.5, streak: 5, psf: 1554.19 },
   { type: 'momentum', entity: 'Azizi Venice 6', area: 'Dubai South', community: 'dubai-south-dubai-world-central',
-    detectedOn: '2026-10-01', direction: 1, value: 674, baseline: 251, magnitudePct: 168.53, streak: 21, psf: 1962.47 },
+    detectedOn: '2026-10-06', direction: 1, value: 674, baseline: 251, magnitudePct: 168.53, streak: 25, psf: 1885.20 },
   { type: 'momentum', entity: 'Azizi Venice 15', area: 'Dubai South', community: 'dubai-south-dubai-world-central',
-    detectedOn: '2026-10-01', direction: 1, value: 512, baseline: 205, magnitudePct: 149.76, streak: 21, psf: 1699.29 },
+    detectedOn: '2026-10-06', direction: 1, value: 512, baseline: 205, magnitudePct: 149.76, streak: 25, psf: 1587.18 },
 
   // ── Registered PSF moves against the project's prior print ──
+  // The newest detection per project only: The Crescent and Springs 4 each
+  // carry an earlier move in the opposite direction, now superseded.
   { type: 'psf_move', entity: 'Koro One', area: 'Al Satwa', community: 'al-satwa',
     detectedOn: '2026-09-25', direction: 1, value: 2234.04, baseline: 1175.92, baselineDate: '2026-09-24', magnitudePct: 89.98, salesL12m: 44 },
-  { type: 'psf_move', entity: 'Al Waleed Garden', area: 'Al Jaddaf', community: 'al-jaddaf',
-    detectedOn: '2026-09-25', direction: 1, value: 1315.57, baseline: 722.21, baselineDate: '2026-09-11', magnitudePct: 82.16, salesL12m: 15 },
   { type: 'psf_move', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
-    detectedOn: '2026-09-26', direction: -1, value: 567.08, baseline: 1607.16, baselineDate: '2026-09-25', magnitudePct: -64.72, salesL12m: 24 },
+    detectedOn: '2026-10-02', direction: 1, value: 997.95, baseline: 567.08, baselineDate: '2026-09-26', magnitudePct: 75.98, salesL12m: 24 },
+  { type: 'psf_move', entity: 'Springs 9', area: 'The Springs', community: 'the-springs',
+    detectedOn: '2026-10-02', direction: -1, value: 552.95, baseline: 1720.26, baselineDate: '2026-10-01', magnitudePct: -67.86, salesL12m: 27 },
   { type: 'psf_move', entity: 'JLT Cluster W', area: 'JLT', community: 'jumeirah-lake-towers',
     detectedOn: '2026-10-01', direction: 1, value: 2958.60, baseline: 1954.06, baselineDate: '2026-09-26', magnitudePct: 51.41, salesL12m: 56 },
   { type: 'psf_move', entity: 'Saba Tower 1', area: 'JLT', community: 'jumeirah-lake-towers',
     detectedOn: '2026-09-25', direction: 1, value: 1853.73, baseline: 1080.98, baselineDate: '2026-09-24', magnitudePct: 71.49, salesL12m: 13 },
-  { type: 'psf_move', entity: 'Golf Place 2', area: 'Dubai Hills Estate', community: 'dubai-hills-estate',
-    detectedOn: '2026-09-22', direction: 1, value: 2762.85, baseline: 1771.09, baselineDate: '2026-09-21', magnitudePct: 56.00, salesL12m: 16 },
+  { type: 'psf_move', entity: 'The Crescent', area: 'Palm Jumeirah', community: 'palm-jumeirah',
+    detectedOn: '2026-10-06', direction: -1, value: 5756.57, baseline: 8294.77, baselineDate: '2026-10-04', magnitudePct: -30.60, salesL12m: 283 },
+  { type: 'psf_move', entity: 'Samana Lake Views', area: 'Dubai Production City', community: 'dubai-production-city-impz',
+    detectedOn: '2026-09-29', direction: 1, value: 1161.01, baseline: 696.45, baselineDate: '2026-09-28', magnitudePct: 66.70, salesL12m: 12 },
+  { type: 'psf_move', entity: 'Mercedes Benz Places by Binghatti', area: 'Downtown Dubai', community: 'downtown-dubai',
+    detectedOn: '2026-10-04', direction: 1, value: 8132.19, baseline: 5590.67, baselineDate: '2026-10-02', magnitudePct: 45.46, salesL12m: 33 },
 
   // ── Highest registered gross yields (top of distribution) ──
   { type: 'yield_leader', entity: 'Platinum One', area: 'Arjan', community: 'arjan',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1505, baseline: null, streak: 21 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1505, baseline: null, streak: 25 },
   { type: 'yield_leader', entity: 'Diamond Business Center Block A', area: 'Arjan', community: 'arjan',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1339, baseline: null, streak: 21 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1339, baseline: null, streak: 25 },
   { type: 'yield_leader', entity: 'Aura Central', area: 'Arjan', community: 'arjan',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1329, baseline: null, streak: 1 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1329, baseline: null, streak: 5 },
   { type: 'yield_leader', entity: 'Golf Panorama B', area: 'DAMAC Hills', community: 'damac-hills',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1297, baseline: null, streak: 21 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1297, baseline: null, streak: 25 },
   { type: 'yield_leader', entity: 'Building K05', area: 'International City', community: 'international-city',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1225, baseline: null, streak: 21 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1225, baseline: null, streak: 25 },
   { type: 'yield_leader', entity: 'Hyatt Regency Creek Heights Residences', area: 'Bur Dubai', community: 'bur-dubai',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1208, baseline: null, streak: 21 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1208, baseline: null, streak: 25 },
   { type: 'yield_leader', entity: 'Madison Columbus', area: 'Majan', community: 'majan',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1208, baseline: null, streak: 1 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1208, baseline: null, streak: 5 },
   { type: 'yield_leader', entity: 'Building Q01', area: 'International City', community: 'international-city',
-    detectedOn: '2026-10-01', direction: 1, value: 0.1167, baseline: null, streak: 20 },
+    detectedOn: '2026-10-06', direction: 1, value: 0.1167, baseline: null, streak: 24 },
 
   // ── Projects printing persistently below their own 12-month average ──
-  { type: 'below_trend', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
-    detectedOn: '2026-10-01', direction: -1, value: 567.08, baseline: 1558.52, magnitudePct: -63.61, streak: 6, salesL12m: 24, offplanPct: 0 },
+  { type: 'below_trend', entity: 'Springs 9', area: 'The Springs', community: 'the-springs',
+    detectedOn: '2026-10-06', direction: -1, value: 552.95, baseline: 1600.76, magnitudePct: -65.46, streak: 4, salesL12m: 27, offplanPct: 0 },
   { type: 'below_trend', entity: 'Rukan Tower A', area: 'Rukan', community: 'rukan',
-    detectedOn: '2026-10-01', direction: -1, value: 575.67, baseline: 1158.52, magnitudePct: -50.31, streak: 21, salesL12m: 24, offplanPct: 33 },
-  { type: 'below_trend', entity: 'Mayfair Residency', area: 'Business Bay', community: 'business-bay',
-    detectedOn: '2026-10-01', direction: -1, value: 736.89, baseline: 1348.34, magnitudePct: -45.35, streak: 21, salesL12m: 20, offplanPct: 0 },
-  { type: 'below_trend', entity: 'Address Fountain Views Hotel', area: 'Downtown Dubai', community: 'downtown-dubai',
-    detectedOn: '2026-10-01', direction: -1, value: 3124.82, baseline: 4797.74, magnitudePct: -34.87, streak: 21, salesL12m: 23, offplanPct: 0 },
-  { type: 'below_trend', entity: 'The Binary Tower', area: 'Business Bay', community: 'business-bay',
-    detectedOn: '2026-10-01', direction: -1, value: 2330.51, baseline: 3470.91, magnitudePct: -32.86, streak: 21, salesL12m: 31, offplanPct: 0 },
+    detectedOn: '2026-10-06', direction: -1, value: 575.67, baseline: 1158.52, magnitudePct: -50.31, streak: 25, salesL12m: 24, offplanPct: 33 },
   { type: 'below_trend', entity: 'Binghatti Royale', area: 'JVC', community: 'jumeirah-village-circle',
-    detectedOn: '2026-10-01', direction: -1, value: 1479.93, baseline: 2079.13, magnitudePct: -28.82, streak: 21, salesL12m: 141, offplanPct: 9 },
+    detectedOn: '2026-10-06', direction: -1, value: 1479.93, baseline: 2079.13, magnitudePct: -28.82, streak: 25, salesL12m: 141, offplanPct: 9 },
+  { type: 'below_trend', entity: 'Hor Al Anz', area: 'Deira', community: 'deira',
+    detectedOn: '2026-10-06', direction: -1, value: 519.63, baseline: 743.31, magnitudePct: -30.09, streak: 4, salesL12m: 98, offplanPct: 0 },
+  { type: 'below_trend', entity: 'Mayfair Residency', area: 'Business Bay', community: 'business-bay',
+    detectedOn: '2026-10-06', direction: -1, value: 736.89, baseline: 1348.34, magnitudePct: -45.35, streak: 25, salesL12m: 20, offplanPct: 0 },
+  { type: 'below_trend', entity: 'JLT Cluster Q', area: 'JLT', community: 'jumeirah-lake-towers',
+    detectedOn: '2026-10-06', direction: -1, value: 1420.49, baseline: 1956.80, magnitudePct: -27.41, streak: 5, salesL12m: 123, offplanPct: 46 },
+  { type: 'below_trend', entity: 'District 18', area: 'JVC', community: 'jumeirah-village-circle',
+    detectedOn: '2026-10-06', direction: -1, value: 1251.88, baseline: 1554.56, magnitudePct: -19.47, streak: 25, salesL12m: 535, offplanPct: 32 },
+  { type: 'below_trend', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
+    detectedOn: '2026-10-06', direction: -1, value: 997.95, baseline: 1558.52, magnitudePct: -35.97, streak: 10, salesL12m: 24, offplanPct: 0 },
 
   // ── Single trades registered materially below the project median ──
+  // The engine's 2026-10-01 row for The Spirit (1,087.73 against 952.23,
+  // +14%) is a trade ABOVE its baseline and is not a discount; it is left
+  // out, and The Spirit's 2026-09-30 discount trade stands.
+  { type: 'discount_trade', entity: 'Springs 9', area: 'The Springs', community: 'the-springs',
+    detectedOn: '2026-10-02', direction: -1, value: 163.84, baseline: 677.63, magnitudePct: -75.82 },
   { type: 'discount_trade', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
     detectedOn: '2026-09-26', direction: -1, value: 220.38, baseline: 675.17, magnitudePct: -67.36 },
-  { type: 'discount_trade', entity: 'Burj Crown', area: 'Downtown Dubai', community: 'downtown-dubai',
-    detectedOn: '2026-09-29', direction: -1, value: 986.34, baseline: 2611.73, magnitudePct: -62.23 },
-  { type: 'discount_trade', entity: 'Creekside 18 B', area: 'Dubai Creek Harbour', community: 'dubai-creek-harbour-the-lagoons',
-    detectedOn: '2026-09-29', direction: -1, value: 795.74, baseline: 1979.49, magnitudePct: -59.80 },
   { type: 'discount_trade', entity: 'The Spirit', area: 'Dubai Sports City', community: 'dubai-sports-city',
     detectedOn: '2026-09-30', direction: -1, value: 952.23, baseline: 2324.74, magnitudePct: -59.04 },
-  { type: 'discount_trade', entity: 'Urbana 2', area: 'Dubai South', community: 'dubai-south-dubai-world-central',
-    detectedOn: '2026-09-26', direction: -1, value: 489.96, baseline: 796.85, magnitudePct: -38.51 },
   { type: 'discount_trade', entity: 'The Grand', area: 'Dubai Creek Harbour', community: 'dubai-creek-harbour-the-lagoons',
     detectedOn: '2026-09-29', direction: -1, value: 1058.84, baseline: 1610.58, magnitudePct: -34.26 },
-  { type: 'discount_trade', entity: 'Sandoval Gardens 1', area: 'JVC', community: 'jumeirah-village-circle',
-    detectedOn: '2026-10-01', direction: -1, value: 596.71, baseline: 898.43, magnitudePct: -33.58 },
+  { type: 'discount_trade', entity: 'Creekside 18 B', area: 'Dubai Creek Harbour', community: 'dubai-creek-harbour-the-lagoons',
+    detectedOn: '2026-09-29', direction: -1, value: 795.74, baseline: 1979.49, magnitudePct: -59.80 },
+  { type: 'discount_trade', entity: 'Burj Crown', area: 'Downtown Dubai', community: 'downtown-dubai',
+    detectedOn: '2026-09-29', direction: -1, value: 986.34, baseline: 2611.73, magnitudePct: -62.23 },
   { type: 'discount_trade', entity: 'The Matrix', area: 'Dubai Sports City', community: 'dubai-sports-city',
     detectedOn: '2026-09-30', direction: -1, value: 906.93, baseline: 1343.66, magnitudePct: -32.50 },
+  { type: 'discount_trade', entity: 'Rukan 3', area: 'Rukan', community: 'rukan',
+    detectedOn: '2026-10-06', direction: -1, value: 844.00, baseline: 1282.39, magnitudePct: -34.18 },
+  { type: 'discount_trade', entity: 'Urbana 2', area: 'Dubai South', community: 'dubai-south-dubai-world-central',
+    detectedOn: '2026-09-26', direction: -1, value: 489.96, baseline: 796.85, magnitudePct: -38.51 },
+  { type: 'discount_trade', entity: 'Sandoval Gardens 1', area: 'JVC', community: 'jumeirah-village-circle',
+    detectedOn: '2026-10-01', direction: -1, value: 596.71, baseline: 898.43, magnitudePct: -33.58 },
   { type: 'discount_trade', entity: 'Zada Tower', area: 'Business Bay', community: 'business-bay',
     detectedOn: '2026-10-01', direction: -1, value: 1536.03, baseline: 2023.34, magnitudePct: -24.08 },
-  { type: 'discount_trade', entity: 'Princess Tower', area: 'Dubai Marina', community: 'dubai-marina',
-    detectedOn: '2026-09-26', direction: -1, value: 1142.17, baseline: 1444.45, magnitudePct: -20.93 },
 ];
 
 // ── Display helpers ──

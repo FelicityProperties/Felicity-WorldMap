@@ -51,6 +51,8 @@ const aptYieldRank = name => {
   return ranked.findIndex(([n]) => n === name) + 1;
 };
 const mbrRank = aptYieldRank('Mohammed Bin Rashid City');
+const southDeepest = Object.values(pixAreas).every(p => p.cohort !== 'Apartment' || p.sales <= south.sales);
+const hillsVelocity = pixSignals.filter(s => s.community === 'dubai-hills-estate' && s.type === 'momentum');
 const ordinal = n => n === 1 ? 'Top of' : n === 2 ? 'Second in' : n === 3 ? 'Third in' : `Number ${n} in`;
 
 export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD medians (${PIX_AS_OF}); everything else is the desk's opinion, not evidence.`;
@@ -81,14 +83,16 @@ export const DESK_CALLS = [
   },
   {
     area: 'Dubai South — off-plan apartments', call: 'AVOID', conviction: 3, horizon: 'Near-term', segment: 'Affordable',
-    thesis: `${fmtCount(south.sales)}${reg} registered apartment sales in twelve months — the deepest primary market in the set — at a ${pct(south.yieldPct)} yield. ${
+    thesis: `${fmtCount(south.sales)}${reg} registered apartment sales in twelve months${southDeepest ? ' — the deepest primary market in the set —' : ''} at a ${pct(south.yieldPct)} yield. ${
       venice ? `Azizi Venice 6 alone registered ${fmtCount(venice.value)} sales in three months, ${(1 + venice.magnitudePct / 100).toFixed(1)}× the prior quarter${reg}: ` : ''
     }bulk registration compresses the district's realised PSF and sets the forward comp. Let the launches clear first.`,
     risk: 'The Al Maktoum airport build-out pulls end-user demand forward faster than the launch pipeline clears.',
   },
   {
     area: 'Dubai Hills Estate villas', call: 'ACCUMULATE', conviction: 3, horizon: '24 months', segment: 'Premium',
-    thesis: `${psf(hills.villa?.psf)}, ${price(hills.villa?.price)} median, ${pct(hills.villa?.yieldPct)} gross. The villa index is holding better than apartments (${pixIndex.villa.yoyPct.toFixed(1)}%${reg} vs ${pixIndex.apartment.yoyPct.toFixed(1)}%${reg} YoY), and no bulk-registration velocity signal appears here — no supply overhang clearing at distressed prices.`,
+    thesis: `${psf(hills.villa?.psf)}, ${price(hills.villa?.price)} median, ${pct(hills.villa?.yieldPct)} gross. The villa index is holding better than apartments (${pixIndex.villa.yoyPct.toFixed(1)}%${reg} vs ${pixIndex.apartment.yoyPct.toFixed(1)}%${reg} YoY)${hillsVelocity.length
+      ? `, though the feed flags sales velocity at ${hillsVelocity.map(s => s.entity).join(' and ')}${reg} — watch whether that is supply clearing.`
+      : ', and no bulk-registration velocity signal appears here — no supply overhang clearing at distressed prices.'}`,
     risk: 'The villa index turns negative in earnest and the premium villa communities stop decoupling from the apartment correction.',
   },
   {

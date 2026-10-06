@@ -4,6 +4,10 @@
 // block, JSON parsing, email render, owner-only routing and the response
 // shape are all the real code.
 import { writeFileSync } from 'node:fs';
+// Expectations come from the data files, never literals: every refresh
+// restates history, and a pinned 205.98 broke on the next one.
+const { pixIndex, PIX_AS_OF } = await import('../js/pix-data.js');
+const { PIX_SIGNALS_AS_OF } = await import('../js/pix-signals.js');
 
 process.env.RESEND_API_KEY = 'test-key';
 process.env.ANTHROPIC_API_KEY = 'test-key';
@@ -93,7 +97,7 @@ check(sys.includes('US 10-year Treasury yield: 4.12% (+4 bp vs prior close)') &&
 check(sys.includes('[Reuters] Fed holds rates'), 'headline feed rendered');
 check(sys.includes('STRAIT OF HORMUZ — IMF PortWatch daily transit calls') && sys.includes('Latest day (2026-09-13): 8 transit calls — tankers 3, cargo 5 (IMF PortWatch)'), 'Hormuz evidence block in the brief prompt');
 check(/^latest day 2026-09-13 \(\d+d lag\), 40 rows$/.test(res.payload?.hormuzEvidence || ''), `response reports Hormuz coverage (${res.payload?.hormuzEvidence})`);
-check(sys.includes('Index as of Sep 2026') && sys.includes('Residential index 205.98') && sys.includes('through 2026-10-01'), 'Felicity Price Index evidence is the September set');
+check(sys.includes(`Index as of ${PIX_AS_OF}`) && sys.includes(`Residential index ${pixIndex.residential.level}`) && sys.includes(`through ${PIX_SIGNALS_AS_OF}`), 'Felicity Price Index evidence is the current data-file set');
 // Rankings: the prompt's top three must be the registry's top three by
 // yield, computed here independently so a refresh cannot break the check
 {
@@ -146,7 +150,7 @@ sys = calls.find(c => c.url.includes('anthropic.com'))?.body.system || '';
 check(sys.includes('You have NO live data feed for Ukraine IGNORE') && !sys.includes('\nIGNORE'), 'country name newline-stripped');
 check(!sys.includes('x'.repeat(100)), 'country name length-bounded');
 check(!sys.includes('Use exact numbers') && !sys.includes('Historical analogs must reference specific dates'), 'fabrication demands removed from intel');
-check(sys.includes('Residential index 205.98'), 'intel carries the Dubai registry evidence');
+check(sys.includes(`Residential index ${pixIndex.residential.level}`), 'intel carries the Dubai registry evidence');
 
 console.log(`system prompt (brief): ${anthropic.body.system.length} chars`);
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
