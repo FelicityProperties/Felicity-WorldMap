@@ -71,6 +71,39 @@ check(ev.levels.every(l => !l.ok), 'all levels unavailable when Yahoo hangs');
 check(ev.levels.some(l => /deadline|timeout/.test(l.error)), 'misses name the reason');
 check(renderMacroEvidence(ev).includes('0 of 9 benchmarks live'), 'rendered as 0 of 9');
 
+// ── Lessons from the 13 Oct audit ──
+{
+  const { pixSignals } = await import('../js/pix-signals.js');
+  const { pixSeries } = await import('../js/pix-data.js');
+  // A PSF move is a running measurement: one row per project, the newest
+  const moveNames = pixSignals.filter(s => s.type === 'psf_move').map(s => s.entity);
+  check(new Set(moveNames).size === moveNames.length, 'psf_move holds one detection per project');
+  // Every stored magnitude is the arithmetic of its own value and baseline
+  for (const s of pixSignals) {
+    if (s.baseline && s.magnitudePct != null && s.type !== 'momentum') {
+      const m = (s.value / s.baseline - 1) * 100;
+      check(Math.abs(m - s.magnitudePct) < 0.06, `${s.type} ${s.entity}: magnitude ${s.magnitudePct} ≠ value/baseline ${m.toFixed(2)}`);
+    }
+    if (s.type === 'momentum') check(Math.abs(((s.value - s.baseline) / s.baseline) * 100 - s.magnitudePct) < 0.06, `momentum ${s.entity}: magnitude is not the velocity increase`);
+    if (s.type === 'below_trend') check(s.magnitudePct < 0 && s.streak >= 3, `below_trend ${s.entity}: must be negative and persistent (streak ≥ 3)`);
+    if (s.type === 'discount_trade') check(s.magnitudePct < 0 && s.value < s.baseline, `discount_trade ${s.entity}: must sit below its project median`);
+  }
+  // Every percentage handed to the AI is computable from the data files —
+  // a hard-coded "MBR City (6.5%)" sat beside a computed 6.4% for two refreshes
+  const pct = v => `${Math.abs(v).toFixed(1)}%`;
+  const allowed = new Set();
+  for (const p of Object.values(pixAreas)) {
+    if (p.yieldPct != null) allowed.add(pct(p.yieldPct));
+    if (p.villa?.yieldPct != null) allowed.add(pct(p.villa.yieldPct));
+  }
+  for (const seg of Object.values(pixIndex)) { allowed.add(pct(seg.yoyPct)); allowed.add(pct(seg.momPct)); }
+  pixSeries.slice(1).forEach((p, k) => allowed.add(pct((p.level / pixSeries[k].level - 1) * 100)));
+  allowed.add(pct(pixIndex.villa.yoyPct - pixIndex.apartment.yoyPct));
+  const desk = buildDeskContext();
+  const stray = (desk.match(/\d+\.\d%/g) || []).filter(x => !allowed.has(x));
+  check(!stray.length, `buildDeskContext carries percentages not computed from the data: ${[...new Set(stray)].join(', ')}`);
+}
+
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log(`desk view: ${DESK_CALLS.length} calls, ${HISTORICAL_ANALOGS.length} analogs; macro deadline honoured in ${took}ms — all checks passed`);
 process.exit(0);

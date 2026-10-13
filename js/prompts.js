@@ -31,13 +31,12 @@ const psf = v => v != null ? `${fmtCount(v)} AED/sqft${reg}` : 'n/a';
 const price = v => v != null ? `${fmtPrice(v)}${reg}` : 'n/a';
 const below = (entity) => {
   const s = sig(entity, 'below_trend');
-  return s ? `${entity} ${Math.abs(s.magnitudePct).toFixed(1)}% below its own 12-month average for ${s.streak} consecutive observations${reg}` : null;
+  return s ? `${entity} ${Math.abs(s.magnitudePct).toFixed(1)}% below its own 12-month average for ${s.streak} consecutive observations, on ${fmtCount(s.salesL12m)} sales in twelve months, ${s.offplanPct}% of them off-plan${reg}` : null;
 };
 const join = parts => parts.filter(Boolean).join('; ');
 
 const jvc = A('JVC'), mbr = A('Mohammed Bin Rashid City'), palm = A('Palm Jumeirah'),
       south = A('Dubai South'), hills = A('Dubai Hills Estate'), marina = A('Dubai Marina');
-const venice = sig('Azizi Venice 6', 'momentum');
 
 // What the signal feed currently holds for a district. Calls that lean on
 // signals read them here, so a refresh that drops a signal changes the
@@ -52,52 +51,72 @@ const aptYieldRank = name => {
 };
 const mbrRank = aptYieldRank('Mohammed Bin Rashid City');
 const southDeepest = Object.values(pixAreas).every(p => p.cohort !== 'Apartment' || p.sales <= south.sales);
+// "On our list": the signal file holds the top of each type, not the whole
+// feed. The 13 Oct audit found "the feed holds no discount trade in MBR"
+// true of the list and false of the feed (MAG Eye sat just below the cut),
+// so these sentences name what they can see.
 const hillsVelocity = pixSignals.filter(s => s.community === 'dubai-hills-estate' && s.type === 'momentum');
+const southVelocity = pixSignals.filter(s => s.community === 'dubai-south-dubai-world-central' && s.type === 'momentum');
 const ordinal = n => n === 1 ? 'Top of' : n === 2 ? 'Second in' : n === 3 ? 'Third in' : `Number ${n} in`;
+const rankWord = n => ['', 'deepest', 'second-deepest', 'third-deepest', 'fourth-deepest', 'fifth-deepest'][n] || null;
+const rentalRank = name => Object.entries(pixAreas).sort((a, b) => b[1].rentals - a[1].rentals).findIndex(([n]) => n === name) + 1;
+const marinaRentalWord = rankWord(rentalRank('Dubai Marina'));
+// Of the below-trend projects cited for JVC, how many sales were off-plan
+const jvcBelowSales = jvcBelow.reduce((n, s) => n + (s.salesL12m || 0), 0);
+const jvcBelowOffplan = jvcBelow.reduce((n, s) => n + (s.salesL12m || 0) * (s.offplanPct || 0) / 100, 0);
+const jvcMostlyCompleted = jvcBelowSales > 0 && jvcBelowOffplan / jvcBelowSales < 0.5;
+// The largest registered sale on the list, and whether it is on the Palm
+const topSale = pixSignals.filter(s => s.type === 'top_sale').sort((a, b) => b.value - a.value)[0];
 
-export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD medians (${PIX_AS_OF}); everything else is the desk's opinion, not evidence.`;
+export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD medians (${PIX_AS_OF}) for the community's whole apartment or villa cohort, ready and off-plan together; everything else is the desk's opinion, not evidence.`;
 
 export const DESK_CALLS = [
   {
-    area: 'JVC — off-plan secondary', call: 'AVOID', conviction: 4, horizon: '12 months', segment: 'Mid-market',
+    area: 'JVC — secondary apartments', call: 'AVOID', conviction: 4, horizon: '12 months', segment: 'Mid-market',
     thesis: `The registry median of ${psf(jvc.psf)} at ${pct(jvc.yieldPct)} gross yield looks healthy; the project tape does not. ${
-      join(jvcBelow.map(s => below(s.entity))) || 'The current signal feed shows no below-trend printing inside the district, so this is the desk\'s structural view rather than a live signal'
-    }. Completed, cash-flowing stock is a different asset from second-hand off-plan paper here.`,
+      join(jvcBelow.map(s => below(s.entity))) || 'None of the below-trend signals on our list is inside the district, so this is the desk\'s structural view rather than a live signal'
+    }. ${jvcMostlyCompleted
+      ? 'Most of those sales were completed units, so the weakness is in resale stock, not only off-plan paper: pick the building, not the postcode.'
+      : 'Completed, cash-flowing stock is a different asset from second-hand off-plan paper here.'}`,
     risk: jvcRecord.length
       ? 'The below-trend printers stop and the record-PSF printers in the same district set the tone.'
       : 'The below-trend printing stops and the district median holds its level through the correction.',
   },
   {
-    area: 'MBR City — completed apartments', call: 'ACCUMULATE', conviction: 4, horizon: '18 months', segment: 'Mid-market',
+    area: 'MBR City — apartments', call: 'ACCUMULATE', conviction: 4, horizon: '18 months', segment: 'Mid-market',
     thesis: `${ordinal(mbrRank)} the apartment yield ranking at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. ${
       mbrDislocation.length
-        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own trend' : 'cohort trend'}${reg}`).join('; ')} — but not as a district-wide pattern.`
-        : 'The current signal feed holds no below-trend or discount trade in the district.'
+        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own 12-month average' : 'its project median'}${reg}`).join('; ')} — but not as a district-wide pattern.`
+        : 'None of the below-trend or discount signals on our list is in the district.'
     } A high registry yield without persistent below-trend printing is the cleanest entry in a correcting market. Completed stock only.`,
-    risk: 'The correction broadens into persistent below-trend printing, as it has in JVC.',
+    risk: `The correction broadens into persistent below-trend printing${jvcBelow.length ? ', as it has in JVC' : ''}.`,
   },
   {
     area: 'Palm Jumeirah villas', call: 'HOLD', conviction: 3, horizon: '36 months', segment: 'Ultra-luxury',
-    thesis: `${psf(palm.villa?.psf)} and a ${price(palm.villa?.price)} median on ${palm.villa?.sales != null ? `${fmtCount(palm.villa.sales)}${reg}` : 'few'} registered villa sales in the window — you own this for scarcity, not carry: ${pct(palm.villa?.yieldPct)} gross. Trophy prints keep landing at the very top of the register, but they are single trades on thin volume, not a re-rating.`,
+    thesis: `${psf(palm.villa?.psf)} and a ${price(palm.villa?.price)} median on ${palm.villa?.sales != null ? `${fmtCount(palm.villa.sales)}${reg}` : 'few'} registered villa sales in the window — you own this for scarcity, not carry: ${pct(palm.villa?.yieldPct)} gross. ${topSale && topSale.community === 'palm-jumeirah'
+      ? `The largest registered sale on our list is on the Palm (${topSale.entity}, ${fmtPrice(topSale.value)}${reg}), but trophy prints are single trades on thin volume, not a re-rating.`
+      : 'Trophy prints are single trades on thin volume, not a re-rating.'}`,
     risk: `The residential index (${pixIndex.residential.level}${reg}, ${pixIndex.residential.yoyPct.toFixed(1)}% YoY${reg}) keeps falling and thin volume cannot defend the mark.`,
   },
   {
     area: 'Dubai South — off-plan apartments', call: 'AVOID', conviction: 3, horizon: 'Near-term', segment: 'Affordable',
-    thesis: `${fmtCount(south.sales)}${reg} registered apartment sales in twelve months${southDeepest ? ' — the deepest primary market in the set —' : ''} at a ${pct(south.yieldPct)} yield. ${
-      venice ? `Azizi Venice 6 alone registered ${fmtCount(venice.value)} sales in three months, ${(1 + venice.magnitudePct / 100).toFixed(1)}× the prior quarter${reg}: ` : ''
-    }bulk registration compresses the district's realised PSF and sets the forward comp. Let the launches clear first.`,
+    thesis: `${fmtCount(south.sales)}${reg} registered apartment sales in twelve months${southDeepest ? ' — the most of any community in the set —' : ''} at a ${pct(south.yieldPct)} yield. ${
+      southVelocity.length
+        ? `${southVelocity[0].entity} alone registered ${fmtCount(southVelocity[0].value)} sales in three months, ${(1 + southVelocity[0].magnitudePct / 100).toFixed(1)}× the prior quarter, at ${psf(southVelocity[0].psf)} against a district median of ${psf(south.psf)}: launch volume on that scale is the supply a resale buyer will compete with.`
+        : 'Volume on that scale is the supply a resale buyer will compete with.'
+    } Let the launches clear first.`,
     risk: 'The Al Maktoum airport build-out pulls end-user demand forward faster than the launch pipeline clears.',
   },
   {
     area: 'Dubai Hills Estate villas', call: 'ACCUMULATE', conviction: 3, horizon: '24 months', segment: 'Premium',
     thesis: `${psf(hills.villa?.psf)}, ${price(hills.villa?.price)} median, ${pct(hills.villa?.yieldPct)} gross. The villa index is holding better than apartments (${pixIndex.villa.yoyPct.toFixed(1)}%${reg} vs ${pixIndex.apartment.yoyPct.toFixed(1)}%${reg} YoY)${hillsVelocity.length
-      ? `, though the feed flags sales velocity at ${hillsVelocity.map(s => s.entity).join(' and ')}${reg} — watch whether that is supply clearing.`
-      : ', and no bulk-registration velocity signal appears here — no supply overhang clearing at distressed prices.'}`,
+      ? `, though our list flags sales velocity at ${hillsVelocity.map(s => s.entity).join(' and ')}${reg} — watch whether that is supply clearing.`
+      : ', and none of the sales-velocity signals on our list is here.'}`,
     risk: 'The villa index turns negative in earnest and the premium villa communities stop decoupling from the apartment correction.',
   },
   {
-    area: 'Dubai Marina — completed apartments', call: 'HOLD', conviction: 2, horizon: '12 months', segment: 'Premium',
-    thesis: `${fmtCount(marina.rentals)}${reg} registered tenancies in the window on ${psf(marina.psf)} — one of the deepest rental markets in the set, ${pct(marina.yieldPct)} gross. Liquidity is the argument, not upside: it is the community you can exit in a correcting market.`,
+    area: 'Dubai Marina — apartments', call: 'HOLD', conviction: 2, horizon: '12 months', segment: 'Premium',
+    thesis: `${fmtCount(marina.rentals)}${reg} registered tenancies in the window on ${psf(marina.psf)} — ${marinaRentalWord ? `the ${marinaRentalWord} rental market in the set` : 'a deep rental market'}, ${pct(marina.yieldPct)} gross. Liquidity is the argument, not upside: it is the community you can exit in a correcting market.`,
     risk: 'Rents soften with the sale index and the yield that justifies holding compresses.',
   },
 ];

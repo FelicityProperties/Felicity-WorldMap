@@ -123,12 +123,40 @@ Things the Oct 2026 refresh (September data) learned:
   September residential 205.98 → 205.95, Dubai South's apartment median
   price 759K → 755K, most rental counts down by one or two). Re-pull
   everything even when the index month has not changed.
-- **The signal feed carries more than one detection per project.** The
-  Crescent and Springs 4 each had two `psf_move` rows in opposite
-  directions; keep the newest. The engine also emitted a `discount_trade`
-  whose value sat 14% *above* its baseline (The Spirit, 1 Oct) — not a
-  discount, left out with a comment. Check the sign of every magnitude
-  against its type before writing it.
+- **The signal feed carries more than one detection per project.** For
+  `psf_move` (a running measurement) keep the NEWEST row per entity_id
+  and rank by that row's score — query the candidates' full history
+  ordered by `detected_on`, because the newest row is often not the
+  highest-scoring one (13 Oct: La Mer, JLT Cluster W and The Crescent all
+  had newer rows that reversed the move the file was showing).
+- **A discount trade's `baseline_value` is not always the median.** On a
+  repeat detection it holds the *previous trade*, so the 6 Oct refresh
+  dropped The Spirit's 1 Oct trade as "14% above baseline — not a
+  discount" when its evidence put it 45.8% below the project median, and
+  The Grand printed a "median" of 1,611 against an evidence median of
+  2,583. Take baseline and discount from the evidence
+  (`project_median_psf`, `below_median_pct`); each row is a separate
+  trade (own `thread_id`), so two trades in one project both count.
+- **Momentum's parent rule is about ancestry, not node level.** Drop a
+  node only when an ANCESTOR in its `location_path` (projects entity) is
+  also flagged. Filtering to sub-communities dropped standalone tower
+  projects (Azizi Milan 30, Regalia) that have no flagged parent.
+  Siblings (Mudon Al Ranim 5 and 6) are not parent and child.
+- **"The feed holds no X" is a claim about the whole feed; the file holds
+  the top N.** Desk calls say "on our list" when they can only see the
+  file. MAG Eye (MBR City) was a real discount trade just below the cut
+  while the MBR call said the feed held none.
+- **No market number in a prompt template, ever — including the rules
+  section.** A hand-written "MBR City (6.5%), Meydan (6.3%) … villas 2.8%
+  to 5.2%" survived two refreshes beside the computed YIELD RANKINGS,
+  handing the model two conflicting yield sets. `tests/desk-view.test.mjs`
+  now fails if `buildDeskContext()` carries a percentage that is not
+  computable from the data files.
+- **Run the adversarial verification before merging a refresh.** The
+  13 Oct refresh was audited by a workflow that re-queried the registry
+  independently per slice (index, areas, each signal family, exclusions,
+  prose) and had two skeptics try to refute every finding. Every figure
+  matched; every error was in a rule's application or in prose.
 - **Prose in the data files ages too.** "First villa gain after three
   declines" became four once May was restated below April. Re-read the
   `buildDeskContext()` narrative against the re-pulled series.

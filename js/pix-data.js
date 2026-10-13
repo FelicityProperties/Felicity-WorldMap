@@ -277,7 +277,7 @@ Rules for using this evidence:
 - The market is CORRECTING, not uniformly bullish. Never describe it as broadly rising.
 - Historical analogs: you may describe how a prior Dubai cycle behaved in words, but you may not attach a percentage, AED figure or date to it unless that figure appears in this evidence. The 13-month index path above is the only price history you have. Never write "last time X happened, Y fell Z%" with an invented Z.
 - Yields and prices above are registered medians, not projections for a specific unit. Say so when it matters.
-- Highest registry apartment yields sit in MBR City (6.5%), Meydan (6.3%), JVC (6.1%), Dubai Hills, DAMAC Hills (5.9%), JLT and Town Square (5.8%); the prime waterfront (Palm Jumeirah 3.4%, Emaar Beachfront/Dubai Harbour 4.3%, Expo City 4.3%) trades yield for capital value. Villa yields run 2.8% (Palm) to 5.2% (JVC).
+- For any yield comparison, quote the YIELD RANKINGS above — they are computed from the area rows on every refresh. Do not carry a yield from memory or from an earlier answer.
 - Where yield is 'n/a' there were too few registered rentals in the window — do not invent one.
 - DIFC is not in this list because the DLD register holds no DIFC sales or rentals in the window. Say the evidence is unavailable rather than quoting a number.`;
 }
