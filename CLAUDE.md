@@ -132,11 +132,20 @@ Things the Oct 2026 refresh (September data) learned:
 - **A discount trade's `baseline_value` is not always the median.** On a
   repeat detection it holds the *previous trade*, so the 6 Oct refresh
   dropped The Spirit's 1 Oct trade as "14% above baseline — not a
-  discount" when its evidence put it 45.8% below the project median, and
-  The Grand printed a "median" of 1,611 against an evidence median of
-  2,583. Take baseline and discount from the evidence
-  (`project_median_psf`, `below_median_pct`); each row is a separate
-  trade (own `thread_id`), so two trades in one project both count.
+  discount" when its evidence put it 45.8% below its median, and The
+  Grand printed a "median" of 1,611 against an evidence median of 2,583.
+  Take baseline and discount from the evidence (`project_median_psf`,
+  `below_median_pct`) — and label it truthfully: that median is for the
+  SAME unit type (bedrooms, property type, resale basis) over the
+  project's whole registered history, not a project-wide or 12-month
+  figure, which is why The Spirit's Studio and 1-Bed show different
+  baselines. Each row is a separate trade (own `thread_id`), so two
+  trades in one project both count.
+- **Below-trend gaps include launch pricing.** The trailing 12-month
+  average holds developer first sales, so a project moving from launch
+  price to resale (Binghatti Royale: 93 of 141 sales were first sales)
+  prints far below it without owners losing that much. Say "where resale
+  is clearing", never "a 28% fall".
 - **Momentum's parent rule is about ancestry, not node level.** Drop a
   node only when an ANCESTOR in its `location_path` (projects entity) is
   also flagged. Filtering to sub-communities dropped standalone tower
@@ -145,7 +154,10 @@ Things the Oct 2026 refresh (September data) learned:
 - **"The feed holds no X" is a claim about the whole feed; the file holds
   the top N.** Desk calls say "on our list" when they can only see the
   file. MAG Eye (MBR City) was a real discount trade just below the cut
-  while the MBR call said the feed held none.
+  while the MBR call said the feed held none. `buildSignalContext()` now
+  tells the model the block is an extract and forbids "the feed shows
+  no …". Cite cohorts precisely too: an off-plan apartment trade is not
+  evidence for a villa call (Orla by Omniyat, 13 Oct).
 - **No market number in a prompt template, ever — including the rules
   section.** A hand-written "MBR City (6.5%), Meydan (6.3%) … villas 2.8%
   to 5.2%" survived two refreshes beside the computed YIELD RANKINGS,

@@ -20,7 +20,7 @@
 // duplicate of api/desk/ask.js and has been removed; the server owns it.
 // ═══════════════════════════════════════════════════════════
 
-import { pixAreas, pixIndex, PIX_AS_OF, fmtCount, fmtPrice } from './pix-data.js';
+import { pixAreas, pixIndex, PIX_AS_OF, PIX_WINDOW, fmtCount, fmtPrice } from './pix-data.js';
 import { pixSignals, PIX_SIGNALS_AS_OF } from './pix-signals.js';
 
 const reg = '<span class="metric-src metric-src--reg" title="Registered Dubai Land Department evidence · Felicity Price Index">reg</span>';
@@ -61,40 +61,35 @@ const ordinal = n => n === 1 ? 'Top of' : n === 2 ? 'Second in' : n === 3 ? 'Thi
 const rankWord = n => ['', 'deepest', 'second-deepest', 'third-deepest', 'fourth-deepest', 'fifth-deepest'][n] || null;
 const rentalRank = name => Object.entries(pixAreas).sort((a, b) => b[1].rentals - a[1].rentals).findIndex(([n]) => n === name) + 1;
 const marinaRentalWord = rankWord(rentalRank('Dubai Marina'));
-// Of the below-trend projects cited for JVC, how many sales were off-plan
-const jvcBelowSales = jvcBelow.reduce((n, s) => n + (s.salesL12m || 0), 0);
-const jvcBelowOffplan = jvcBelow.reduce((n, s) => n + (s.salesL12m || 0) * (s.offplanPct || 0) / 100, 0);
-const jvcMostlyCompleted = jvcBelowSales > 0 && jvcBelowOffplan / jvcBelowSales < 0.5;
-// The largest registered sale on the list, and whether it is on the Palm
-const topSale = pixSignals.filter(s => s.type === 'top_sale').sort((a, b) => b.value - a.value)[0];
+// The largest registered VILLA sale on the list, for the Palm villa call —
+// an apartment trade (Orla by Omniyat, 13 Oct) is a different cohort
+const topVillaSale = pixSignals.filter(s => s.type === 'top_sale' && s.beds === 'Villa').sort((a, b) => b.value - a.value)[0];
 
-export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD medians (${PIX_AS_OF}) for the community's whole apartment or villa cohort, ready and off-plan together; everything else is the desk's opinion, not evidence.`;
+export const DESK_CALLS_NOTE = `Desk view as of ${PIX_SIGNALS_AS_OF}. Figures marked reg are registered DLD evidence: community medians and counts over ${PIX_WINDOW} (the whole apartment or villa cohort, ready and off-plan together), Felicity Price Index levels for ${PIX_AS_OF}, and individual project signals as of their detection dates. Everything else is the desk's opinion, not evidence.`;
 
 export const DESK_CALLS = [
   {
     area: 'JVC — secondary apartments', call: 'AVOID', conviction: 4, horizon: '12 months', segment: 'Mid-market',
     thesis: `The registry median of ${psf(jvc.psf)} at ${pct(jvc.yieldPct)} gross yield looks healthy; the project tape does not. ${
       join(jvcBelow.map(s => below(s.entity))) || 'None of the below-trend signals on our list is inside the district, so this is the desk\'s structural view rather than a live signal'
-    }. ${jvcMostlyCompleted
-      ? 'Most of those sales were completed units, so the weakness is in resale stock, not only off-plan paper: pick the building, not the postcode.'
-      : 'Completed, cash-flowing stock is a different asset from second-hand off-plan paper here.'}`,
+    }. The gap is measured against a trailing average that still holds launch-price first sales, so read it as where resale is clearing, not as a fall of that size in what owners paid: pick the building, not the postcode.`,
     risk: jvcRecord.length
       ? 'The below-trend printers stop and the record-PSF printers in the same district set the tone.'
       : 'The below-trend printing stops and the district median holds its level through the correction.',
   },
   {
     area: 'MBR City — apartments', call: 'ACCUMULATE', conviction: 4, horizon: '18 months', segment: 'Mid-market',
-    thesis: `${ordinal(mbrRank)} the apartment yield ranking at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. ${
+    thesis: `${ordinal(mbrRank)} the apartment yield ranking (ready and off-plan together) at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. ${
       mbrDislocation.length
-        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own 12-month average' : 'its project median'}${reg}`).join('; ')} — but not as a district-wide pattern.`
+        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own 12-month average' : 'the median for its unit type'}${reg}`).join('; ')} — but not as a district-wide pattern.`
         : 'None of the below-trend or discount signals on our list is in the district.'
     } A high registry yield without persistent below-trend printing is the cleanest entry in a correcting market. Completed stock only.`,
     risk: `The correction broadens into persistent below-trend printing${jvcBelow.length ? ', as it has in JVC' : ''}.`,
   },
   {
     area: 'Palm Jumeirah villas', call: 'HOLD', conviction: 3, horizon: '36 months', segment: 'Ultra-luxury',
-    thesis: `${psf(palm.villa?.psf)} and a ${price(palm.villa?.price)} median on ${palm.villa?.sales != null ? `${fmtCount(palm.villa.sales)}${reg}` : 'few'} registered villa sales in the window — you own this for scarcity, not carry: ${pct(palm.villa?.yieldPct)} gross. ${topSale && topSale.community === 'palm-jumeirah'
-      ? `The largest registered sale on our list is on the Palm (${topSale.entity}, ${fmtPrice(topSale.value)}${reg}), but trophy prints are single trades on thin volume, not a re-rating.`
+    thesis: `${psf(palm.villa?.psf)} and a ${price(palm.villa?.price)} median on ${palm.villa?.sales != null ? `${fmtCount(palm.villa.sales)}${reg}` : 'few'} registered villa sales in the window — you own this for scarcity, not carry: ${pct(palm.villa?.yieldPct)} gross. ${topVillaSale && topVillaSale.community === 'palm-jumeirah'
+      ? `The largest registered villa sale on our list is on the Palm (${topVillaSale.entity}, ${fmtPrice(topVillaSale.value)}${reg}), but trophy prints are single trades on thin volume, not a re-rating.`
       : 'Trophy prints are single trades on thin volume, not a re-rating.'}`,
     risk: `The residential index (${pixIndex.residential.level}${reg}, ${pixIndex.residential.yoyPct.toFixed(1)}% YoY${reg}) keeps falling and thin volume cannot defend the mark.`,
   },

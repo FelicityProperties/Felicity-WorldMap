@@ -29,9 +29,13 @@
 //                  project's own 12-month average PSF. magnitudePct =
 //                  the discount. Persistent (streak ≥ 3 observations).
 //   discount_trade value = registered PSF of a single trade; baseline
-//                  = the project's median PSF, read from the evidence
-//                  (project_median_psf) — the signal's own baseline_value
-//                  is the previous trade on a repeat detection.
+//                  = the evidence's project_median_psf, which is the
+//                  median of the project's registered sales of the SAME
+//                  unit type (bedrooms, property type, resale basis) over
+//                  its whole registered history — not a project-wide or
+//                  12-month median, which is why one project can show
+//                  two baselines. The signal's own baseline_value is the
+//                  previous trade on a repeat detection; never use it.
 //                  magnitudePct = −below_median_pct. beds = the unit.
 // ═══════════════════════════════════════════════════════════
 
@@ -116,8 +120,10 @@ export const pixSignals = [
   // earlier one: 13 Oct, La Mer's −32.4% (7 Oct) became +16.5% on 8 Oct,
   // JLT Cluster W's +51.4% (1 Oct) went −19.3% then +14.9%, and The
   // Crescent's +76.8% (4 Oct) has newer detections through 12 Oct — each
-  // newest row scores below the cut. Skyhills Astra Tower A repeats its
-  // parent's move and is left out.
+  // newest row scores below the cut. Skyhills Astra Tower A (−43.7%, a
+  // larger move than its parent's −30.2%) sits under Skyhills Astra, so its
+  // registrations are already inside the parent's move: left out on the
+  // same ancestor rule as momentum.
   { type: 'psf_move', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
     detectedOn: '2026-10-02', direction: 1, value: 997.95, baseline: 567.08, baselineDate: '2026-09-26', magnitudePct: 75.98, salesL12m: 24 },
   { type: 'psf_move', entity: '15 Cascade', area: 'Motor City', community: 'motor-city',
@@ -173,12 +179,12 @@ export const pixSignals = [
   { type: 'below_trend', entity: 'Springs 4', area: 'The Springs', community: 'the-springs',
     detectedOn: '2026-10-12', direction: -1, value: 997.95, baseline: 1558.52, magnitudePct: -35.97, streak: 13, salesL12m: 24, offplanPct: 0 },
 
-  // ── Single trades registered materially below the project median ──
+  // ── Single trades registered materially below their unit-type median ──
   // Baseline and discount come from the engine's EVIDENCE
   // (project_median_psf, below_median_pct), not the signal's
   // baseline_value: on a repeat detection that field holds the previous
-  // trade, which made The Grand read "34% below a 1,611 median" when its
-  // evidence says 59% below 2,583. Each row is a separate registered trade
+  // trade, which made The Grand read "34% below 1,611" when its evidence
+  // says 59% below 2,583 (its 2-bed median). Each row is a separate registered trade
   // (its own thread), so The Spirit's Studio on 29 Sep and 1-Bed on 30 Sep
   // both count. Top 12 by score.
   { type: 'discount_trade', entity: 'Springs 9', area: 'The Springs', community: 'the-springs',
@@ -258,8 +264,8 @@ export function signalCopy(s) {
       };
     case 'discount_trade':
       return {
-        headline: `${Math.abs(s.magnitudePct).toFixed(1)}% below the project median`,
-        detail: `${s.beds ? `A ${s.beds} registered` : 'Registered'} at ${psf(s.value)} against a project median of ${psf(s.baseline)}.`,
+        headline: `${Math.abs(s.magnitudePct).toFixed(1)}% below the median for its unit type`,
+        detail: `${s.beds ? `A ${s.beds} registered` : 'Registered'} at ${psf(s.value)} against ${psf(s.baseline)}, the median of the project's registered ${s.beds ? `${s.beds} ` : ''}resales across its history.`,
       };
     default:
       return { headline: '', detail: '' };
@@ -292,7 +298,8 @@ export function buildSignalContext() {
       return `  - ${x.entity} (${x.area || 'Dubai'}), ${x.detectedOn}: ${c.headline}. ${c.detail}`;
     }).join('\n');
 
-  return `LIVE MARKET SIGNALS — the Felicity Price Index signal feed, detected over DLD registered transactions through ${PIX_SIGNALS_AS_OF}. Refer to it as "our signal feed" or "the Felicity Price Index signals"; use no other name for it or its provider. These are real registered events. Cite them by name and date; never invent a comparable anecdote.
+  return `LIVE MARKET SIGNALS — the highest-scoring signals from the Felicity Price Index signal feed, detected over DLD registered transactions through ${PIX_SIGNALS_AS_OF}. Refer to them as "our signal list" or "the Felicity Price Index signals"; use no other name for them or their provider. These are real registered events. Cite them by name and date; never invent a comparable anecdote.
+This is an EXTRACT: each section holds only the top of its type (the feed holds hundreds of PSF moves and below-trend runs). A project or district missing from these lists is not evidence that the feed has nothing there — never write "the feed shows no …"; say "none of the signals on our list".
 
 TOP REGISTERED SALES:
 ${group('top_sale')}
@@ -300,7 +307,7 @@ ${group('top_sale')}
 NEW RECORD PRICE PER SQFT:
 ${group('record_psf')}
 
-SALES VELOCITY (registered sales, last 3 months vs the prior 3 — off-plan launches registering in bulk, not price strength):
+SALES VELOCITY (registered sales, last 3 months vs the prior 3 — often launches registering in bulk; velocity, not price strength):
 ${group('momentum')}
 
 REGISTERED PSF MOVES (project-level, signed):
@@ -309,9 +316,9 @@ ${group('psf_move')}
 HIGHEST REGISTERED GROSS YIELDS (extreme top of the distribution — not typical returns):
 ${group('yield_leader')}
 
-PROJECTS PRINTING PERSISTENTLY BELOW THEIR OWN 12-MONTH AVERAGE (evidence of the correction):
+PROJECTS PRINTING PERSISTENTLY BELOW THEIR OWN 12-MONTH AVERAGE (the trailing average includes developer first sales, so a project moving from launch pricing to resale can print well below it without a like-for-like fall of that size):
 ${group('below_trend')}
 
-SINGLE TRADES REGISTERED BELOW THE PROJECT MEDIAN:
+SINGLE TRADES REGISTERED BELOW THE MEDIAN FOR THEIR UNIT TYPE (the median of the project's registered resales of the same bedrooms across its whole history — not a current price level):
 ${group('discount_trade')}`;
 }
