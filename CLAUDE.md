@@ -588,6 +588,14 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   prints a weight. `tests/nikkei.test.mjs` fails if an exact figure from
   the file reaches the JSON. Do not add exports, weight tables or weights
   in the AI prompt.
+  **No CSS `:has()` for layout, and no percentage heights for the map.**
+  The owner's browser rendered the map 0px tall: its container's height
+  came from `:has()` rules his browser did not apply, and the map's
+  `flex: 1 1 0` resolved against an indefinite height. The picker now sets
+  `.tv-view--picker` / `.tv-view--own` classes and `.nkhm__map` carries an
+  explicit `clamp()` height; `tests/heatmap.test.mjs` fails on any `:has(`
+  in `css/`. Reproduce such reports by deleting `:has()` rules from the
+  CSSOM in Playwright before blaming the data.
   First production pull (16 Oct): 225/225 quoted, weights sum 100.00%,
   the weight-implied move (+1.44%) within 0.05 pt of the index (+1.39%).
 - **New upstream? Probe it from a runner and from Vercel before building.**

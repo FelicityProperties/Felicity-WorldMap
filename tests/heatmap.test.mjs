@@ -32,5 +32,18 @@ check(t.datasets.join() === 'ASX200,DAX' && t.labels.DAX === 'DAX Index (XETR:DA
 const rt = 'a.u=e=>"static/bundles/embed/"+({9756:"en"}[e]||e)+"."+{9756:"b0a51148f4d75ee4d509",37036:"20ed3a36fa7505fbb33c"}[e]+".js"';
 check(chunkUrls(rt).join() === 'https://www.tradingview-widget.com/static/bundles/embed/en.9756.b0a51148f4d75ee4d509.js,https://www.tradingview-widget.com/static/bundles/embed/37036.20ed3a36fa7505fbb33c.js', 'runtime chunk map → URLs');
 
+// 16 Oct: in a browser without CSS :has() the Nikkei map rendered 0px tall —
+// its layout hung on :has() rules and a percentage height. Layout hooks are
+// classes set by the picker, and the map carries its own height.
+{
+  const { readFileSync, readdirSync } = await import('node:fs');
+  for (const f of readdirSync(new URL('../css/', import.meta.url))) {
+    const css = readFileSync(new URL(`../css/${f}`, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    check(!css.includes(':has('), `css/${f} has no :has() selector (unsupported in older Firefox/Safari)`);
+  }
+  const inv = readFileSync(new URL('../css/invest.css', import.meta.url), 'utf8');
+  check(/\.nkhm__map\s*\{[^}]*height:\s*clamp\(/.test(inv), 'the Nikkei map has an explicit height of its own');
+}
+
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
 console.log(`heatmap: ${TV_HEATMAP_KEYS.length} TradingView chips, all in its embed menu, plus ${HEATMAP_KEYS.length - TV_HEATMAP_KEYS.length} drawn by us; withheld markets named — all checks passed`);

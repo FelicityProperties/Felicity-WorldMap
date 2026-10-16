@@ -229,6 +229,9 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
   // The view header describes TradingView's heatmaps; the Nikkei chip is
   // drawn by us, sized by official index weight, so the header follows it
   const view = host.closest('.tv-view');
+  // Layout hooks as plain classes, not CSS :has() (unsupported in older
+  // Firefox and Safari, where the Nikkei map collapsed to zero height)
+  view?.classList.add('tv-view--picker');
   const sub = view?.querySelector('.tv-view__sub'), src = view?.querySelector('.tv-view__src');
   // The defaults are stored once on the elements: a re-mount (fullscreen
   // on/off) while the Nikkei is showing must not adopt its text as default
@@ -243,6 +246,7 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
       ? 'The Nikkei 225\u2019s constituents grouped by Nikkei sector, sized by official index weight (the index is price-weighted, not market cap), coloured by the session\u2019s delayed move. Drawn by Felicity from Nikkei Inc.\u2019s weight file and Yahoo Finance quotes.'
       : defSub;
     if (src) src.textContent = m?.own === 'nikkei' ? 'Nikkei Inc. · Yahoo (delayed)' : defSrc;
+    view?.classList.toggle('tv-view--own', m?.own === 'nikkei');
     if (m?.own === 'nikkei') {
       note.textContent = 'Showing the Nikkei 225, drawn by Felicity: TradingView does not serve Japan to embedded heatmaps.';
       if (w) { w.classList.remove('tradingview-widget-container'); mountNikkeiHeatmap(w); }

@@ -102,6 +102,9 @@ export function tileHtml(t, minFont = 9) {
 function render(root, data) {
   const map = root.querySelector('.nkhm__map');
   if (!map) return;
+  // Last line of defence: a stylesheet that leaves the map without a height
+  // (a missing rule, a cached old CSS) must not leave an empty box
+  if (map.clientWidth > 0 && map.clientHeight < 120) map.style.height = '420px';
   const w = map.clientWidth, h = map.clientHeight;
   if (!w || !h) return;
   const minFont = isPhone() ? 11 : 9;

@@ -1976,7 +1976,9 @@ body.tv-fullscreen-open { overflow: hidden; }
 }
 
 /* ── Heatmap market picker (chips over the TradingView treemap) ── */
-.tv-view__body:has(.hm-picker) { display: flex; flex-direction: column; gap: var(--space-2); }
+/* .tv-view--picker / --own are set by mountHeatmapPicker (js/tv-widgets.js),
+   not :has(): a browser without :has() collapsed the Nikkei map to 0px */
+.tv-view--picker .tv-view__body { display: flex; flex-direction: column; gap: var(--space-2); }
 .hm-picker { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) 0; }
 .hm-picker__group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .hm-picker__region {
@@ -2002,7 +2004,7 @@ body.tv-fullscreen-open { overflow: hidden; }
    The map flexes into whatever height is left, so the header (with the
    weights date and sources) and the footer are never clipped; tiles are
    laid out from the map's measured size and redrawn on resize. */
-.nkhm { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; }
+.nkhm { display: flex; flex-direction: column; gap: 6px; }
 .nkhm__head, .nkhm__detail, .nkhm__foot { flex: 0 0 auto; }
 .nkhm__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
 .nkhm__level { font-weight: var(--weight-bold); color: var(--text-primary); }
@@ -2015,7 +2017,9 @@ body.tv-fullscreen-open { overflow: hidden; }
 .nkhm__legend { display: inline-flex; flex-wrap: wrap; gap: 1px; }
 .nkhm__legend i { font-style: normal; font-size: 9px; color: #fff; padding: 1px 5px; }
 .nkhm__detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); min-height: 1.5em; line-height: 1.5; }
-.nkhm__map { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
+/* The map's height is its own — never a percentage of a parent whose height
+   may not be definite, which is what left it 0px tall in some browsers */
+.nkhm__map { position: relative; flex: none; height: clamp(380px, 62vh, 780px); overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
 .nkhm__sector { position: absolute; box-sizing: border-box; border: 1px solid var(--bg-primary); pointer-events: none; }
 .nkhm__sector-label { position: absolute; left: 4px; top: 1px; font-family: var(--font-mono); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
 .nkhm__tile {
@@ -2036,14 +2040,10 @@ body.tv-fullscreen-open { overflow: hidden; }
 .nkhm__foot a { color: var(--accent-primary); }
 .nkhm__foot strong { color: var(--semantic-red); }
 
-/* The Nikkei view needs a map, not a sliver: inline, the panel grows
-   around a fixed-height map; fullscreen, the map takes the screen that is
-   left (scrolling only below a 320px floor) */
-.invest-layout.is-market-view .tv-view__body:has(.nkhm) { height: auto; }
-.hm-picker__widget:has(.nkhm) { height: max(460px, 68vh); flex: 0 0 auto; }
-.tv-view.is-fullscreen:has(.nkhm) { overflow-y: auto; }
-.tv-view.is-fullscreen .tv-view__body:has(.nkhm) { flex: 1 1 auto; height: auto; }
-.tv-view.is-fullscreen .hm-picker__widget:has(.nkhm) { height: auto; flex: 1 1 auto; min-height: 440px; }
+/* The Nikkei view: the panel grows around the map instead of clipping it */
+.invest-layout .tv-view.tv-view--own .tv-view__body { height: auto; flex: 0 0 auto; }
+.tv-view.tv-view--own .hm-picker__widget { height: auto; min-height: 0; flex: 0 0 auto; }
+.tv-view.is-fullscreen.tv-view--own { overflow-y: auto; }
 
 /* Why some markets have no chip — open on desktop, folded on phones */
 .hm-picker__why > summary { cursor: pointer; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); list-style: none; }
@@ -2058,13 +2058,11 @@ body.tv-fullscreen-open { overflow: hidden; }
   .hm-picker__group:not(.hm-picker__group--menu)::-webkit-scrollbar { display: none; }
   .hm-picker__chip { min-height: 36px; flex: 0 0 auto; }
   .hm-picker__region, .hm-picker__note, .hm-picker__why > summary { font-size: 11px !important; }
-  .invest-layout.is-market-view .tv-view__body:has(.hm-picker) { height: auto; }
-  .tv-view__body:has(.hm-picker) .hm-picker__widget { min-height: 70vh; }
-  .tv-view.is-fullscreen:has(.hm-picker) { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .hm-picker__widget:has(.nkhm) { height: 82vh; }
-  /* Phone fullscreen: the same tall map as inline; the overlay scrolls */
-  .tv-view.is-fullscreen .tv-view__body:has(.nkhm) { flex: 0 0 auto; }
-  .tv-view.is-fullscreen .hm-picker__widget:has(.nkhm) { height: 82vh; flex: 0 0 auto; min-height: 0; }
+  .invest-layout .tv-view.tv-view--picker .tv-view__body { height: auto; }
+  .tv-view.tv-view--picker .hm-picker__widget { min-height: 70vh; }
+  .tv-view.tv-view--own .hm-picker__widget { min-height: 0; }
+  .tv-view.is-fullscreen.tv-view--picker { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .nkhm__map { height: 60vh; }
   /* Nothing under 11px on a phone: the chips and the view header too */
   .hm-picker__chip, .hm-picker__hint, .tv-view__expand, .tv-view__back, .tv-view__src { font-size: 11px !important; }
   .nkhm__head, .nkhm__foot, .nkhm__detail, .nkhm__badge, .nkhm__refresh, .nkhm__legend i, .nkhm__sector-label { font-size: 11px !important; }
