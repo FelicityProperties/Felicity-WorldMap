@@ -1,0 +1,32 @@
+# Diagnostics only: fetches the given URLs from a GitHub runner and prints
+# status, content type and the head of each body to the run log. Used to
+# see a new upstream's real response before building on it — Vercel and
+# the development sandbox cannot reach several of them (CLAUDE.md, live
+# layers). Manual only; stores and pushes nothing.
+name: probe
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'Whitespace-separated URLs, or yahoo-crumb:SYM,SYM'
+        required: true
+      head:
+        description: 'Characters of each body to print'
+        required: false
+        default: '3000'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe
+        env:
+          PROBE_TARGETS: ${{ inputs.targets }}
+          PROBE_HEAD: ${{ inputs.head }}
+        run: node scripts/probe.mjs
