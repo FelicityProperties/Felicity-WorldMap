@@ -1075,6 +1075,9 @@
 
 .tv-view__body { height: 620px; width: 100%; }
 .tv-view__body .tradingview-widget-container__widget { height: 100%; width: 100%; }
+/* mountWidget's inner container on the panel body: takes TradingView's inline
+   height:100% so the body keeps its own (see js/tv-widgets.js) */
+.tv-fill { height: 100%; width: 100%; }
 
 /* ── Market views take the full panel ──
    A 500-constituent treemap rendered in the detail column next to a 400px
@@ -2001,44 +2004,71 @@ body.tv-fullscreen-open { overflow: hidden; }
 .hm-picker__hint a { color: var(--accent-primary); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── Nikkei 225 heatmap: drawn by us (js/nikkei-heatmap.js) ──
-   The map flexes into whatever height is left, so the header (with the
-   weights date and sources) and the footer are never clipped; tiles are
-   laid out from the map's measured size and redrawn on resize. */
-.nkhm { display: flex; flex-direction: column; gap: 6px; }
-.nkhm__head, .nkhm__detail, .nkhm__foot { flex: 0 0 auto; }
-.nkhm__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
-.nkhm__level { font-weight: var(--weight-bold); color: var(--text-primary); }
-.nkhm__idxchg { font-weight: var(--weight-bold); }
-.nkhm__badge { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); color: var(--text-secondary); }
-.nkhm__asof { color: var(--text-muted); }
-.nkhm__refresh { margin-left: auto; font: inherit; font-size: 10px; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); padding: 3px 8px; cursor: pointer; }
-.nkhm__refresh:hover:not(:disabled) { color: var(--accent-primary); border-color: var(--border-accent); }
-.nkhm__refresh:disabled { opacity: 0.6; cursor: progress; }
-.nkhm__legend { display: inline-flex; flex-wrap: wrap; gap: 1px; }
-.nkhm__legend i { font-style: normal; font-size: 9px; color: #fff; padding: 1px 5px; }
-.nkhm__detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); min-height: 1.5em; line-height: 1.5; }
-/* The map's height is its own — never a percentage of a parent whose height
-   may not be definite, which is what left it 0px tall in some browsers */
-.nkhm__map { position: relative; flex: none; height: clamp(380px, 62vh, 780px); overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
-.nkhm__sector { position: absolute; box-sizing: border-box; border: 1px solid var(--bg-primary); pointer-events: none; }
-.nkhm__sector-label { position: absolute; left: 4px; top: 1px; font-family: var(--font-mono); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
+   Styled to sit beside TradingView's heatmaps: a black frame, a toolbar,
+   1px gaps between tiles, a floating card on hover/tap/focus and the
+   legend underneath. The map's height is its own (never a percentage of a
+   parent whose height may not be definite — that rendered it 0px tall). */
+.nkhm { display: flex; flex-direction: column; background: #000; border-radius: var(--radius-xs); overflow: hidden; color: #d1d4dc; font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif; }
+.nkhm__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 10px 14px; border-bottom: 1px solid #1f2229; }
+.nkhm__idx { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; }
+.nkhm__name { font-weight: 600; color: #fff; }
+.nkhm__level { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+.nkhm__idxchg { font-weight: 600; font-variant-numeric: tabular-nums; }
+.nkhm__idxchg.is-up, .nkhm__tip-move.is-up { color: #22ab94; }
+.nkhm__idxchg.is-down, .nkhm__tip-move.is-down { color: #f7525f; }
+.nkhm__badge { align-self: center; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 4px; background: #2a2e39; color: #b2b5be; }
+.nkhm__asof { font-size: 13px; color: #787b86; }
+.nkhm__basis { display: flex; gap: 18px; font-size: 14px; color: #d1d4dc; }
+.nkhm__basis b { font-weight: 400; color: #787b86; margin-right: 6px; }
+.nkhm__refresh { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #2a2e39; background: transparent; color: #d1d4dc; cursor: pointer; }
+.nkhm__refresh svg { width: 16px; height: 16px; }
+.nkhm__refresh:hover:not(:disabled) { background: #1e222d; }
+.nkhm__refresh.is-busy svg { animation: nkhm-spin 0.9s linear infinite; }
+.nkhm__refresh:disabled { cursor: progress; }
+@keyframes nkhm-spin { to { transform: rotate(360deg); } }
+
+.nkhm__stage { position: relative; }
+.nkhm__map { position: relative; height: clamp(420px, 64vh, 820px); overflow: hidden; background: #000; }
+.nkhm__sector { position: absolute; box-sizing: border-box; border: 2px solid #000; pointer-events: none; }
+.nkhm__sector-label { position: absolute; left: 4px; top: 0; height: 16px; line-height: 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #b2b5be; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
 .nkhm__tile {
   position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  overflow: hidden; color: #fff; text-align: center; line-height: 1.15;
+  overflow: hidden; color: #fff; text-align: center; line-height: 1.2;
   border: 0; padding: 0; margin: 0; font-family: inherit; cursor: pointer; background: rgb(42, 46, 57);
 }
-.nkhm__tile:hover, .nkhm__tile:focus-visible { outline: 1px solid rgba(255, 255, 255, 0.85); outline-offset: -1px; z-index: 1; }
+.nkhm__tile:hover, .nkhm__tile:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.9); outline-offset: -2px; z-index: 1; }
 /* No quote, or no trade this session: a pattern no move colour can produce */
 .nkhm__tile.is-missing, .nkhm__legend i.is-missing {
   background: repeating-linear-gradient(45deg, #2a2e39 0 4px, #14171f 4px 8px);
-  color: var(--text-secondary);
+  color: #b2b5be;
 }
-.nkhm__tile.is-missing { outline: 1px dashed rgba(136, 153, 170, 0.55); outline-offset: -2px; }
-.nkhm__code { font-weight: var(--weight-bold); max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nkhm__chg { font-size: 0.85em; opacity: 0.92; }
-.nkhm__foot { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); line-height: 1.5; }
-.nkhm__foot a { color: var(--accent-primary); }
-.nkhm__foot strong { color: var(--semantic-red); }
+.nkhm__code { font-weight: 600; max-width: 94%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nkhm__chg { font-size: 0.86em; opacity: 0.95; font-variant-numeric: tabular-nums; }
+
+.nkhm__tip { position: absolute; z-index: 5; min-width: 180px; max-width: 280px; padding: 10px 12px; border-radius: 6px; background: #1e222d; border: 1px solid #2a2e39; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55); pointer-events: none; }
+.nkhm__tip[hidden] { display: none; }
+.nkhm__tip-name { font-size: 14px; font-weight: 600; color: #fff; }
+.nkhm__tip-name span { font-weight: 400; color: #787b86; margin-left: 4px; }
+.nkhm__tip-move { font-size: 18px; font-weight: 600; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+.nkhm__tip-meta { font-size: 12px; color: #b2b5be; line-height: 1.5; }
+
+.nkhm__credit { position: absolute; right: 6px; bottom: 6px; z-index: 4; font-size: 11px; color: #d1d4dc; background: rgba(0, 0, 0, 0.62); padding: 2px 7px; border-radius: 4px; pointer-events: none; }
+
+.nkhm__bottom { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; padding: 10px 14px 8px; }
+.nkhm__legend { display: inline-flex; flex-wrap: wrap; gap: 2px; }
+.nkhm__legend span { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; }
+.nkhm__legend em { font-style: normal; font-size: 12px; color: #d1d4dc; }
+.nkhm__legend i { display: block; width: 100%; height: 8px; }
+.nkhm__status { font-size: 12px; color: #787b86; }
+.nkhm__about { padding: 0 14px 10px; font-size: 12px; color: #787b86; }
+.nkhm__about > summary { cursor: pointer; color: #b2b5be; list-style: none; }
+.nkhm__about > summary::-webkit-details-marker { display: none; }
+.nkhm__about > summary::before { content: '\25B8 '; }
+.nkhm__about[open] > summary::before { content: '\25BE '; }
+.nkhm__about p { margin: 6px 0 0; line-height: 1.6; }
+.nkhm__about a { color: var(--accent-primary); }
+.nkhm__about strong { color: #f7525f; }
+.nkhm__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* The Nikkei view: the panel grows around the map instead of clipping it */
 .invest-layout .tv-view.tv-view--own .tv-view__body { height: auto; flex: 0 0 auto; }
@@ -2059,13 +2089,23 @@ body.tv-fullscreen-open { overflow: hidden; }
   .hm-picker__chip { min-height: 36px; flex: 0 0 auto; }
   .hm-picker__region, .hm-picker__note, .hm-picker__why > summary { font-size: 11px !important; }
   .invest-layout .tv-view.tv-view--picker .tv-view__body { height: auto; }
-  .tv-view.tv-view--picker .hm-picker__widget { min-height: 70vh; }
-  .tv-view.tv-view--own .hm-picker__widget { min-height: 0; }
+  /* An explicit height, not a minimum: the TradingView iframe is 100% of it */
+  .tv-view.tv-view--picker .hm-picker__widget { height: 70vh; min-height: 0; flex: 0 0 auto; }
+  .tv-view.tv-view--own .hm-picker__widget { height: auto; min-height: 0; }
   .tv-view.is-fullscreen.tv-view--picker { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .nkhm__map { height: 60vh; }
+  .nkhm__map { height: 62vh; }
   /* Nothing under 11px on a phone: the chips and the view header too */
   .hm-picker__chip, .hm-picker__hint, .tv-view__expand, .tv-view__back, .tv-view__src { font-size: 11px !important; }
-  .nkhm__head, .nkhm__foot, .nkhm__detail, .nkhm__badge, .nkhm__refresh, .nkhm__legend i, .nkhm__sector-label { font-size: 11px !important; }
+  .nkhm__bar { padding: 8px 10px; gap: 6px 12px; }
+  .nkhm__basis { font-size: 12px; gap: 12px; }
+  .nkhm__asof, .nkhm__badge, .nkhm__sector-label, .nkhm__legend em, .nkhm__status, .nkhm__about, .nkhm__credit, .nkhm__tip-meta { font-size: 11px !important; }
+  /* The legend spans the width; the credit moves left, clear of the floating buttons */
+  .nkhm__bottom { flex-direction: column; align-items: stretch; }
+  .nkhm__legend { display: flex; width: 100%; }
+  .nkhm__legend em { white-space: nowrap; }
+  .nkhm__legend span { width: auto; flex: 1 1 0; }
+  .nkhm__legend span:last-child { flex: 1.6 1 0; }
+  .nkhm__credit { right: auto; left: 6px; }
   .nkhm__chg { font-size: 1em; }
-  .nkhm__refresh { min-height: 40px; padding: 0 12px; }
+  .nkhm__refresh { width: 40px; height: 40px; }
 }

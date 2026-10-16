@@ -598,6 +598,18 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   CSSOM in Playwright before blaming the data.
   First production pull (16 Oct): 225/225 quoted, weights sum 100.00%,
   the weight-implied move (+1.44%) within 0.05 pt of the index (+1.39%).
+- **TradingView's loader writes its size inline onto your container.** It
+  sets the configured `width`/`height` (`"100%"`) as an inline style on the
+  `.tradingview-widget-container` the script sits in (read from
+  `embed-widget-crypto-coins-heatmap.js` via the probe, 16 Oct). On the
+  view panel's body that replaced our fixed height with "100% of a parent
+  with none", so the crypto heatmap and the calendar collapsed to the
+  iframe's 150px default — and on phones the stock heatmaps did too.
+  `mountWidget` now mounts heatmap/panel widgets into an inner `.tv-fill`
+  container that absorbs the inline style, clears sizes left from a
+  previous mount, and the phone picker gives its container an explicit
+  height, never just a `min-height`. Reproduce sizing bugs by serving a
+  stand-in loader with the same sizing logic through `page.route`.
 - **New upstream? Probe it from a runner and from Vercel before building.**
   `.github/workflows/probe.yml` (manual only) fetches URLs from a GitHub
   runner and prints status, type and the head of each body; pointing it at

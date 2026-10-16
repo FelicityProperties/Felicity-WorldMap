@@ -40,7 +40,21 @@ export function mountWidget(host, widget, config, failMessage = 'Widget unavaila
   const el = typeof host === 'string' ? document.getElementById(host) : host;
   if (!el) return;
 
-  el.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+  // TradingView's loader writes the configured width/height ("100%") inline
+  // onto the .tradingview-widget-container its script sits in. On the view
+  // panel's body that replaced our fixed height with "100% of a parent that
+  // has none", so the crypto heatmap and the calendar collapsed to the
+  // iframe's 150px default (owner screenshot, 16 Oct; the rule is in the
+  // loader, read via the probe workflow). The panel body therefore gets a
+  // full-size inner container to absorb that inline style, and sizes left
+  // over from a previous mount are cleared.
+  el.style.removeProperty('height');
+  el.style.removeProperty('width');
+  const wrap = el.classList.contains('tv-view__body') || el.classList.contains('hm-picker__widget');
+  el.innerHTML = wrap
+    ? '<div class="tradingview-widget-container tv-fill"><div class="tradingview-widget-container__widget"></div></div>'
+    : '<div class="tradingview-widget-container__widget"></div>';
+  const target = wrap ? el.firstElementChild : el;
 
   const s = document.createElement('script');
   s.type = 'text/javascript';
@@ -50,9 +64,9 @@ export function mountWidget(host, widget, config, failMessage = 'Widget unavaila
   // A script superseded by a newer mount (another chip, or the Nikkei map
   // we draw ourselves) is detached: its late failure must not overwrite
   // whatever now occupies the container
-  s.onerror = () => { if (s.isConnected && s.parentNode === el) el.innerHTML = `<div class="tv-fail">${failMessage}</div>`; };
+  s.onerror = () => { if (s.isConnected && s.parentNode === target) el.innerHTML = `<div class="tv-fail">${failMessage}</div>`; };
 
-  el.appendChild(s);
+  target.appendChild(s);
 }
 
 // ── Ticker tape: scrolling live prices across asset classes ──
