@@ -837,17 +837,20 @@ async function handleHormuzWire(req, res) {
 // ── Router ──
 // Nikkei 225 heatmap (lib/nikkei.js): TradingView withholds Japan from
 // embeds, so the tiles are drawn by the page from Nikkei Inc.'s official
-// weight file and Yahoo's delayed Tokyo quotes. Only a complete pull — all
-// 225 constituents quoted — is edge-cached; anything less is served as it
-// is, uncached, with the gaps listed.
+// weight file and Yahoo's delayed Tokyo quotes. A complete pull is edge-
+// cached two minutes, a partial one (gaps listed) thirty seconds, a failure
+// never.
 async function handleNikkeiHeatmap(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
   if (!checkRateLimit(limitKey(req, 'nikkei-heatmap'), 30)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
   try {
     const data = await fetchNikkeiHeatmap({ timeoutMs: 8000 });
     const i = data.integrity;
-    const complete = data.ok && i.missing.length === 0 && i.batchesFailed === 0 && i.constituents === i.expected;
-    res.setHeader('Cache-Control', complete ? 's-maxage=120' : 'no-store');
+    // Complete: all 225 quoted for the same session, the index too, the
+    // weight file fresh. A partial pull is real, labelled data with its gaps
+    // listed — cached thirty seconds so a throttle cannot become a storm.
+    // Only a failure is never cached.
+    res.setHeader('Cache-Control', !data.ok ? 'no-store' : data.complete ? 's-maxage=120' : 's-maxage=30');
     return res.status(200).json(data.ok ? data : { ...data, error: i.batchErrors[0] ? `no constituent was quoted (${i.batchErrors[0]})` : 'no constituent was quoted' });
   } catch (e) {
     console.warn('[invest/nikkei-heatmap]', e.message);

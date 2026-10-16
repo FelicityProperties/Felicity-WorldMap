@@ -825,7 +825,7 @@ function mountChart(asset) {
     calendar: false,
     support_host: 'https://www.tradingview.com',
   });
-  s.onerror = () => { host.innerHTML = '<div class="invest-chart__fail">Chart unavailable — TradingView could not be reached.</div>'; };
+  s.onerror = () => { if (s.isConnected) host.innerHTML = '<div class="invest-chart__fail">Chart unavailable — TradingView could not be reached.</div>'; };
   host.appendChild(s);
 }
 

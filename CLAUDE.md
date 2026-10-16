@@ -555,6 +555,35 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   page so nobody hunts for a chip that cannot exist, and the widget's own
   menu stays enabled. Re-run the discovery endpoint before touching the
   table — TradingView changes the list.
+- **The Nikkei 225 heatmap is drawn by us** (owner request, Oct 2026),
+  because TradingView withholds Japan from embeds. `lib/nikkei.js` reads
+  Nikkei Inc.'s own weight file
+  (`indexes.nikkei.co.jp/en/nkave/archives/file/nikkei_stock_average_weight_en.csv`:
+  code, name, Nikkei industry, sector, official weight, dated) and Yahoo's
+  `v7/finance/spark` endpoint, 20 `CODE.T` symbols per request plus
+  `^N225`. `/api/invest/nikkei-heatmap` lives in the `[action]` function;
+  `js/nikkei-heatmap.js` + `js/treemap.js` (squarified) draw it as the
+  `own: 'nikkei'` chip in the picker. Facts established before building
+  (see the probe below): the component HTML page is a Cloudflare challenge
+  (403) to datacenters, the CSV is not; Yahoo's v7 `quote` endpoint is 401
+  without a crumb, `spark` and `chart` answer from Vercel; GitHub runners
+  get 429 from every Yahoo endpoint. Tile size is the **official index
+  weight** — the Nikkei is price-weighted, so it is not market cap, and the
+  header says so. Rules the review fixed before ship: Yahoo's JSON `null`
+  must never become 0 (`Number(null)` is 0 — a "Nikkei 225 0" or a 0.00%
+  tile); a constituent whose last trade is from an earlier session is
+  hatched and listed, never coloured as today; a failed weight refresh
+  keeps the dated copy and says so; a 429 stops further batches instead
+  of firing 48 calls; the whole pull has a 25 s budget; a complete pull is
+  edge-cached 120 s, a partial one 30 s, a failure never; tiles are
+  buttons so a phone or keyboard reaches each one's figures.
+- **New upstream? Probe it from a runner and from Vercel before building.**
+  `.github/workflows/probe.yml` (manual only) fetches URLs from a GitHub
+  runner and prints status, type and the head of each body; pointing it at
+  `https://felicity-world-map.vercel.app/api/data?layer=diag` shows what
+  Vercel itself gets, since the diag runs inside the function. The sandbox
+  can reach neither. Read the logs with the GitHub MCP `get_job_logs`
+  (`gh api` log downloads redirect to blob storage the proxy blocks).
 - **Broadcasts embed by channel**, via YouTube's own
   `/embed/live_stream?channel=<id>` resolver, with the broadcaster's live
   page and the YouTube channel linked under every frame. The old

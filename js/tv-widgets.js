@@ -47,7 +47,10 @@ export function mountWidget(host, widget, config, failMessage = 'Widget unavaila
   s.async = true;
   s.src = `${TV_BASE}${widget}.js`;
   s.textContent = JSON.stringify({ ...config, support_host: 'https://www.tradingview.com' });
-  s.onerror = () => { el.innerHTML = `<div class="tv-fail">${failMessage}</div>`; };
+  // A script superseded by a newer mount (another chip, or the Nikkei map
+  // we draw ourselves) is detached: its late failure must not overwrite
+  // whatever now occupies the container
+  s.onerror = () => { if (s.isConnected && s.parentNode === el) el.innerHTML = `<div class="tv-fail">${failMessage}</div>`; };
 
   el.appendChild(s);
 }
@@ -214,19 +217,32 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
           <span class="hm-picker__region">${g.region}</span>
           ${g.items.map(m => `<button class="hm-picker__chip${m.key === initial ? ' is-on' : ''}" data-ds="${escapeHtml(m.key)}" title="${escapeHtml(m.evidence)}">${escapeHtml(m.label)}</button>`).join('')}
         </div>`).join('')}
-      <div class="hm-picker__group hm-picker__group--menu">
-        <span class="hm-picker__region">Not served to embeds</span>
+      <details class="hm-picker__group hm-picker__group--menu hm-picker__why"${typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches ? '' : ' open'}>
+        <summary>Why some markets have no chip</summary>
         <span class="hm-picker__hint">TradingView withholds ${escapeHtml(TV_EMBED_WITHHELD.filter(m => !OWN_DRAWN.has(m)).join(', '))} from embedded heatmaps and draws the S&amp;P 500 in their place, so there is no chip for them. <strong>Nikkei 225</strong> is withheld too, so we draw it ourselves from Nikkei's official weights and delayed Tokyo quotes. The other chips are the ${TV_HEATMAP_KEYS.length} most-used of the ${TV_EMBED_DATASETS.length} datasets TradingView does serve; the widget's own menu (top-left header) lists all of them. For a withheld market, <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>.</span>
-      </div>
+      </details>
     </div>
     <div class="hm-picker__note" id="${hostId}-note"></div>
     <div class="tradingview-widget-container hm-picker__widget" id="${hostId}-widget"><div class="tradingview-widget-container__widget"></div></div>`;
 
   const note = host.querySelector(`#${hostId}-note`);
+  // The view header describes TradingView's heatmaps; the Nikkei chip is
+  // drawn by us, sized by official index weight, so the header follows it
+  const view = host.closest('.tv-view');
+  const sub = view?.querySelector('.tv-view__sub'), src = view?.querySelector('.tv-view__src');
+  // The defaults are stored once on the elements: a re-mount (fullscreen
+  // on/off) while the Nikkei is showing must not adopt its text as default
+  if (sub && sub.dataset.def == null) sub.dataset.def = sub.textContent;
+  if (src && src.dataset.def == null) src.dataset.def = src.textContent;
+  const defSub = sub?.dataset.def, defSrc = src?.dataset.def;
   const show = key => {
     lastHeatmapKey = key;
     const m = HEATMAP_MARKETS.flatMap(g => g.items).find(x => x.key === key);
     const w = host.querySelector(`#${hostId}-widget`);
+    if (sub) sub.textContent = m?.own === 'nikkei'
+      ? 'The Nikkei 225\u2019s constituents grouped by Nikkei sector, sized by official index weight (the index is price-weighted, not market cap), coloured by the session\u2019s delayed move. Drawn by Felicity from Nikkei Inc.\u2019s weight file and Yahoo Finance quotes.'
+      : defSub;
+    if (src) src.textContent = m?.own === 'nikkei' ? 'Nikkei Inc. · Yahoo (delayed)' : defSrc;
     if (m?.own === 'nikkei') {
       note.textContent = 'Showing the Nikkei 225, drawn by Felicity: TradingView does not serve Japan to embedded heatmaps.';
       if (w) { w.classList.remove('tradingview-widget-container'); mountNikkeiHeatmap(w); }

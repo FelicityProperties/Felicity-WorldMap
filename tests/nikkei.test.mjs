@@ -3,7 +3,7 @@
 // and are laid out by js/treemap.js. The fixture rows are copied from the
 // real responses the probe workflow and the deployed diag returned on
 // 2026-10-16; the synthetic rows only pad the file to 225 constituents.
-import { parseCsv, parseWeights, parseSpark, sparkUrl, fetchNikkeiHeatmap, _resetNikkeiMemo, NIKKEI_WEIGHTS_URL, SPARK_BATCH } from '../lib/nikkei.js';
+import { parseCsv, parseWeights, parseSpark, sparkUrl, fetchNikkeiHeatmap, _resetNikkeiMemo, tokyoDay, NIKKEI_WEIGHTS_URL, SPARK_BATCH } from '../lib/nikkei.js';
 import { squarify } from '../js/treemap.js';
 import { layout, moveColour, shortName, tileHtml } from '../js/nikkei-heatmap.js';
 
@@ -42,6 +42,20 @@ const sp = parseSpark({ spark: { result: [sparkRow('285A.T', 13375.0, 3.843)] } 
 check(sp['285A.T'].price === 13375 && sp['285A.T'].changePct === 3.84 && sp['285A.T'].time === new Date(1792132200 * 1000).toISOString(), 'spark meta → price, day move, quote time');
 check(parseSpark({ spark: { result: [{ symbol: 'X.T', response: [{ meta: { regularMarketPrice: 10 } }] }] } })['X.T'].changePct === null, 'no day move from Yahoo stays null — never computed from a guessed close');
 check(sparkUrl(['7203.T', '^N225']).includes('symbols=7203.T%2C%5EN225&range=1d&interval=1d'), 'spark URL');
+// Review, 16 Oct: Number(null) is 0 — a JSON null must never become a 0.00% tile or a level of 0
+const nulls = parseSpark({ spark: { result: [
+  { symbol: 'A.T', response: [{ meta: { regularMarketPrice: null, regularMarketChangePercent: null, regularMarketTime: null } }] },
+  { symbol: 'B.T', response: [{ meta: { regularMarketPrice: 0, regularMarketChangePercent: 0 } }] },
+  { symbol: 'C.T', response: [{ meta: { regularMarketPrice: '1200', regularMarketChangePercent: '1.2' } }] },
+] } });
+check(Object.values(nulls).every(q => q.price === null && q.changePct === null), 'explicit null, zero price and string fields are missing, not 0');
+check(tokyoDay('2026-10-15T23:30:00Z') === '2026-10-16' && tokyoDay(null) === null, 'Tokyo calendar day');
+let htmlErr = '';
+try { parseWeights('<!DOCTYPE html><html><title>Just a moment...</title>'); } catch (e) { htmlErr = e.message; }
+check(/HTML/.test(htmlErr) && !/Just a moment/.test(htmlErr), 'a challenge page is refused as HTML without echoing it');
+let longErr = '';
+try { parseWeights('X'.repeat(5000) + ',Y\n1,2\n'); } catch (e) { longErr = e.message; }
+check(longErr.length < 420, 'a changed header is echoed bounded');
 
 // ── The full pull against stubbed upstreams ──
 const asked = [];
@@ -57,8 +71,11 @@ const stub = async (u) => {
     const syms = decodeURIComponent(new URL(url).searchParams.get('symbols')).split(',');
     if (mode === 'one-batch-down' && syms.includes('9100.T')) return new Response('err', { status: 500 });
     if (mode === 'throttle' && !stub.throttled) { stub.throttled = true; return new Response('Too Many Requests', { status: 429 }); }
+    if (mode === 'always-429') return new Response('Too Many Requests', { status: 429 });
+    if (mode === 'slow') { await new Promise(res => setTimeout(res, 400)); }
     const result = syms.filter(s => !(mode === 'two-missing' && (s === '1332.T' || s === '1605.T')))
-      .map(s => s === '^N225' ? sparkRow('^N225', 47512.3, -0.62) : sparkRow(s, 1000, s === '285A.T' ? 3.84 : -1.25));
+      .map(s => s === '^N225' ? (mode === 'index-null' ? { symbol: s, response: [{ meta: { regularMarketPrice: null, regularMarketChangePercent: null } }] } : sparkRow('^N225', 47512.3, -0.62))
+        : sparkRow(s, 1000, s === '285A.T' ? 3.84 : -1.25, mode === 'one-stale' && s === '1605.T' ? 1792132200 - 86400 : 1792132200));
     return new Response(JSON.stringify({ spark: { result } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
   return new Response('unexpected', { status: 404 });
@@ -92,6 +109,42 @@ check(!asked.includes(NIKKEI_WEIGHTS_URL), 'weight file reused within six hours'
 await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW + 7 * 3600e3 });
 check(asked.includes(NIKKEI_WEIGHTS_URL), 'weight file refetched after six hours');
 
+// A failed six-hourly refresh keeps the dated copy already parsed, and says so
+mode = 'csv-403';
+d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW + 13 * 3600e3 });
+check(d.ok && d.tiles.length === 225 && /403/.test(d.integrity.weightsRefreshError) && !d.complete, 'weight refresh failure serves the last good copy, flagged and not complete');
+
+// Explicit nulls for the index: no level is printed and the pull is not complete
+mode = 'index-null'; _resetNikkeiMemo();
+d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW });
+check(d.index === null && !d.complete && d.integrity.indexQuoted === false, 'a null index quote is no level, not 0');
+
+// A constituent whose last trade is from an earlier session is not today's move
+mode = 'one-stale'; _resetNikkeiMemo();
+d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW });
+const st = d.tiles.find(t => t.code === '1605');
+check(st.stale && d.integrity.staleQuotes.length === 1 && d.integrity.staleQuotes[0].day === '2026-10-15' && d.sessionDay === '2026-10-16' && !d.complete, 'an earlier-session quote is flagged stale, listed, and the pull is not complete');
+
+// Throttled: one batch's two attempts, then no further batches are asked
+mode = 'always-429'; _resetNikkeiMemo(); asked.length = 0;
+d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW });
+const sparkCalls = asked.filter(u => String(u).includes('spark')).length;
+check(!d.ok && sparkCalls <= 8 && d.integrity.batchesFailed === d.integrity.batches && d.integrity.batchErrors.some(e => /throttling/.test(e)), `a 429 storm stops after the first wave (${sparkCalls} Yahoo calls, not 48)`);
+
+// A time budget turns a slow upstream into listed gaps, not a 504
+mode = 'slow'; _resetNikkeiMemo();
+d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW, budgetMs: 1200, concurrency: 1 });
+check(d.integrity.batchErrors.includes('time budget exceeded') && d.integrity.missing.length > 0 && d.integrity.missing.length < 225, 'past the budget, untaken batches are listed as gaps');
+
+// Back-to-back and concurrent requests share one pull
+mode = 'ok'; _resetNikkeiMemo(); asked.length = 0;
+const [p1, p2] = await Promise.all([fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW }), fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW })]);
+const firstCalls = asked.length;
+const p3 = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW + 60e3 });
+check(p1 === p2 && asked.length === firstCalls && p3.servedFromMemo && p3.memoAgeSec === 60, 'concurrent callers share one pull; a complete pull is reused for two minutes, with its age');
+const p4 = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW + 121e3 });
+check(!p4.servedFromMemo && asked.length > firstCalls, 'after two minutes it is pulled again');
+
 mode = 'csv-403'; _resetNikkeiMemo();
 let csvErr = '';
 try { await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW }); } catch (e) { csvErr = e.message; }
@@ -108,7 +161,7 @@ let r = await call();
 check(r.code === 200 && r.payload.ok && r.headers['Cache-Control'] === 's-maxage=120', 'complete pull cached two minutes');
 mode = 'two-missing'; _resetNikkeiMemo();
 r = await call();
-check(r.payload.ok && r.headers['Cache-Control'] === 'no-store', 'partial pull served uncached');
+check(r.payload.ok && !r.payload.complete && r.headers['Cache-Control'] === 's-maxage=30', 'partial pull (gaps listed) cached only thirty seconds');
 mode = 'csv-403'; _resetNikkeiMemo();
 r = await call();
 check(r.code === 200 && r.payload.ok === false && /403/.test(r.payload.error) && r.headers['Cache-Control'] === 'no-store' && r.payload.sources?.constituents?.url, 'failure is honest, uncached and names its sources');

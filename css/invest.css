@@ -1998,31 +1998,76 @@ body.tv-fullscreen-open { overflow: hidden; }
 .hm-picker__hint strong { color: var(--accent-primary); }
 .hm-picker__hint a { color: var(--accent-primary); text-decoration: underline; text-underline-offset: 2px; }
 
-/* ── Nikkei 225 heatmap: drawn by us (js/nikkei-heatmap.js) ── */
-.nkhm { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 420px; }
+/* ── Nikkei 225 heatmap: drawn by us (js/nikkei-heatmap.js) ──
+   The map flexes into whatever height is left, so the header (with the
+   weights date and sources) and the footer are never clipped; tiles are
+   laid out from the map's measured size and redrawn on resize. */
+.nkhm { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; }
+.nkhm__head, .nkhm__detail, .nkhm__foot { flex: 0 0 auto; }
 .nkhm__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
 .nkhm__level { font-weight: var(--weight-bold); color: var(--text-primary); }
 .nkhm__idxchg { font-weight: var(--weight-bold); }
-.nkhm__badge { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); color: var(--text-muted); }
+.nkhm__badge { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); color: var(--text-secondary); }
 .nkhm__asof { color: var(--text-muted); }
 .nkhm__refresh { margin-left: auto; font: inherit; font-size: 10px; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); padding: 3px 8px; cursor: pointer; }
-.nkhm__refresh:hover { color: var(--accent-primary); border-color: var(--border-accent); }
-.nkhm__legend { display: inline-flex; gap: 1px; }
+.nkhm__refresh:hover:not(:disabled) { color: var(--accent-primary); border-color: var(--border-accent); }
+.nkhm__refresh:disabled { opacity: 0.6; cursor: progress; }
+.nkhm__legend { display: inline-flex; flex-wrap: wrap; gap: 1px; }
 .nkhm__legend i { font-style: normal; font-size: 9px; color: #fff; padding: 1px 5px; }
-.nkhm__map { position: relative; flex: 1 1 auto; min-height: 520px; overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
+.nkhm__detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); min-height: 1.5em; line-height: 1.5; }
+.nkhm__map { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
 .nkhm__sector { position: absolute; box-sizing: border-box; border: 1px solid var(--bg-primary); pointer-events: none; }
 .nkhm__sector-label { position: absolute; left: 4px; top: 1px; font-family: var(--font-mono); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
-.nkhm__tile { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; color: #fff; text-align: center; line-height: 1.15; cursor: default; }
-.nkhm__tile:hover { outline: 1px solid rgba(255, 255, 255, 0.85); z-index: 1; }
-.nkhm__tile.is-missing { color: var(--text-muted); }
+.nkhm__tile {
+  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden; color: #fff; text-align: center; line-height: 1.15;
+  border: 0; padding: 0; margin: 0; font-family: inherit; cursor: pointer; background: rgb(42, 46, 57);
+}
+.nkhm__tile:hover, .nkhm__tile:focus-visible { outline: 1px solid rgba(255, 255, 255, 0.85); outline-offset: -1px; z-index: 1; }
+/* No quote, or no trade this session: a pattern no move colour can produce */
+.nkhm__tile.is-missing, .nkhm__legend i.is-missing {
+  background: repeating-linear-gradient(45deg, #2a2e39 0 4px, #14171f 4px 8px);
+  color: var(--text-secondary);
+}
+.nkhm__tile.is-missing { outline: 1px dashed rgba(136, 153, 170, 0.55); outline-offset: -2px; }
 .nkhm__code { font-weight: var(--weight-bold); max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nkhm__chg { font-size: 0.85em; opacity: 0.92; }
 .nkhm__foot { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); line-height: 1.5; }
 .nkhm__foot a { color: var(--accent-primary); }
 .nkhm__foot strong { color: var(--semantic-red); }
+
+/* The Nikkei view needs a map, not a sliver: inline, the panel grows
+   around a fixed-height map; fullscreen, the map takes the screen that is
+   left (scrolling only below a 320px floor) */
+.invest-layout.is-market-view .tv-view__body:has(.nkhm) { height: auto; }
+.hm-picker__widget:has(.nkhm) { height: max(460px, 68vh); flex: 0 0 auto; }
+.tv-view.is-fullscreen:has(.nkhm) { overflow-y: auto; }
+.tv-view.is-fullscreen .tv-view__body:has(.nkhm) { flex: 1 1 auto; height: auto; }
+.tv-view.is-fullscreen .hm-picker__widget:has(.nkhm) { height: auto; flex: 1 1 auto; min-height: 440px; }
+
+/* Why some markets have no chip — open on desktop, folded on phones */
+.hm-picker__why > summary { cursor: pointer; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); list-style: none; }
+.hm-picker__why > summary::-webkit-details-marker { display: none; }
+.hm-picker__why > summary::before { content: '\25B8 '; }
+.hm-picker__why[open] > summary::before { content: '\25BE '; }
+
 @media (max-width: 767px) {
-  .nkhm { min-height: 520px; }
-  .nkhm__map { min-height: 380px; }
-  .nkhm__head, .nkhm__foot, .nkhm__legend i, .nkhm__sector-label { font-size: 11px !important; }
-  .nkhm__refresh { min-height: 36px; }
+  /* Chips scroll sideways, one row per region, so the map starts near the top */
+  .hm-picker { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+  .hm-picker__group:not(.hm-picker__group--menu) { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .hm-picker__group:not(.hm-picker__group--menu)::-webkit-scrollbar { display: none; }
+  .hm-picker__chip { min-height: 36px; flex: 0 0 auto; }
+  .hm-picker__region, .hm-picker__note, .hm-picker__why > summary { font-size: 11px !important; }
+  .invest-layout.is-market-view .tv-view__body:has(.hm-picker) { height: auto; }
+  .tv-view__body:has(.hm-picker) .hm-picker__widget { min-height: 70vh; }
+  .tv-view.is-fullscreen:has(.hm-picker) { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .hm-picker__widget:has(.nkhm) { height: 82vh; }
+  /* Phone fullscreen: the same tall map as inline; the overlay scrolls */
+  .tv-view.is-fullscreen .tv-view__body:has(.nkhm) { flex: 0 0 auto; }
+  .tv-view.is-fullscreen .hm-picker__widget:has(.nkhm) { height: 82vh; flex: 0 0 auto; min-height: 0; }
+  /* Nothing under 11px on a phone: the chips and the view header too */
+  .hm-picker__chip, .hm-picker__hint, .tv-view__expand, .tv-view__back, .tv-view__src { font-size: 11px !important; }
+  .nkhm__head, .nkhm__foot, .nkhm__detail, .nkhm__badge, .nkhm__refresh, .nkhm__legend i, .nkhm__sector-label { font-size: 11px !important; }
+  .nkhm__chg { font-size: 1em; }
+  .nkhm__refresh { min-height: 40px; padding: 0 12px; }
 }
