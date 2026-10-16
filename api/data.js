@@ -151,6 +151,13 @@ async function handleLayer(layer, request) {
         ['yahoo-bz-nov26', 'https://query1.finance.yahoo.com/v8/finance/chart/BZX26.NYM?range=1d&interval=1d'],
         ['yahoo-bz-dec26', 'https://query1.finance.yahoo.com/v8/finance/chart/BZZ26.NYM?range=1d&interval=1d'],
         ['yahoo-cl-cont', 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=1d&interval=1d'],
+        // Nikkei 225 heatmap sources: the official constituent/weight file
+        // (Cloudflare-fronted — its HTML page challenges datacenters) and
+        // Yahoo's Tokyo quotes by batch (spark, v7) and by symbol (chart)
+        ['nikkei-weights', 'https://indexes.nikkei.co.jp/en/nkave/archives/file/nikkei_stock_average_weight_en.csv'],
+        ['yahoo-spark-jp', 'https://query1.finance.yahoo.com/v7/finance/spark?symbols=7203.T,6758.T,8035.T,285A.T&range=1d&interval=1d'],
+        ['yahoo-v7-jp', 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=7203.T,6758.T'],
+        ['yahoo-chart-jp', 'https://query1.finance.yahoo.com/v8/finance/chart/7203.T?interval=1d&range=5d'],
       ];
       const out = await Promise.all(targets.map(async ([name, u]) => {
         const t0 = Date.now();
@@ -159,7 +166,7 @@ async function handleLayer(layer, request) {
         try {
           const r = await fetch(u, { signal: c.signal, headers: { Accept: '*/*', 'User-Agent': 'FelicityIntelligence/1.0 (+https://felicity-world-map.vercel.app)' } });
           const body = await r.text();
-          const entry = { target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120) };
+          const entry = { target: name, ms: Date.now() - t0, status: r.status, bytes: body.length, head: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, name.startsWith('yahoo-spark') || name === 'nikkei-weights' ? 900 : 120) };
           // A Yahoo chart answer: pull the fields that identify the contract
           try {
             const meta = JSON.parse(body)?.chart?.result?.[0]?.meta;
