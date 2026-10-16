@@ -23,6 +23,7 @@ import { discoverDatasets } from '../../lib/tv-datasets.js';
 import { readLayer } from '../../lib/live-store.js';
 import { yahooPrevClose } from '../../lib/market-evidence.js';
 import { yahooCandidates } from '../../lib/futures.js';
+import { fetchNikkeiHeatmap, NIKKEI_SOURCE, QUOTES_SOURCE } from '../../lib/nikkei.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -834,6 +835,27 @@ async function handleHormuzWire(req, res) {
 }
 
 // ── Router ──
+// Nikkei 225 heatmap (lib/nikkei.js): TradingView withholds Japan from
+// embeds, so the tiles are drawn by the page from Nikkei Inc.'s official
+// weight file and Yahoo's delayed Tokyo quotes. Only a complete pull — all
+// 225 constituents quoted — is edge-cached; anything less is served as it
+// is, uncached, with the gaps listed.
+async function handleNikkeiHeatmap(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
+  if (!checkRateLimit(limitKey(req, 'nikkei-heatmap'), 30)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+  try {
+    const data = await fetchNikkeiHeatmap({ timeoutMs: 8000 });
+    const i = data.integrity;
+    const complete = data.ok && i.missing.length === 0 && i.batchesFailed === 0 && i.constituents === i.expected;
+    res.setHeader('Cache-Control', complete ? 's-maxage=120' : 'no-store');
+    return res.status(200).json(data.ok ? data : { ...data, error: i.batchErrors[0] ? `no constituent was quoted (${i.batchErrors[0]})` : 'no constituent was quoted' });
+  } catch (e) {
+    console.warn('[invest/nikkei-heatmap]', e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ ok: false, error: e.message, sources: { constituents: NIKKEI_SOURCE, quotes: QUOTES_SOURCE } });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -849,6 +871,7 @@ export default async function handler(req, res) {
   if (action === 'backtest') return handleBacktest(req, res);
   if (action === 'hormuz')      return handleHormuz(req, res, url);   // no symbol — dispatched before resolution
   if (action === 'hormuz-wire') return handleHormuzWire(req, res);
+  if (action === 'nikkei-heatmap') return handleNikkeiHeatmap(req, res);
   if (action === 'tv-datasets') {
     // Diagnostic: the heatmap's real dataSource codes, read from TradingView's
     // own bundle by this function (the dev sandbox cannot reach TradingView).

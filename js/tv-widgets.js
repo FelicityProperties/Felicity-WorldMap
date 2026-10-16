@@ -12,6 +12,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { escapeHtml } from './safe.js';
+import { mountNikkeiHeatmap } from './nikkei-heatmap.js';
 
 const TV_BASE = 'https://s3.tradingview.com/external-embedding/embed-widget-';
 
@@ -172,6 +173,9 @@ export const HEATMAP_MARKETS = [
     { key: 'TA35',            label: 'Tel Aviv 35',          evidence: EV },
   ]},
   { region: 'Asia-Pacific', items: [
+    // Drawn by us, not TradingView: Japan is withheld from embeds
+    { key: 'FELICITY_NIKKEI225', label: 'Nikkei 225', own: 'nikkei',
+      evidence: 'Drawn by Felicity: constituents and official weights from Nikkei Inc., delayed day moves from Yahoo Finance' },
     { key: 'ASX200',          label: 'ASX 200',              evidence: EV },
     { key: 'HSTECH',          label: 'Hang Seng Tech',       evidence: EV },
     { key: 'HSCEI',           label: 'HS China Enterprises', evidence: EV },
@@ -189,6 +193,10 @@ export const HEATMAP_MARKETS = [
 ];
 
 export const HEATMAP_KEYS = HEATMAP_MARKETS.flatMap(g => g.items.map(m => m.key));
+// The chips TradingView draws (the rest are drawn by us)
+export const TV_HEATMAP_KEYS = HEATMAP_MARKETS.flatMap(g => g.items.filter(m => !m.own).map(m => m.key));
+// Withheld markets we draw ourselves, so the hint does not send people away
+const OWN_DRAWN = new Set(HEATMAP_MARKETS.flatMap(g => g.items.filter(m => m.own).map(m => m.label)));
 
 // The last chip chosen, so a re-mount (fullscreen on/off re-mounts the
 // widget at the new size) keeps the market the reader picked.
@@ -208,7 +216,7 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
         </div>`).join('')}
       <div class="hm-picker__group hm-picker__group--menu">
         <span class="hm-picker__region">Not served to embeds</span>
-        <span class="hm-picker__hint">TradingView withholds ${escapeHtml(TV_EMBED_WITHHELD.join(', '))} from embedded heatmaps and draws the S&amp;P 500 in their place, so there is no chip for them. The chips are the ${HEATMAP_KEYS.length} most-used of the ${TV_EMBED_DATASETS.length} datasets it does serve; the widget's own menu (top-left header) lists all of them. For a withheld market, <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>.</span>
+        <span class="hm-picker__hint">TradingView withholds ${escapeHtml(TV_EMBED_WITHHELD.filter(m => !OWN_DRAWN.has(m)).join(', '))} from embedded heatmaps and draws the S&amp;P 500 in their place, so there is no chip for them. <strong>Nikkei 225</strong> is withheld too, so we draw it ourselves from Nikkei's official weights and delayed Tokyo quotes. The other chips are the ${TV_HEATMAP_KEYS.length} most-used of the ${TV_EMBED_DATASETS.length} datasets TradingView does serve; the widget's own menu (top-left header) lists all of them. For a withheld market, <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>.</span>
       </div>
     </div>
     <div class="hm-picker__note" id="${hostId}-note"></div>
@@ -218,9 +226,14 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
   const show = key => {
     lastHeatmapKey = key;
     const m = HEATMAP_MARKETS.flatMap(g => g.items).find(x => x.key === key);
-    note.textContent = `Showing ${m ? m.label : key} (TradingView dataset ${key}). The widget's header names the market it is drawing.`;
     const w = host.querySelector(`#${hostId}-widget`);
-    if (w) w.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+    if (m?.own === 'nikkei') {
+      note.textContent = 'Showing the Nikkei 225, drawn by Felicity: TradingView does not serve Japan to embedded heatmaps.';
+      if (w) { w.classList.remove('tradingview-widget-container'); mountNikkeiHeatmap(w); }
+      return;
+    }
+    note.textContent = `Showing ${m ? m.label : key} (TradingView dataset ${key}). The widget's header names the market it is drawing.`;
+    if (w) { w.classList.add('tradingview-widget-container'); w.innerHTML = '<div class="tradingview-widget-container__widget"></div>'; }
     mountHeatmap(`${hostId}-widget`, key);
   };
   show(initial);

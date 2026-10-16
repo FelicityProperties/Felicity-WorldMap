@@ -1997,3 +1997,32 @@ body.tv-fullscreen-open { overflow: hidden; }
 .hm-picker__hint { font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6; max-width: 90ch; }
 .hm-picker__hint strong { color: var(--accent-primary); }
 .hm-picker__hint a { color: var(--accent-primary); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Nikkei 225 heatmap: drawn by us (js/nikkei-heatmap.js) ── */
+.nkhm { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 420px; }
+.nkhm__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+.nkhm__level { font-weight: var(--weight-bold); color: var(--text-primary); }
+.nkhm__idxchg { font-weight: var(--weight-bold); }
+.nkhm__badge { font-size: 9px; letter-spacing: 0.08em; padding: 2px 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); color: var(--text-muted); }
+.nkhm__asof { color: var(--text-muted); }
+.nkhm__refresh { margin-left: auto; font: inherit; font-size: 10px; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); padding: 3px 8px; cursor: pointer; }
+.nkhm__refresh:hover { color: var(--accent-primary); border-color: var(--border-accent); }
+.nkhm__legend { display: inline-flex; gap: 1px; }
+.nkhm__legend i { font-style: normal; font-size: 9px; color: #fff; padding: 1px 5px; }
+.nkhm__map { position: relative; flex: 1 1 auto; min-height: 520px; overflow: hidden; background: var(--bg-primary); border-radius: var(--radius-xs); }
+.nkhm__sector { position: absolute; box-sizing: border-box; border: 1px solid var(--bg-primary); pointer-events: none; }
+.nkhm__sector-label { position: absolute; left: 4px; top: 1px; font-family: var(--font-mono); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
+.nkhm__tile { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; color: #fff; text-align: center; line-height: 1.15; cursor: default; }
+.nkhm__tile:hover { outline: 1px solid rgba(255, 255, 255, 0.85); z-index: 1; }
+.nkhm__tile.is-missing { color: var(--text-muted); }
+.nkhm__code { font-weight: var(--weight-bold); max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nkhm__chg { font-size: 0.85em; opacity: 0.92; }
+.nkhm__foot { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); line-height: 1.5; }
+.nkhm__foot a { color: var(--accent-primary); }
+.nkhm__foot strong { color: var(--semantic-red); }
+@media (max-width: 767px) {
+  .nkhm { min-height: 520px; }
+  .nkhm__map { min-height: 380px; }
+  .nkhm__head, .nkhm__foot, .nkhm__legend i, .nkhm__sector-label { font-size: 11px !important; }
+  .nkhm__refresh { min-height: 36px; }
+}
