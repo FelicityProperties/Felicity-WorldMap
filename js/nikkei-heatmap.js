@@ -63,15 +63,15 @@ const isPhone = () => typeof window !== 'undefined' && window.matchMedia?.('(max
 /** Pure layout: sector boxes, then tiles inside each (tested in Node). */
 export function layout(data, width, height) {
   const sectors = (data.sectors || []).map(name => {
-    const tiles = data.tiles.filter(t => t.sector === name && t.weightPct > 0);
-    return { name, tiles, weight: tiles.reduce((s, t) => s + t.weightPct, 0) };
+    const tiles = data.tiles.filter(t => t.sector === name && t.size > 0);
+    return { name, tiles, weight: tiles.reduce((s, t) => s + t.size, 0) };
   }).filter(s => s.tiles.length);
   const boxes = squarify(sectors.map(s => s.weight), 0, 0, width, height);
   return sectors.map((s, i) => {
     const b = boxes[i];
     if (!b) return null;
     const strip = b.h > SECTOR_STRIP * 3 && b.w > 60 ? SECTOR_STRIP : 0;
-    const rects = squarify(s.tiles.map(t => t.weightPct), b.x, b.y + strip, b.w, Math.max(0, b.h - strip));
+    const rects = squarify(s.tiles.map(t => t.size), b.x, b.y + strip, b.w, Math.max(0, b.h - strip));
     return { ...s, box: b, strip, tiles: s.tiles.map((t, j) => ({ ...t, rect: rects[j] })) };
   }).filter(Boolean);
 }
@@ -81,7 +81,8 @@ export function tileSummary(t) {
   const move = t.changePct == null ? 'no quote from Yahoo'
     : t.stale ? `no trade this session — last move ${fmtPct(t.changePct)} on ${fmtTokyo(t.time)}`
     : fmtPct(t.changePct);
-  return `${t.name} (${t.code}) · ${t.industry} · ${fmtYen(t.price)} · ${move} · ${t.weightPct.toFixed(4)}% of the index`;
+  // No weight figure: exact Nikkei weights are not published on this site
+  return `${t.name} (${t.code}) · ${t.industry} · ${fmtYen(t.price)} · ${move}`;
 }
 
 export function tileHtml(t, minFont = 9) {
@@ -106,7 +107,7 @@ function render(root, data) {
   const minFont = isPhone() ? 11 : 9;
   map.innerHTML = layout(data, w, h).map(g => `
     <div class="nkhm__sector" style="left:${g.box.x.toFixed(1)}px;top:${g.box.y.toFixed(1)}px;width:${g.box.w.toFixed(1)}px;height:${g.box.h.toFixed(1)}px">
-      ${g.strip ? `<span class="nkhm__sector-label">${escapeHtml(g.name)} · ${g.weight.toFixed(1)}%</span>` : ''}
+      ${g.strip ? `<span class="nkhm__sector-label">${escapeHtml(g.name)}</span>` : ''}
     </div>
     ${g.tiles.map(t => tileHtml(t, minFont)).join('')}`).join('');
 }
@@ -134,7 +135,7 @@ function footHtml(data) {
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(data.sessionDay || '')}), hatched: ${i.staleQuotes.map(q => `${escapeHtml(q.code)} (last ${escapeHtml(q.day || '—')})`).join(', ')}.`);
   if (i.weightsRefreshError) notes.push(`<strong>Nikkei's weight file could not be refreshed (${escapeHtml(i.weightsRefreshError)}); showing the copy dated ${escapeHtml(data.weightsAsOf || '—')}.</strong>`);
   if (data.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(data.memoAgeSec))}s ago.`);
-  return `<span>${escapeHtml(String(i.quoted))}/${escapeHtml(String(i.constituents))} constituents quoted. ${notes.join(' ')} Tile size: official index weight on ${escapeHtml(data.weightsAsOf || '—')} — the Nikkei is price-weighted, so this is not market cap (weights sum to ${escapeHtml(String(i.weightSumPct))}%). Colour: the session's move, ±3% saturates.</span>
+  return `<span>${escapeHtml(String(i.quoted))}/${escapeHtml(String(i.constituents))} constituents quoted. ${notes.join(' ')} ${i.weightsSumOk === false ? '<strong>The weight file does not sum to 100%.</strong> ' : ''}Tile size: Nikkei's official index weight on ${escapeHtml(data.weightsAsOf || '—')}, rounded; exact weights are not shown. The Nikkei is price-weighted, so size is not market cap. Colour: the session's move, ±3% saturates.</span>
     <span>Constituents and weights © Nikkei Inc.${i.notices?.length ? ` — ${escapeHtml(i.notices[0])}` : ''}</span>
     <span>Sources: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || 'Nikkei Inc.')}</a> · <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve Japan to embedded heatmaps.</span>`;
 }

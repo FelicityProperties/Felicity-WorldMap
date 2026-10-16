@@ -91,7 +91,13 @@ check(d.ok && d.tiles.length === 225 && d.integrity.quoted === 225 && !d.integri
 check(d.integrity.batches === Math.ceil(226 / SPARK_BATCH) && asked.filter(u => String(u).includes('spark')).every(u => decodeURIComponent(new URL(u).searchParams.get('symbols')).split(',').length <= SPARK_BATCH), `spark asked in batches of at most ${SPARK_BATCH}`);
 check(d.index && d.index.level === 47512.3 && d.index.changePct === -0.62, 'the index level comes from ^N225 in the same pull');
 check(d.weightsAsOf === '2026-09-30' && d.sectors[0] === 'Technology', 'weights dated; sectors in Nikkei order');
-check(Math.abs(d.integrity.weightSumPct - (0.0562 + 0.0737 + 0.2206 + 1.9083 + 0.3508 + 220 * 0.4)) < 0.01, 'weight sum reported');
+// Owner decision, 16 Oct: exact Nikkei weights never leave the server
+check(d.tiles.every(t => !('weightPct' in t)) && !('weightSumPct' in d.integrity), 'no exact weight or weight sum in the payload');
+const wire = JSON.stringify(d);
+check(!/1\.9083|0\.0562|0\.2206/.test(wire), 'the exact figures from the file appear nowhere in the payload');
+const kx = d.tiles.find(t => t.code === '285A'), nissui = d.tiles.find(t => t.code === '1332');
+check(kx.size === 1.9 && nissui.size === 0.1 && d.tiles.find(t => t.code === '1605').size === 0.1, 'tiles carry the weight rounded to 0.1 point');
+check(d.integrity.weightsSumOk === false, 'a file that does not sum to 100% is flagged (the fixture sums to ~90.6%)');
 
 mode = 'two-missing'; _resetNikkeiMemo();
 d = await fetchNikkeiHeatmap({ fetchImpl: stub, now: NOW });
@@ -195,7 +201,8 @@ check(tech && tech.tiles.every(t => t.rect && t.rect.x >= tech.box.x - 1e-6 && t
 // ── Colour, labels and escaping ──
 check(moveColour(5) === moveColour(3) && moveColour(-9) === moveColour(-3) && moveColour(null) === 'rgb(42, 46, 57)', '±3% saturates; no quote is grey');
 check(shortName('KIOXIA HOLDINGS CORP.') === 'KIOXIA' && shortName('DAIWA HOUSE IND. CO., LTD.') === 'DAIWA HOUSE IND.', 'tile labels drop corporate suffixes');
-const hostile = tileHtml({ code: '1332', name: '<img src=x onerror=alert(1)>', industry: '"><script>', sector: 'x', weightPct: 1, price: 1, changePct: 1, rect: { x: 0, y: 0, w: 200, h: 100 } });
+const hostile = tileHtml({ code: '1332', name: '<img src=x onerror=alert(1)>', industry: '"><script>', sector: 'x', size: 1, price: 1, changePct: 1, rect: { x: 0, y: 0, w: 200, h: 100 } });
+check(!/% of the index/.test(tileHtml({ code: '1332', name: 'N', industry: 'I', sector: 'x', size: 1, price: 1, changePct: 1, rect: { x: 0, y: 0, w: 200, h: 100 } })), 'tile details print no weight');
 check(!/<img|<script/.test(hostile) && /&lt;img/.test(hostile), 'names and industries from the file are escaped');
 
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
