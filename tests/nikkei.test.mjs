@@ -20,14 +20,17 @@ const REAL = [
 ];
 const sectors = ['Technology', 'Financials', 'Consumer Goods', 'Materials', 'Capital Goods/Others', 'Transportation and Utilities'];
 const pad = Array.from({ length: 225 - REAL.length }, (_, i) => `"2026/09/30","${9000 + i}","PAD ${i} CO., LTD.","Industry ${i % 9}","${sectors[i % 6]}","${(0.4).toFixed(4)}%"`);
-const CSV = [HEADER, ...REAL, ...pad].join('\r\n') + '\r\n';
+// The real file ends with Nikkei's copyright line (probe, 2026-10-16)
+const NOTICE = '"This material is a copyrightable work of Nikkei. It is prohibited to copy, reproduce, reprint, or circulate all or part of this material in any form without Nikkei\'s permission."';
+const CSV = [HEADER, ...REAL, ...pad, NOTICE].join('\r\n') + '\r\n';
 
 // ── CSV and the weight file ──
 const rows = parseCsv(CSV);
-check(rows.length === 226 && rows[3][2] === 'DAIWA HOUSE IND. CO., LTD.', 'quoted commas stay inside the field');
+check(rows.length === 227 && rows[3][2] === 'DAIWA HOUSE IND. CO., LTD.', 'quoted commas stay inside the field');
 check(parseCsv('a,"b ""q"" c"\n')[0][1] === 'b "q" c', 'escaped quotes');
 const w = parseWeights(CSV);
 check(w.constituents.length === 225 && w.asOf === '2026-09-30', 'all 225 constituents and the file date');
+check(w.rowsMalformed === 0 && w.notices.length === 1 && /copyrightable work of Nikkei/.test(w.notices[0]), "Nikkei's copyright line is carried as a notice, not counted as a bad row");
 const kioxia = w.constituents.find(c => c.code === '285A');
 check(kioxia && kioxia.weightPct === 1.9083 && kioxia.sector === 'Technology' && kioxia.industry === 'Electric Machinery', 'alphanumeric code (285A) and its weight');
 check(parseWeights(HEADER + '\n"2026/09/30","12","BAD","x","y","1%"\n"2026/09/30","1332","NISSUI","Fishery","Consumer Goods","n/a"\n').rowsMalformed === 2, 'bad code and bad weight are counted, not kept');

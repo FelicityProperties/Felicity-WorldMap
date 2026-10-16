@@ -577,6 +577,15 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   of firing 48 calls; the whole pull has a 25 s budget; a complete pull is
   edge-cached 120 s, a partial one 30 s, a failure never; tiles are
   buttons so a phone or keyboard reaches each one's figures.
+  **The weight file ends with Nikkei's copyright notice**: "a copyrightable
+  work of Nikkei … prohibited to copy, reproduce, reprint, or circulate all
+  or part of this material … without Nikkei's permission." The parser
+  carries it as a notice and the map credits © Nikkei Inc. Publishing the
+  constituent weights on a public site is the owner's licensing call — it
+  was raised with the owner on 16 Oct; do not widen the reuse (exports,
+  tables of weights, the AI prompt) without that decision.
+  First production pull (16 Oct): 225/225 quoted, weights sum 100.00%,
+  the weight-implied move (+1.44%) within 0.05 pt of the index (+1.39%).
 - **New upstream? Probe it from a runner and from Vercel before building.**
   `.github/workflows/probe.yml` (manual only) fetches URLs from a GitHub
   runner and prints status, type and the head of each body; pointing it at

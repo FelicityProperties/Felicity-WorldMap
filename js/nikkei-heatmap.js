@@ -135,6 +135,7 @@ function footHtml(data) {
   if (i.weightsRefreshError) notes.push(`<strong>Nikkei's weight file could not be refreshed (${escapeHtml(i.weightsRefreshError)}); showing the copy dated ${escapeHtml(data.weightsAsOf || '—')}.</strong>`);
   if (data.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(data.memoAgeSec))}s ago.`);
   return `<span>${escapeHtml(String(i.quoted))}/${escapeHtml(String(i.constituents))} constituents quoted. ${notes.join(' ')} Tile size: official index weight on ${escapeHtml(data.weightsAsOf || '—')} — the Nikkei is price-weighted, so this is not market cap (weights sum to ${escapeHtml(String(i.weightSumPct))}%). Colour: the session's move, ±3% saturates.</span>
+    <span>Constituents and weights © Nikkei Inc.${i.notices?.length ? ` — ${escapeHtml(i.notices[0])}` : ''}</span>
     <span>Sources: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || 'Nikkei Inc.')}</a> · <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve Japan to embedded heatmaps.</span>`;
 }
 
