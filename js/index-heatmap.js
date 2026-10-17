@@ -16,6 +16,8 @@
 import { mountOwnHeatmap, fmtPct, fmtTime, shortName } from './own-heatmap.js';
 import { escapeHtml, safeUrl } from './safe.js';
 
+const fmtAge = ms => (ms < 90e3 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 90 * 60e3 ? `${Math.round(ms / 60e3)} min` : `${Math.round(ms / 3600e3)} h`);
+
 const fmtNum = v => v.toLocaleString('en-US', { maximumFractionDigits: v < 10 ? 3 : 2 });
 const fmtPrice = t => (t.price == null ? '—' : `${fmtNum(t.price)} ${t.currency || ''}`.trim());
 export function fmtCap(v, cur) {
@@ -106,7 +108,9 @@ function aboutHtml(d) {
   if (i.listed != null) notes.push(`Yahoo lists ${escapeHtml(String(i.listed))} equities on the exchange${i.leftOut ? `; ${escapeHtml(String(i.leftOut))} are left out by the rule in the source line below` : ''}.`);
   if (d.index?.close) notes.push(`The index level is ${escapeHtml(d.index.source || 'the official close')} of ${escapeHtml((d.index.time || '').slice(0, 10))} — Yahoo carries no live level for this index — and its move is Felicity's arithmetic: that close against the one before${d.index.changePct == null ? ' (no earlier close in the report, so none is shown)' : ''}. During a session the level is the previous close while the tiles move with today's quotes.`);
   if (i.batchErrors?.length) notes.push(`Upstream errors: ${list(i.batchErrors, 4)}.`);
-  if (d.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(d.memoAgeSec))}s ago.`);
+  // Age from the pull's own time, never a copied counter (an edge copy is older than its memo said)
+  const age = Date.parse(d.fetchedAt || '');
+  if (Number.isFinite(age)) notes.push(`Pulled ${escapeHtml(fmtAge(Date.now() - age))} ago.`);
   return `<p>${notes.join(' ')}</p>
     <p>${d.membersAsOfKind === 'listing' ? `Tiles are the market as Yahoo lists it, by the rule in the source line below — not the index provider's own file, which our servers cannot reach` : `Tiles are the members the list below gives`}, grouped by Yahoo Finance sector and sized by market capitalisation in ${escapeHtml(m.currency || '')} — not by index weight, which the index providers license. Colour is the session's move from delayed Yahoo Finance quotes; ±3% saturates.</p>
     <p>Constituents: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || '—')}</a>${d.membersAsOf && d.membersAsOfKind !== 'revision' ? `, ${escapeHtml(d.membersAsOf)}` : ''}. Quotes, market caps and sectors: <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve this market to embedded heatmaps.</p>`;

@@ -683,6 +683,23 @@ fabrication and has been removed. The rule generalises beyond Dubai:
     the `heatmap-sources` diagnostic: it reports shape, counts and dates,
     never holdings rows (its first version echoed the funds' weight
     columns).
+  - **Caching follows what another pull could fix.** A complete map, or
+    one whose only gaps last all day (a suspended member, a share Yahoo
+    gives no size, an ISIN it cannot place), is kept 120 s on the instance
+    and at the edge; a map with a retryable gap (an upstream error, an
+    unquoted member, no index level) 30–45 s. A memo-served map is
+    edge-cached only for the time its memo has left, and the page computes
+    "Pulled … ago" from `fetchedAt`. A failed pull is never memoised; a
+    refusing list source with nothing stored is asked again only after two
+    minutes; reported share counts are kept a day per symbol; a Yahoo 429
+    on any call — the crumb handshake included — pauses every market and
+    the ISIN searches for a minute, during which a map at most ten minutes
+    old is served as partial and uncached.
+  - **`/api/invest/heatmap-sources` (the raw-source probe) is off** unless
+    `HEATMAP_PROBE=1` is set in Vercel: it makes a dozen third-party
+    fetches and its own Yahoo handshake per call, and a public loop of it
+    could spend the handshake budget the heatmaps share. Turn it on to vet
+    a new upstream; `?diag=members` covers the sources in use.
   - Lessons from building it: a greedy character-class regex over the
     2.7 MB iShares page hung the whole function — scan multi-megabyte
     pages with literal `indexOf`, and time the body read, not just the

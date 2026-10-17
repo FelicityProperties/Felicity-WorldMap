@@ -14,6 +14,8 @@
 import { mountOwnHeatmap, tileHtml as ownTileHtml, fmtPct, fmtTime, shortName } from './own-heatmap.js';
 import { escapeHtml, safeUrl } from './safe.js';
 
+const fmtAge = ms => (ms < 90e3 ? `${Math.max(0, Math.round(ms / 1000))}s` : ms < 90 * 60e3 ? `${Math.round(ms / 60e3)} min` : `${Math.round(ms / 3600e3)} h`);
+
 export { moveColour, shortName, layout } from './own-heatmap.js';
 
 const fmtYen = v => v == null ? '—' : `¥${v.toLocaleString('en-US', { maximumFractionDigits: 1 })}`;
@@ -45,7 +47,9 @@ function aboutHtml(data) {
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(data.sessionDay || '')}), hatched: ${i.staleQuotes.map(q => `${escapeHtml(q.code)} (last ${escapeHtml(q.day || '—')})`).join(', ')}.`);
   if (i.weightsRefreshError) notes.push(`<strong>Nikkei's weight file could not be refreshed (${escapeHtml(i.weightsRefreshError)}); showing the copy dated ${escapeHtml(data.weightsAsOf || '—')}.</strong>`);
   if (i.weightsSumOk === false) notes.push('<strong>The weight file does not sum to 100%.</strong>');
-  if (data.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(data.memoAgeSec))}s ago.`);
+  // Age from the pull's own time, never a copied counter (an edge copy is older than its memo said)
+  const age = Date.parse(data.fetchedAt || '');
+  if (Number.isFinite(age)) notes.push(`Pulled ${escapeHtml(fmtAge(Date.now() - age))} ago.`);
   return `<p>${notes.join(' ')} Tiles are the Nikkei 225's constituents, grouped by Nikkei sector and sized by Nikkei's official index weight on ${escapeHtml(data.weightsAsOf || '—')}, rounded — exact weights are not shown. The Nikkei is price-weighted, so size is not market cap. Colour is the session's move from delayed Yahoo Finance quotes; ±3% saturates.</p>
     <p>Constituents and weights © Nikkei Inc.${i.notices?.length ? ` — ${escapeHtml(i.notices[0])}` : ''}</p>
     <p>Sources: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || 'Nikkei Inc.')}</a> · <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve Japan to embedded heatmaps.</p>`;

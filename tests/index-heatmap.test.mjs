@@ -255,6 +255,10 @@ mode = 'summary'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
 check(p.tiles.find(t => t.code === 'C04')?.size === 5e9 && p.integrity.capsDerived.some(x => x.code === 'C04' && /ordinary shares reported 2026-06-30/.test(x.basis)), "a member the batch quote left without a cap is sized by price × its latest reported share count, dated");
 
+const tsAsked = asked.filter(u => u.includes('fundamentals-timeseries')).length;
+await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW + 130e3 });
+check(asked.filter(u => u.includes('fundamentals-timeseries')).length === tsAsked, 'a reported share count is kept for the day, not asked again every pull');
+
 mode = 'one-missing'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
 check(p.ok && !p.complete && p.integrity.missing.join() === 'C07', 'one member Yahoo did not answer is listed; the pull is partial');
@@ -301,21 +305,26 @@ _resetIndexHeatmap();
 let listErr = '';
 try { await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW }); } catch (err) { listErr = err.message; }
 check(/Wikipedia HTTP 503/.test(listErr), 'with no list at all the map fails — no member list is invented');
+const wikiAsked = asked.filter(u => u.includes('wikipedia')).length;
+let listErr2 = '';
+try { await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW + 5e3 }); } catch (err) { listErr2 = err.message; }
+check(/retried \d+s from now/.test(listErr2) && asked.filter(u => u.includes('wikipedia')).length === wikiAsked, 'a refusing source is not asked again for two minutes');
 
 mode = 'ok'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW });
 check(p.integrity.unresolved.join() === 'GHOST' && p.integrity.drawn === 5 && p.membersAsOf === '2026-10-07', 'ISINs resolve to listings through Yahoo search; one with no listing is named, not guessed');
 check(p.tiles.some(t => t.symbol === 'FRE.DE') && !p.tiles.some(t => t.symbol === 'FRE.F') && !p.integrity.secondaryListings.length, 'a member matched to the Frankfurt floor is drawn from its XETRA line once Yahoo quotes it');
 check(p.integrity.fx.GBP === 1.15 && p.integrity.fx.CHF === 1.05 && !p.complete, 'pounds and francs converted to euros; a short list is not complete');
+check(!p.retryable, 'an ISIN Yahoo cannot place is a lasting gap: reported, but the map is cached like a complete one');
 check(p.tiles.some(t => t.name === 'M&G') && !p.tiles.some(t => /&amp;/.test(t.name)), "Invesco's HTML-escaped names are decoded (M&amp;G → M&G)");
 check(!JSON.stringify(p).includes('4.7744'), "Invesco's index weights are not carried");
 const searches = asked.filter(u => u.includes('/v1/finance/search')).length;
-await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 50e3 });
+await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 130e3 });
 check(asked.filter(u => u.includes('/v1/finance/search')).length === searches + 1, 'a resolved ISIN is not searched again; only the unresolved one is retried');
 mode = 'renamed';
-p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 100e3 });
+p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 260e3 });
 check(p.integrity.missing.includes('MNG'), 'a listing Yahoo stopped quoting is missing on that pull');
-p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 150e3 });
+p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 390e3 });
 check(p.tiles.some(t => t.symbol === 'MNG2.L') && !p.integrity.missing.includes('MNG'), 'its ISIN is searched again and the new listing drawn');
 mode = 'ok';
 
@@ -371,6 +380,17 @@ r = await call('?market=cac40');
 check(r.payload.ok === false && /503/.test(r.payload.error) && r.headers['Cache-Control'] === 'no-store', 'failure is honest and uncached');
 r = await call('?market=<script>');
 check(r.code === 400 && !/<script>/.test(r.payload.error), 'an unknown market is refused without echoing markup');
+r = await call('?market=constructor');
+check(r.code === 400, 'a prototype property is not a market');
+mode = 'ok'; _resetIndexHeatmap();
+await call('?market=aex');
+r = await call('?market=aex');
+check(r.payload.servedFromMemo && /^s-maxage=(\d+)$/.test(r.headers['Cache-Control']) && Number(r.headers['Cache-Control'].split('=')[1]) <= 120, 'a memo-served map is edge-cached only for the time its memo has left');
+{
+  const pr = mkRes();
+  await invest({ method: 'GET', url: '/api/invest/heatmap-sources', headers: { host: 'localhost', 'x-forwarded-for': '8.8.4.4' } }, pr);
+  check(pr.code === 404 && /HEATMAP_PROBE/.test(pr.payload.error), 'the raw source probe is off unless switched on');
+}
 globalThis.fetch = realFetch;
 
 // ── Renderer ──

@@ -25,7 +25,7 @@ import { yahooPrevClose } from '../../lib/market-evidence.js';
 import { yahooCandidates } from '../../lib/futures.js';
 import { fetchNikkeiHeatmap, NIKKEI_SOURCE, QUOTES_SOURCE } from '../../lib/nikkei.js';
 import { probeSources } from '../../lib/source-probe.js';
-import { fetchIndexHeatmap, membersDiag, MARKETS as INDEX_MARKETS, QUOTES_SOURCE as INDEX_QUOTES_SOURCE } from '../../lib/index-heatmap.js';
+import { fetchIndexHeatmap, membersDiag, isMarket, MARKETS as INDEX_MARKETS, QUOTES_SOURCE as INDEX_QUOTES_SOURCE } from '../../lib/index-heatmap.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -874,11 +874,15 @@ async function handleIndexHeatmap(req, res, url) {
     try { return res.status(200).json(await membersDiag()); } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
   }
   const id = String(url.searchParams.get('market') || '').toLowerCase();
-  if (!INDEX_MARKETS[id]) return res.status(400).json({ ok: false, error: `Unknown market; use one of ${Object.keys(INDEX_MARKETS).join(', ')}` });
+  if (!isMarket(id)) return res.status(400).json({ ok: false, error: `Unknown market; use one of ${Object.keys(INDEX_MARKETS).join(', ')}` });
   if (!checkRateLimit(limitKey(req, 'index-heatmap'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
   try {
     const data = await fetchIndexHeatmap(id, { timeoutMs: 8000 });
-    res.setHeader('Cache-Control', !data.ok ? 'no-store' : data.complete ? 's-maxage=120' : 's-maxage=30');
+    // The edge keeps a map no longer than the instance would: a memo-served
+    // payload only for the time its memo has left, so its stated age holds
+    const full = data.complete || !data.retryable ? 120 : 30;
+    const ttl = data.servedFromMemo ? Math.min(full, data.memoLeftSec ?? 0) : full;
+    res.setHeader('Cache-Control', !data.ok || data.throttled || ttl <= 0 ? 'no-store' : `s-maxage=${ttl}`);
     return res.status(200).json(data.ok ? data : { ...data, error: data.integrity.batchErrors[0] ? `no constituent was quoted (${data.integrity.batchErrors[0]})` : 'no constituent was quoted' });
   } catch (e) {
     console.warn(`[invest/index-heatmap ${id}]`, e.message);
@@ -906,8 +910,12 @@ export default async function handler(req, res) {
   if (action === 'index-heatmap') return handleIndexHeatmap(req, res, url);
   if (action === 'heatmap-sources') {
     // Diagnostic: which candidate constituent and quote sources this
-    // function can reach (lib/source-probe.js). Fixed target list.
-    if (!checkRateLimit(limitKey(req, 'heatmap-sources'), 6)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+    // function can reach (lib/source-probe.js). Fixed target list. It makes
+    // a dozen third-party fetches and its own Yahoo handshake per call, so
+    // it is off unless HEATMAP_PROBE=1 is set; ?diag=members on the heatmap
+    // route covers the sources in use
+    if (process.env.HEATMAP_PROBE !== '1') return res.status(404).json({ ok: false, error: 'The source probe is off; set HEATMAP_PROBE=1 to enable it. /api/invest/index-heatmap?diag=members reads the sources in use.' });
+    if (!checkRateLimit(limitKey(req, 'heatmap-sources'), 2)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
     res.setHeader('Cache-Control', 'no-store');
     try {
       return res.status(200).json(await probeSources({ only: url.searchParams.get('only'), head: url.searchParams.get('head') }));
