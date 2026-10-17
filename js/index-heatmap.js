@@ -75,7 +75,7 @@ function listDate(d) {
 function statusHtml(d) {
   const i = d.integrity || {};
   const hatched = (d.tiles || []).filter(t => t.changePct == null || t.stale).length;
-  const gaps = (i.missing?.length || 0) + (i.unsized?.length || 0) + (i.unresolved?.length || 0);
+  const gaps = (i.missing?.length || 0) + (i.unsized?.length || 0) + (i.unresolved?.length || 0) + (i.sameListing?.length || 0);
   return `${escapeHtml(String(i.drawn))}/${escapeHtml(String(i.constituents))} drawn${hatched ? ` · ${hatched} hatched` : ''}${gaps ? ` · ${gaps} not drawn` : ''} · ${escapeHtml(listDate(d))}`;
 }
 
@@ -90,6 +90,8 @@ function aboutHtml(d) {
   if (i.membersRefreshError) notes.push(`<strong>The constituent list could not be refreshed (${escapeHtml(i.membersRefreshError)}); showing the copy read ${escapeHtml((i.membersFetchedAt || '').slice(0, 10) || '—')}.</strong>`);
   if (i.unresolved?.length) notes.push(`Not yet matched to a Yahoo listing, so not drawn (each is matched once and remembered): ${list(i.unresolved)}.`);
   if (i.secondaryListings?.length) notes.push(`Yahoo lists ${list(i.secondaryListings)} only on a secondary venue; drawn from that line.`);
+  if (i.sameListing?.length) notes.push(`Matched by Yahoo to a listing already drawn, so not drawn twice: ${list(i.sameListing)}.`);
+  if (i.listingShort) notes.push(`<strong>Yahoo reports ${escapeHtml(String(i.listed))} equities but its listing returned ${escapeHtml(String(i.listed - i.listingShort))} while it was being read (its order moves with market caps); the rest are missing from this map.</strong>`);
   if (i.missing?.length) notes.push(`Not quoted by Yahoo, so not drawn: ${list(i.missing)}.`);
   if (i.unsized?.length) notes.push(`No market cap from Yahoo, so not drawn: ${list(i.unsized)}.`);
   if (i.noMove?.length) notes.push(`Quoted by Yahoo but with no move for the session, hatched: ${list(i.noMove)}.`);

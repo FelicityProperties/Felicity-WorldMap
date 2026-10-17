@@ -8,7 +8,7 @@
 import {
   MARKETS, MARKET_IDS, fetchIndexHeatmap, _resetIndexHeatmap, membersFromWikitext, membersFromNiftyCsv, membersFromCnindex,
   membersFromKap, membersFromSsga, membersFromMoneyDj, pickSearchSymbol, capOf, parseQuote, localDay, rocDay, twseIndexLevel,
-  lseSymbol, suffixed, euronextSymbol, sehkSymbol, QUOTE_BATCH, latestShareCount,
+  lseSymbol, suffixed, euronextSymbol, sehkSymbol, QUOTE_BATCH, latestShareCount, withinBudget,
 } from '../lib/index-heatmap.js';
 import { findTable, parseTable, cleanWiki, infoboxCount, splitTop } from '../lib/wikitable.js';
 import { readXlsx } from '../lib/xlsx.js';
@@ -84,7 +84,7 @@ const ESX = `{| class="wikitable sortable" id="constituents" style="white-space:
 |-
 |WKL.AS || {{Flagicon|Netherlands}} {{EuronextAmsterdam|WKL|NL0000395903|XAMS}} ||[[Wolters Kluwer]] ||{{Flagicon|Netherlands}} ''[[Naamloze vennootschap]]'' ||{{NLD}} ||Industrials ||1968
 |}`;
-const e = membersFromWikitext(ESX, MARKETS.sx5e.members);
+const e = membersFromWikitext(ESX, { page: 'EURO_STOXX_50', table: { id: 'constituents' }, ticker: /^ticker$/i, name: /^name$/i, symbol: suffixed('.DE') });
 check(e.members.map(m => `${m.symbol}:${m.name}`).join() === 'ADS.DE:Adidas,WKL.AS:Wolters Kluwer', 'Yahoo-form tickers kept as written; names from links');
 check(suffixed('.PA')('AC.PA') === 'AC.PA' && suffixed('.AS')('ASML') === 'ASML.AS' && suffixed('.PA')('a b') === 'AB.PA' && suffixed('.PA')('!!') === null, 'suffix rule');
 check(euronextSymbol('{{EuronextParis|AI|FR0000120073|XPAR}}') === 'AI.PA' && euronextSymbol('ABI') === null, 'Euronext template rule');
@@ -184,7 +184,7 @@ const stub = async (url, opts = {}) => {
   const u = String(url);
   asked.push(u);
   if (u.startsWith('https://fc.yahoo.com')) { authCalls++; return new Response('nf', { status: 404, headers: { 'set-cookie': 'A3=d=abc; Path=/; Domain=.yahoo.com' } }); }
-  if (u.includes('/v1/test/getcrumb')) return new Response(mode === 'nocrumb' ? '' : 'Crumb123ab');
+  if (u.includes('/v1/test/getcrumb')) return mode === 'crumb429' ? new Response('', { status: 429 }) : new Response(mode === 'nocrumb' ? '' : 'Crumb123ab');
   if (u.includes('en.wikipedia.org')) {
     if (mode === 'wiki-down') return new Response('down', { status: 503 });
     return new Response(JSON.stringify({ query: { pages: [{ revisions: [{ revid: 1379195393, timestamp: '2026-10-08T13:51:15Z', slots: { main: { content: wikiPage(CAC) } } }] }] } }));
@@ -194,13 +194,13 @@ const stub = async (url, opts = {}) => {
     if (mode === '429') return new Response('{}', { status: 429 });
     const syms = decodeURIComponent(/symbols=([^&]+)/.exec(u)[1]).split(',');
     if (syms.length > QUOTE_BATCH) return new Response('too many', { status: 400 });
-    const drop = mode === 'one-missing' ? ['C07.PA'] : [];
+    const drop = mode === 'one-missing' ? ['C07.PA'] : mode === 'renamed' ? ['MNG.L'] : [];
     return new Response(JSON.stringify({ quoteResponse: { result: syms.filter(s => !drop.includes(s)).map((s, i) => quoteFor(s, i)) } }));
   }
-  if (u.includes('dng-api.invesco.com')) return new Response(JSON.stringify({ effectiveDate: '2026-10-07', holdings: [{ name: 'ASML HOLDING ORD', isin: 'NL0010273215', weight: 4.7744 }, { name: 'HSBC HOLDINGS ORD', isin: 'GB0005405286', weight: 2.1808 }, { name: 'NOVARTIS N ORD', isin: 'CH0012005267', weight: 1.865 }, { name: 'FRESENIUS ORD', isin: 'DE0005785604', weight: 0.2 }, { name: 'GHOST ORD', isin: 'XS0000000009', weight: 0.01 }] }));
+  if (u.includes('dng-api.invesco.com')) return new Response(JSON.stringify({ effectiveDate: '2026-10-07', holdings: [{ name: 'ASML HOLDING ORD', isin: 'NL0010273215', weight: 4.7744 }, { name: 'HSBC HOLDINGS ORD', isin: 'GB0005405286', weight: 2.1808 }, { name: 'NOVARTIS N ORD', isin: 'CH0012005267', weight: 1.865 }, { name: 'FRESENIUS ORD', isin: 'DE0005785604', weight: 0.2 }, { name: 'M&amp;G ORD', isin: 'GB00BKFB1C65', weight: 0.1 }, { name: 'GHOST ORD', isin: 'XS0000000009', weight: 0.01 }] }));
   if (u.includes('/v1/finance/search')) {
     const isin = /q=([A-Z0-9]+)/.exec(u)[1];
-    const map = { NL0010273215: 'ASML.AS', GB0005405286: 'HSBA.L', CH0012005267: 'NOVN.SW', DE0005785604: 'FRE.F' };
+    const map = { NL0010273215: 'ASML.AS', GB0005405286: 'HSBA.L', CH0012005267: 'NOVN.SW', DE0005785604: 'FRE.F', GB00BKFB1C65: mode === 'renamed' ? 'MNG2.L' : 'MNG.L' };
     return new Response(JSON.stringify({ quotes: map[isin] ? [{ symbol: map[isin], quoteType: 'EQUITY' }] : [] }));
   }
   if (u.includes('niftyindices.com')) return new Response('Company Name,Industry,Symbol,Series,ISIN Code\nReliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,EQ,INE002A01018\n', { headers: { 'last-modified': 'Fri, 16 Oct 2026 12:00:00 GMT' } });
@@ -211,6 +211,13 @@ const stub = async (url, opts = {}) => {
   if (u.includes('/v1/finance/screener')) {
     const body = JSON.parse(opts.body);
     const ex = body.query.operands[0].operands[1];
+    if (ex === 'DFM') {
+      // 300 listed; between the two page requests rank 251 rises to 249, so
+      // page two repeats one row and never shows another
+      const all = Array.from({ length: 300 }, (_, i) => ({ symbol: `C${i + 1}.AE`, longName: `Company ${i + 1}` }));
+      const page = body.offset === 0 ? all.slice(0, 250) : [all[248], ...all.slice(251, 300)];
+      return new Response(JSON.stringify({ finance: { result: [{ total: 300, quotes: body.offset >= 500 ? [] : body.offset === 0 ? page : body.offset === 250 ? page : [] }] } }));
+    }
     const rows = ex === 'SAU' ? [{ symbol: '2222.SR', longName: 'Saudi Arabian Oil Co.' }, { symbol: '4330.SR', longName: 'Riyad REIT Fund' }, { symbol: '4339.SR', shortName: 'Alinma Hospitality REIT' }, { symbol: '9510.SR', longName: 'National Building and Marketing Co.' }]
       : [{ symbol: '005930.KS' }, { symbol: '005935.KS' }, { symbol: '0126Z0.KS' }];
     return new Response(JSON.stringify({ finance: { result: [{ total: rows.length, quotes: body.offset ? [] : rows }] } }));
@@ -264,6 +271,23 @@ mode = 'ok';
 p = await fetchIndexHeatmap('aex', { fetchImpl: stub, now: NOW + 46e3 }).catch(err => ({ error: err.message }));
 check(asked.filter(u => u.includes('/v7/finance/quote')).length === quotesAsked, 'during the throttle cooldown no market asks Yahoo again');
 
+mode = 'crumb429'; _resetIndexHeatmap(); authCalls = 0;
+await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
+await fetchIndexHeatmap('aex', { fetchImpl: stub, now: NOW + 1e3 });
+check(authCalls === 1, 'a throttled crumb handshake starts the cooldown: the next market does not handshake again');
+
+mode = 'ok'; _resetIndexHeatmap();
+const good = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
+mode = '429';
+const failed = await fetchIndexHeatmap('aex', { fetchImpl: stub, now: NOW + 130e3 });
+const old = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW + 130e3 });
+check(good.complete && old.servedFromMemo && old.throttled && old.complete === false, 'during a throttle a recent map is served, marked partial');
+const tooOld = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW + 11 * 60e3 });
+check(!tooOld.servedFromMemo, 'a map older than ten minutes is not served as a throttle fallback');
+mode = 'ok';
+const after = await fetchIndexHeatmap('aex', { fetchImpl: stub, now: NOW + 131e3 }).catch(() => null);
+check(!failed.ok && after && !after.servedFromMemo, 'a failed pull is not remembered');
+
 mode = 'nocrumb'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
 check(!p.ok && p.integrity.batchErrors.some(x => /crumb/i.test(x)), 'no crumb, no quotes — said plainly');
@@ -280,13 +304,20 @@ check(/Wikipedia HTTP 503/.test(listErr), 'with no list at all the map fails —
 
 mode = 'ok'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW });
-check(p.integrity.unresolved.join() === 'GHOST' && p.integrity.drawn === 4 && p.membersAsOf === '2026-10-07', 'ISINs resolve to listings through Yahoo search; one with no listing is named, not guessed');
+check(p.integrity.unresolved.join() === 'GHOST' && p.integrity.drawn === 5 && p.membersAsOf === '2026-10-07', 'ISINs resolve to listings through Yahoo search; one with no listing is named, not guessed');
 check(p.tiles.some(t => t.symbol === 'FRE.DE') && !p.tiles.some(t => t.symbol === 'FRE.F') && !p.integrity.secondaryListings.length, 'a member matched to the Frankfurt floor is drawn from its XETRA line once Yahoo quotes it');
-check(p.integrity.fx.GBP === 1.15 && p.integrity.fx.CHF === 1.05 && !p.complete, 'pounds and francs converted to euros; 3 of 600 is not complete');
+check(p.integrity.fx.GBP === 1.15 && p.integrity.fx.CHF === 1.05 && !p.complete, 'pounds and francs converted to euros; a short list is not complete');
+check(p.tiles.some(t => t.name === 'M&G') && !p.tiles.some(t => /&amp;/.test(t.name)), "Invesco's HTML-escaped names are decoded (M&amp;G → M&G)");
 check(!JSON.stringify(p).includes('4.7744'), "Invesco's index weights are not carried");
 const searches = asked.filter(u => u.includes('/v1/finance/search')).length;
 await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 50e3 });
 check(asked.filter(u => u.includes('/v1/finance/search')).length === searches + 1, 'a resolved ISIN is not searched again; only the unresolved one is retried');
+mode = 'renamed';
+p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 100e3 });
+check(p.integrity.missing.includes('MNG'), 'a listing Yahoo stopped quoting is missing on that pull');
+p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW + 150e3 });
+check(p.tiles.some(t => t.symbol === 'MNG2.L') && !p.integrity.missing.includes('MNG'), 'its ISIN is searched again and the new listing drawn');
+mode = 'ok';
 
 _resetIndexHeatmap();
 p = await fetchIndexHeatmap('nifty50', { fetchImpl: stub, now: NOW });
@@ -297,6 +328,10 @@ _resetIndexHeatmap();
 p = await fetchIndexHeatmap('kospi', { fetchImpl: stub, now: NOW });
 check(p.integrity.constituents === 2 && p.integrity.leftOut === 1 && p.integrity.listed === 3 && !p.tiles.some(t => t.symbol === '005935.KS'), 'KOSPI: common shares only, the preferred line left out and counted');
 check(p.membersAsOfKind === 'listing' && /not the index provider's file/.test(p.method) && !/live/i.test(p.membersAsOfKind), 'an exchange listing is called the market, not the index file, and never "live"');
+
+_resetIndexHeatmap();
+p = await fetchIndexHeatmap('dfm', { fetchImpl: stub, now: NOW });
+check(p.integrity.listingShort === 1 && p.integrity.duplicates === 1 && p.integrity.leftOut === 0 && !p.complete, 'a listing whose paging skipped a member says one is missing and is not complete — not blamed on the rule');
 
 _resetIndexHeatmap();
 p = await fetchIndexHeatmap('tasi', { fetchImpl: stub, now: NOW });
@@ -310,6 +345,14 @@ check(p.index?.close && p.index.level === 43347.41 && p.index.changePct === -0.0
 // Batching: no request carries more than fifty symbols
 check(asked.filter(u => u.includes('/v7/finance/quote')).every(u => decodeURIComponent(/symbols=([^&]+)/.exec(u)[1]).split(',').length <= QUOTE_BATCH), 'quotes are asked fifty symbols at a time');
 check(MARKET_IDS.length === 16 && MARKET_IDS.every(id => MARKETS[id].tz && MARKETS[id].currency && MARKETS[id].city && (MARKETS[id].index || MARKETS[id].indexTwse)), 'sixteen markets, each with a zone, currency, city and an index level source');
+
+{
+  const t0 = Date.now();
+  const keepAlive = setTimeout(() => {}, 5000);   // the budget timer is unref'd, as in production
+  const r = await withinBudget(new Promise(() => {}), { deadline: Date.now() + 1600 }, 2000);
+  clearTimeout(keepAlive);
+  check(typeof r === 'symbol' && Date.now() - t0 < 1500, 'a stalled Postgres call gives up within the pull\'s budget');
+}
 
 // ── The route ──
 const realFetch = globalThis.fetch;

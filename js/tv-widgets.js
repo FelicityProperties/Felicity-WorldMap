@@ -191,7 +191,7 @@ export const HEATMAP_MARKETS = [
     own('ftse100', 'FTSE 100', 'FTSE 100', 'wiki', 'Wikipedia', 'the FTSE 100 table of a dated Wikipedia revision'),
     own('cac40', 'CAC 40', 'CAC 40', 'wiki', 'Wikipedia', 'the CAC 40 table of a dated Wikipedia revision'),
     { key: 'DAX',             label: 'DAX',                  evidence: EV },
-    own('sx5e', 'Euro Stoxx 50', 'Euro Stoxx 50', 'wiki', 'Wikipedia', 'the EURO STOXX 50 table of a dated Wikipedia revision'),
+    own('sx5e', 'Euro Stoxx 50', 'Euro Stoxx 50', 'issuer', 'Invesco', 'the dated EURO STOXX 50 index file Invesco publishes for its ETF'),
     own('stoxx600', 'STOXX 600', 'Stoxx 600', 'issuer', 'Invesco', "the dated STOXX Europe 600 index file Invesco publishes for its ETF"),
     { key: 'MDAX',            label: 'MDAX',                 evidence: EV },
     { key: 'TECDAX',          label: 'TecDAX',               evidence: EV },

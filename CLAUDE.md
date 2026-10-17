@@ -633,13 +633,16 @@ fabrication and has been removed. The rule generalises beyond Dubai:
     sample list (500, dated); KAP's BIST lists (the React Server Component
     chunks of `kap.org.tr/en/Endeksler`, read across chunks); State
     Street's daily SPDR STI holdings xlsx (`lib/xlsx.js`, no dependency);
-    Invesco's STOXX Europe 600 index file (600 ISINs, dated) with each ISIN
-    matched once through Yahoo search to its home venue by ISIN country
-    and kept in Postgres (`lib/kv-store.js`); MoneyDJ's **all-holdings**
-    page (`Basic0007B` — `Basic0007` is the top ten only) of the Tracker
-    Fund of Hong Kong (2800) and the Yuanta Taiwan 50 ETF (0050); a dated
-    Wikipedia revision for FTSE 100, CAC 40, Euro Stoxx 50, AEX and BEL 20
-    (revisions API, permanent `oldid` link, CC BY-SA); Yahoo's undated
+    Invesco's STOXX Europe 600 and EURO STOXX 50 index files (ISINs,
+    dated — the EURO STOXX 50 one replaced Wikipedia's table, which gave
+    Volkswagen's ordinary line where the index holds the preference
+    shares), each ISIN matched once through Yahoo search to its home venue
+    by ISIN country and kept in Postgres (`lib/kv-store.js`, merged on
+    write, an entry withdrawn when its listing stops quoting); MoneyDJ's
+    **all-holdings** page (`Basic0007B` — `Basic0007` is the top ten only)
+    of the Tracker Fund of Hong Kong (2800) and the Yuanta Taiwan 50 ETF
+    (0050); a dated Wikipedia revision (revisions API, permanent `oldid`
+    link, CC BY-SA) for FTSE 100, CAC 40, AEX and BEL 20; Yahoo's undated
     SET50 component list. KOSPI, Tadawul and DFM are drawn as **Yahoo's
     exchange listing** (company shares only — REIT and fund units left out
     on all three; KOSPI common lines, codes ending in 0; Tadawul main
