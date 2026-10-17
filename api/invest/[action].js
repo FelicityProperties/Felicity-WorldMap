@@ -25,6 +25,7 @@ import { yahooPrevClose } from '../../lib/market-evidence.js';
 import { yahooCandidates } from '../../lib/futures.js';
 import { fetchNikkeiHeatmap, NIKKEI_SOURCE, QUOTES_SOURCE } from '../../lib/nikkei.js';
 import { probeSources } from '../../lib/source-probe.js';
+import { fetchIndexHeatmap, membersDiag, MARKETS as INDEX_MARKETS, QUOTES_SOURCE as INDEX_QUOTES_SOURCE } from '../../lib/index-heatmap.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -860,6 +861,32 @@ async function handleNikkeiHeatmap(req, res) {
   }
 }
 
+// The sixteen markets TradingView withholds from embeds (lib/index-heatmap.js),
+// one per request: ?market=ftse100 … szse. Cached like the Nikkei map — a
+// complete pull two minutes at the edge, a partial one thirty seconds, a
+// failure never. ?diag=members reads every market's constituent list (and
+// the index quotes) without drawing anything.
+async function handleIndexHeatmap(req, res, url) {
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' });
+  if (url.searchParams.get('diag') === 'members') {
+    if (!checkRateLimit(limitKey(req, 'index-heatmap-diag'), 4)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+    res.setHeader('Cache-Control', 'no-store');
+    try { return res.status(200).json(await membersDiag()); } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
+  }
+  const id = String(url.searchParams.get('market') || '').toLowerCase();
+  if (!INDEX_MARKETS[id]) return res.status(400).json({ ok: false, error: `Unknown market: ${id.slice(0, 20)}` });
+  if (!checkRateLimit(limitKey(req, 'index-heatmap'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+  try {
+    const data = await fetchIndexHeatmap(id, { timeoutMs: 8000 });
+    res.setHeader('Cache-Control', !data.ok ? 'no-store' : data.complete ? 's-maxage=120' : 's-maxage=30');
+    return res.status(200).json(data.ok ? data : { ...data, error: data.integrity.batchErrors[0] ? `no constituent was quoted (${data.integrity.batchErrors[0]})` : 'no constituent was quoted' });
+  } catch (e) {
+    console.warn(`[invest/index-heatmap ${id}]`, e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ ok: false, error: e.message, market: { id, label: INDEX_MARKETS[id].label }, sources: { quotes: INDEX_QUOTES_SOURCE } });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -876,6 +903,7 @@ export default async function handler(req, res) {
   if (action === 'hormuz')      return handleHormuz(req, res, url);   // no symbol — dispatched before resolution
   if (action === 'hormuz-wire') return handleHormuzWire(req, res);
   if (action === 'nikkei-heatmap') return handleNikkeiHeatmap(req, res);
+  if (action === 'index-heatmap') return handleIndexHeatmap(req, res, url);
   if (action === 'heatmap-sources') {
     // Diagnostic: which candidate constituent and quote sources this
     // function can reach (lib/source-probe.js). Fixed target list.
