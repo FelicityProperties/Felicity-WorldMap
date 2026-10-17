@@ -641,14 +641,26 @@ fabrication and has been removed. The rule generalises beyond Dubai:
     Wikipedia revision for FTSE 100, CAC 40, Euro Stoxx 50, AEX and BEL 20
     (revisions API, permanent `oldid` link, CC BY-SA); Yahoo's undated
     SET50 component list. KOSPI, Tadawul and DFM are drawn as **Yahoo's
-    exchange listing** (KOSPI common shares — codes ending in 0; Tadawul
-    main-market company shares — no Nomu 9xxx codes, no REIT funds; every
-    DFM equity) and the page says so: it is the market, not the index
-    provider's file.
+    exchange listing** (company shares only — REIT and fund units left out
+    on all three; KOSPI common lines, codes ending in 0; Tadawul main
+    market, no Nomu 9xxx codes; DFM keeps the Gulf cross-listings that
+    trade there) and the page says so: it is the market, not the index
+    provider's file. Its list date reads "exchange listing read <time>",
+    never "live" — it is memoised for twelve hours.
+  - **Say what each list is.** The chip subtitle, the header credit and
+    the picker hint are built per market from its source kind (provider
+    file, fund holdings, Wikipedia revision, Yahoo list, exchange
+    listing). The first version told every map it came from "the index's
+    dated constituent list" — false for ten of sixteen (review, 17 Oct).
+  - **A share class is not a company.** Where a tile is sized by its own
+    line's price × shares (Hong Kong H-shares, preference lines, or Yahoo
+    giving no cap), the card says "listed-line value", not "market cap".
   - **Taiwan 50's level is TWSE's official close** (OpenAPI
     `indicesReport/TAI50I`, ROC dates — `1151016` is 2026-10-16); Yahoo
-    carries no FTSE TWSE Taiwan 50 symbol. The move is that close against
-    the previous one, labelled as such.
+    carries no FTSE TWSE Taiwan 50 symbol. The toolbar dates it as a close
+    and marks its move `calc` (close against the previous close — our
+    arithmetic); the report holds only the current month, so on its first
+    trading day there is no prior close and the toolbar says so.
   - **Dead ends, so nobody retries them**: Yahoo's `components` module is
     short for most indices (CAC 36/40, AEX 20/25, BEL 4/20, HSI 81,
     Nifty 49) — only SET 50 uses it; Wikipedia's Hang Seng table was three
@@ -664,7 +676,10 @@ fabrication and has been removed. The rule generalises beyond Dubai:
     TradingView withholds.
   - **No weight from any upstream reaches a payload** (Invesco, CNI, State
     Street, MoneyDJ and the Wikipedia AEX/BEL tables all carry them);
-    `tests/index-heatmap.test.mjs` fails if one does.
+    `tests/index-heatmap.test.mjs` fails if one does. The same holds for
+    the `heatmap-sources` diagnostic: it reports shape, counts and dates,
+    never holdings rows (its first version echoed the funds' weight
+    columns).
   - Lessons from building it: a greedy character-class regex over the
     2.7 MB iShares page hung the whole function — scan multi-megabyte
     pages with literal `indexOf`, and time the body read, not just the

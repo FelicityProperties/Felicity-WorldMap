@@ -138,8 +138,12 @@ export function mountOwnHeatmap(host, cfg) {
 
   const barHtml = d => {
     const i = d.index;
+    // An official close (Taiwan 50, from TWSE) is dated as a close, and its
+    // move — our arithmetic, close against the previous close — is marked
+    const move = i?.close && i.changePct == null ? 'no prior close' : fmtPct(i?.changePct);
     const idx = i
-      ? `<span class="nkhm__name">${escapeHtml(cfg.title)}</span><span class="nkhm__level">${escapeHtml(i.level.toLocaleString('en-US', { maximumFractionDigits: 2 }))}</span><span class="nkhm__idxchg ${i.changePct == null ? '' : i.changePct >= 0 ? 'is-up' : 'is-down'}">${escapeHtml(fmtPct(i.changePct))}</span>`
+      ? `<span class="nkhm__name">${escapeHtml(cfg.title)}</span><span class="nkhm__level">${escapeHtml(i.level.toLocaleString('en-US', { maximumFractionDigits: 2 }))}</span><span class="nkhm__idxchg ${i.changePct == null ? '' : i.changePct >= 0 ? 'is-up' : 'is-down'}">${escapeHtml(move)}</span>${
+        i.close ? `<span class="nkhm__badge" title="Felicity calc: this close against the previous close">calc</span><span class="nkhm__asof">${escapeHtml(i.source || 'close')} ${escapeHtml(new Date(i.time).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))}</span>` : ''}`
       : `<span class="nkhm__name">${escapeHtml(cfg.title)}</span><span class="nkhm__asof">index level not quoted</span>`;
     return `<div class="nkhm__idx">${idx}<span class="nkhm__badge" title="${escapeHtml(cfg.delayedTitle)}">Delayed</span><span class="nkhm__asof">${escapeHtml(cfg.when(d))}</span></div>
       <div class="nkhm__basis"><span><b>Size</b> ${escapeHtml(cfg.sizeBasis)}</span><span><b>Colour</b> change, %</span></div>

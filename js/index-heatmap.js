@@ -40,7 +40,7 @@ export function tileSummary(t, cur) {
   const move = t.changePct == null ? 'no quote from Yahoo'
     : t.stale ? `no trade this session — last move ${fmtPct(t.changePct)}`
     : fmtPct(t.changePct);
-  return `${t.name} (${t.code}) · ${t.sector}${t.industry ? ` / ${t.industry}` : ''} · ${fmtPrice(t)} · market cap ${fmtCap(t.size, cur)} · ${move}`;
+  return `${t.name} (${t.code}) · ${t.sector}${t.industry ? ` / ${t.industry}` : ''} · ${fmtPrice(t)} · ${sizeWord(t)} ${fmtCap(t.size, cur)} · ${move}`;
 }
 
 function tipHtml(t, d) {
@@ -50,10 +50,15 @@ function tipHtml(t, d) {
   const cls = t.changePct == null || t.stale ? '' : t.changePct >= 0 ? ' is-up' : ' is-down';
   return `<div class="nkhm__tip-name">${escapeHtml(shortName(t.name))} <span>${escapeHtml(t.code)}</span></div>
     <div class="nkhm__tip-move${cls}">${escapeHtml(move)}</div>
-    <div class="nkhm__tip-meta">${escapeHtml(fmtPrice(t))} · market cap ${escapeHtml(fmtCap(t.size, cur))}</div>
+    <div class="nkhm__tip-meta">${escapeHtml(fmtPrice(t))} · ${sizeWord(t)} ${escapeHtml(fmtCap(t.size, cur))}</div>
     <div class="nkhm__tip-meta">${escapeHtml(t.sector)}${t.industry ? ` · ${escapeHtml(t.industry)}` : ''}</div>
     <div class="nkhm__tip-meta">${escapeHtml(t.name)}${t.localName ? ` · ${escapeHtml(t.localName)}` : ''}</div>`;
 }
+
+const fmtRead = iso => (iso ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : '—');
+// What a tile's size is: Yahoo's (or a derived) company market cap, or the
+// value of the listed line alone
+const sizeWord = t => (t.lineValue ? 'listed-line value' : 'market cap');
 
 // How the constituent list is dated, in words
 function listDate(d) {
@@ -61,9 +66,9 @@ function listDate(d) {
   switch (d.membersAsOfKind) {
     case 'revision': return `Wikipedia revision ${d.membersAsOf || '—'}`;
     case 'file': return `list dated ${d.membersAsOf || '—'}`;
-    case 'live': return 'exchange listing, live';
+    case 'listing': return `exchange listing read ${fmtRead(i.membersFetchedAt)}`;
     case 'undated': return `undated list, read ${(i.membersFetchedAt || '').slice(0, 10) || '—'}`;
-    default: return `list read ${(i.membersFetchedAt || '').slice(0, 10) || '—'}`;
+    default: return `list read ${fmtRead(i.membersFetchedAt)}`;
   }
 }
 
@@ -88,16 +93,19 @@ function aboutHtml(d) {
   if (i.missing?.length) notes.push(`Not quoted by Yahoo, so not drawn: ${list(i.missing)}.`);
   if (i.unsized?.length) notes.push(`No market cap from Yahoo, so not drawn: ${list(i.unsized)}.`);
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(d.sessionDay || '')}), hatched: ${list(i.staleQuotes.map(q => `${q.code} (last ${q.day || '—'})`))}.`);
-  if (i.capsDerived?.length) notes.push(`Market cap taken as price × shares (Yahoo's own figure missing or out of line with them), from the company's other listing, or from the share count in its latest reported balance sheet, for ${list(i.capsDerived.map(c => c.code))}.`);
+  const line = (d.tiles || []).filter(t => t.lineValue).map(t => t.code);
+  if (line.length) notes.push(`Sized by the listed line's own value — its price × its shares, because Yahoo's market cap was missing or covered the whole company: ${list(line)}. For a company with more than one share class (Hong Kong H-shares, preference lines) that is less than its market cap, and the card says "listed-line value".`);
+  const other = (i.capsDerived || []).filter(c => !/^price × shares/.test(c.basis)).map(c => `${c.code} (${c.basis})`);
+  if (other.length) notes.push(`Market cap taken from ${list(other, 12)}.`);
   if (i.currencyInferred?.length) notes.push(`Yahoo gave no quote currency for ${list(i.currencyInferred)}; its reporting currency, the index's own, is used.`);
   const fx = Object.entries(i.fx || {});
   if (fx.length) notes.push(`Caps quoted in another currency are converted to ${escapeHtml(m.currency || '')} at Yahoo's spot rate: ${fx.map(([c, r]) => `1 ${escapeHtml(c)} = ${escapeHtml(r.toFixed(4))}`).join(', ')}.`);
   if (i.listed != null) notes.push(`Yahoo lists ${escapeHtml(String(i.listed))} equities on the exchange${i.leftOut ? `; ${escapeHtml(String(i.leftOut))} are left out by the rule in the source line below` : ''}.`);
-  if (d.index?.close) notes.push(`The index level is ${escapeHtml(d.index.source || 'the official close')} of ${escapeHtml((d.index.time || '').slice(0, 10))}; its move is that close against the one before — Yahoo carries no live level for this index.`);
+  if (d.index?.close) notes.push(`The index level is ${escapeHtml(d.index.source || 'the official close')} of ${escapeHtml((d.index.time || '').slice(0, 10))} — Yahoo carries no live level for this index — and its move is Felicity's arithmetic: that close against the one before${d.index.changePct == null ? ' (no earlier close in the report, so none is shown)' : ''}. During a session the level is the previous close while the tiles move with today's quotes.`);
   if (i.batchErrors?.length) notes.push(`Upstream errors: ${list(i.batchErrors, 4)}.`);
   if (d.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(d.memoAgeSec))}s ago.`);
   return `<p>${notes.join(' ')}</p>
-    <p>Tiles are the ${escapeHtml(m.label || 'index')}'s members as the constituent list below gives them, grouped by Yahoo Finance sector and sized by market capitalisation in ${escapeHtml(m.currency || '')} — not by index weight, which the index providers license. Colour is the session's move from delayed Yahoo Finance quotes; ±3% saturates.</p>
+    <p>${d.membersAsOfKind === 'listing' ? `Tiles are the market as Yahoo lists it, by the rule in the source line below — not the index provider's own file, which our servers cannot reach` : `Tiles are the members the list below gives`}, grouped by Yahoo Finance sector and sized by market capitalisation in ${escapeHtml(m.currency || '')} — not by index weight, which the index providers license. Colour is the session's move from delayed Yahoo Finance quotes; ±3% saturates.</p>
     <p>Constituents: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || '—')}</a>${d.membersAsOf ? `, ${escapeHtml(d.membersAsOf)}` : ''}. Quotes, market caps and sectors: <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve this market to embedded heatmaps.</p>`;
 }
 

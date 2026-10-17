@@ -166,9 +166,13 @@ export const TV_EMBED_WITHHELD = [
 
 const EV = 'TradingView embed menu, read from the widget bundle 2026-09-26';
 // Withheld markets drawn by us (js/index-heatmap.js): `market` is the
-// lib/index-heatmap.js id, `withheld` the TV_EMBED_WITHHELD entry it covers
-const own = (market, label, withheld, list) => ({
-  key: `FELICITY_${market.toUpperCase()}`, label, own: 'index', market, withheld,
+// lib/index-heatmap.js id, `withheld` the TV_EMBED_WITHHELD entry it
+// covers, `list` where its members come from (said as plainly as the
+// source deserves — a fund's holdings, a Wikipedia revision, or the whole
+// exchange as Yahoo lists it are not the index provider's file), `src`
+// the short credit for the view header, `kind` the family for the hint
+const own = (market, label, withheld, kind, src, list) => ({
+  key: `FELICITY_${market.toUpperCase()}`, label, own: 'index', market, withheld, kind, src, list,
   evidence: `Drawn by Felicity: members from ${list}, delayed quotes, market caps and sectors from Yahoo Finance`,
 });
 export const HEATMAP_MARKETS = [
@@ -183,15 +187,15 @@ export const HEATMAP_MARKETS = [
     { key: 'BCBAIMV',         label: 'Argentina Merval',     evidence: EV },
   ]},
   { region: 'Europe', items: [
-    own('ftse100', 'FTSE 100', 'FTSE 100', "Wikipedia's dated FTSE 100 table"),
-    own('cac40', 'CAC 40', 'CAC 40', "Wikipedia's dated CAC 40 table"),
+    own('ftse100', 'FTSE 100', 'FTSE 100', 'wiki', 'Wikipedia', 'the FTSE 100 table of a dated Wikipedia revision'),
+    own('cac40', 'CAC 40', 'CAC 40', 'wiki', 'Wikipedia', 'the CAC 40 table of a dated Wikipedia revision'),
     { key: 'DAX',             label: 'DAX',                  evidence: EV },
-    own('sx5e', 'Euro Stoxx 50', 'Euro Stoxx 50', "Wikipedia's dated EURO STOXX 50 table"),
-    own('stoxx600', 'STOXX 600', 'Stoxx 600', "Invesco's STOXX Europe 600 index file"),
+    own('sx5e', 'Euro Stoxx 50', 'Euro Stoxx 50', 'wiki', 'Wikipedia', 'the EURO STOXX 50 table of a dated Wikipedia revision'),
+    own('stoxx600', 'STOXX 600', 'Stoxx 600', 'file', 'Invesco', "Invesco's dated STOXX Europe 600 index file"),
     { key: 'MDAX',            label: 'MDAX',                 evidence: EV },
     { key: 'TECDAX',          label: 'TecDAX',               evidence: EV },
-    own('aex', 'AEX', 'AEX', "Wikipedia's dated AEX table"),
-    own('bel20', 'BEL 20', 'BEL 20', "Wikipedia's dated BEL 20 table"),
+    own('aex', 'AEX', 'AEX', 'wiki', 'Wikipedia', 'the AEX table of a dated Wikipedia revision'),
+    own('bel20', 'BEL 20', 'BEL 20', 'wiki', 'Wikipedia', 'the BEL 20 table of a dated Wikipedia revision'),
     { key: 'IBEX35',          label: 'IBEX 35',              evidence: EV },
     { key: 'FTSEMIB',         label: 'FTSE MIB',             evidence: EV },
     { key: 'SIXSMI',          label: 'Swiss SMI',            evidence: EV },
@@ -200,30 +204,30 @@ export const HEATMAP_MARKETS = [
     { key: 'HELSINKI25',      label: 'Helsinki 25',          evidence: EV },
     { key: 'GPWWIG20',        label: 'Warsaw WIG20',         evidence: EV },
     { key: 'ATHEXGD',         label: 'Athens Composite',     evidence: EV },
-    own('bist100', 'BIST 100', 'BIST 100', "KAP's BIST 100 constituent list"),
+    own('bist100', 'BIST 100', 'BIST 100', 'file', 'KAP', "KAP's BIST 100 constituent list (undated)"),
     { key: 'TA35',            label: 'Tel Aviv 35',          evidence: EV },
   ]},
   { region: 'Asia-Pacific', items: [
     // Drawn by us, not TradingView: Japan is withheld from embeds
     { key: 'FELICITY_NIKKEI225', label: 'Nikkei 225', own: 'nikkei', withheld: 'Nikkei 225',
       evidence: 'Drawn by Felicity: constituents and official weights from Nikkei Inc., delayed day moves from Yahoo Finance' },
-    own('hsi', 'Hang Seng', 'Hang Seng (HSI)', "the Tracker Fund of Hong Kong's holdings"),
-    own('szse', 'Shenzhen Component', 'Shenzhen Component', "CNI's SZSE Component sample list"),
+    own('hsi', 'Hang Seng', 'Hang Seng (HSI)', 'fund', 'Fund holdings', 'the dated holdings of the Tracker Fund of Hong Kong, which tracks the index'),
+    own('szse', 'Shenzhen Component', 'Shenzhen Component', 'file', 'CNI', "CNI's dated SZSE Component sample list"),
     { key: 'ASX200',          label: 'ASX 200',              evidence: EV },
-    own('nifty50', 'Nifty 50', 'Nifty 50', "NSE's Nifty 50 constituent file"),
+    own('nifty50', 'Nifty 50', 'Nifty 50', 'file', 'NSE', "NSE's Nifty 50 constituent file"),
     { key: 'SENSEX',          label: 'India Sensex',         evidence: EV },
-    own('kospi', 'KOSPI', 'KOSPI', "Yahoo's KOSPI common-share listing"),
-    own('tw50', 'Taiwan 50', 'Taiwan 50', "the Yuanta Taiwan 50 ETF's holdings"),
-    own('sti', 'Straits Times', 'Straits Times', "State Street's STI ETF holdings"),
-    own('set50', 'SET 50', 'SET 50', "Yahoo's SET50 member list"),
+    own('kospi', 'KOSPI', 'KOSPI', 'listing', 'Yahoo listing', "Yahoo's listing of the KOSPI market's common shares — the market, not KRX's index file"),
+    own('tw50', 'Taiwan 50', 'Taiwan 50', 'fund', 'Fund holdings', 'the dated holdings of the Yuanta Taiwan 50 ETF, which tracks the index'),
+    own('sti', 'Straits Times', 'Straits Times', 'fund', 'Fund holdings', "the dated holdings of State Street's STI ETF"),
+    own('set50', 'SET 50', 'SET 50', 'yahoo', 'Yahoo list', "Yahoo's undated SET50 member list"),
     { key: 'HSTECH',          label: 'Hang Seng Tech',       evidence: EV },
     { key: 'HSCEI',           label: 'HS China Enterprises', evidence: EV },
     { key: 'IDX30',           label: 'Indonesia IDX 30',     evidence: EV },
     { key: 'PSXKSE100',       label: 'Pakistan KSE 100',     evidence: EV },
   ]},
   { region: 'Middle East & Africa', items: [
-    own('tasi', 'Tadawul TASI', 'Tadawul TASI', "Yahoo's Saudi main-market listing"),
-    own('dfm', 'DFM General', 'DFM General', "Yahoo's DFM listing"),
+    own('tasi', 'Tadawul TASI', 'Tadawul TASI', 'listing', 'Yahoo listing', "Yahoo's listing of Saudi main-market company shares — the market, not the exchange's index file"),
+    own('dfm', 'DFM General', 'DFM General', 'listing', 'Yahoo listing', "Yahoo's listing of DFM company shares — the market, not the exchange's index file"),
     { key: 'ADXFADX15',       label: 'Abu Dhabi FTSE ADX 15', evidence: EV },
     { key: 'KSEBKP',          label: 'Kuwait Premier',       evidence: EV },
     { key: 'EGXEGX30',        label: 'Egypt EGX 30',         evidence: EV },
@@ -243,8 +247,18 @@ export const OWN_DRAWN = new Set(HEATMAP_MARKETS.flatMap(g => g.items.filter(m =
 function withheldHint() {
   const missing = TV_EMBED_WITHHELD.filter(m => !OWN_DRAWN.has(m));
   const drawn = TV_EMBED_WITHHELD.filter(m => OWN_DRAWN.has(m));
+  const chips = HEATMAP_MARKETS.flatMap(g => g.items).filter(m => m.own === 'index');
+  const of = kind => chips.filter(m => m.kind === kind).map(m => m.label).join(', ');
+  const families = [
+    [of('file'), 'from an exchange or index-provider file'],
+    [of('fund'), "from an index fund's dated holdings"],
+    [of('wiki'), 'from a dated Wikipedia revision'],
+    [of('yahoo'), "from Yahoo's undated member list"],
+    [of('listing'), "as the whole market Yahoo lists — not the index provider's file, which our servers cannot reach"],
+  ].filter(([names]) => names).map(([names, how]) => `${escapeHtml(names)} ${how}`);
   return `TradingView withholds ${escapeHtml(TV_EMBED_WITHHELD.join(', '))} from embedded heatmaps and draws the S&amp;P 500 in their place. `
-    + `Felicity draws ${drawn.length === TV_EMBED_WITHHELD.length ? `all ${drawn.length}` : escapeHtml(drawn.join(', '))} itself: each index's members from its own dated constituent list, sized by market cap (the Nikkei 225 by Nikkei's official weights) and coloured by Yahoo Finance's delayed moves — the map's About panel names the list and its date. `
+    + `Felicity draws ${drawn.length === TV_EMBED_WITHHELD.length ? `all ${drawn.length}` : escapeHtml(drawn.join(', '))} itself. The Nikkei 225 comes from Nikkei's official weight file; the others take their members ${families.join('; ')}. `
+    + `Tiles are sized by market cap (the Nikkei 225 by Nikkei's official weights) and coloured by Yahoo Finance's delayed moves; each map's About panel names its list and the date it carries, where it has one. `
     + (missing.length ? `No chip yet for ${escapeHtml(missing.join(', '))}; <a href="https://www.tradingview.com/heatmap/stock/" target="_blank" rel="noopener">open the heatmap on tradingview.com</a>. ` : '')
     + `The other ${TV_HEATMAP_KEYS.length} chips are TradingView's own, the most-used of the ${TV_EMBED_DATASETS.length} datasets it serves; the widget's own menu (top-left header) lists all of them.`;
 }
@@ -293,9 +307,9 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
     if (sub) sub.textContent = m?.own === 'nikkei'
       ? 'The Nikkei 225\u2019s constituents grouped by Nikkei sector, sized by official index weight (the index is price-weighted, not market cap), coloured by the session\u2019s delayed move. Drawn by Felicity from Nikkei Inc.\u2019s weight file and Yahoo Finance quotes.'
       : m?.own === 'index'
-        ? `The ${m.label}\u2019s members grouped by sector, sized by market cap, coloured by the session\u2019s delayed move. Drawn by Felicity from the index\u2019s dated constituent list and Yahoo Finance quotes.`
+        ? `The ${m.label}: members from ${m.list}, grouped by sector, sized by market cap and coloured by the session\u2019s delayed move. Drawn by Felicity with Yahoo Finance quotes.`
         : defSub;
-    if (src) src.textContent = m?.own === 'nikkei' ? 'Nikkei Inc. · Yahoo (delayed)' : m?.own === 'index' ? 'Constituent list · Yahoo (delayed)' : defSrc;
+    if (src) src.textContent = m?.own === 'nikkei' ? 'Nikkei Inc. · Yahoo (delayed)' : m?.own === 'index' ? `${m.src} · Yahoo (delayed)` : defSrc;
     view?.classList.toggle('tv-view--own', !!m?.own);
     if (m?.own === 'nikkei') {
       note.textContent = 'Showing the Nikkei 225, drawn by Felicity: TradingView does not serve Japan to embedded heatmaps.';

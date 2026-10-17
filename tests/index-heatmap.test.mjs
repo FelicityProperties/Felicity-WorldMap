@@ -294,6 +294,7 @@ check(rel && rel.size === 1.6e13 && p.integrity.capsDerived.some(x => x.code ===
 _resetIndexHeatmap();
 p = await fetchIndexHeatmap('kospi', { fetchImpl: stub, now: NOW });
 check(p.integrity.constituents === 2 && p.integrity.leftOut === 1 && p.integrity.listed === 3 && !p.tiles.some(t => t.symbol === '005935.KS'), 'KOSPI: common shares only, the preferred line left out and counted');
+check(p.membersAsOfKind === 'listing' && /not the index provider's file/.test(p.method) && !/live/i.test(p.membersAsOfKind), 'an exchange listing is called the market, not the index file, and never "live"');
 
 _resetIndexHeatmap();
 p = await fetchIndexHeatmap('tasi', { fetchImpl: stub, now: NOW });
@@ -301,6 +302,7 @@ check(p.integrity.constituents === 1 && p.tiles[0]?.symbol === '2222.SR' && p.in
 
 _resetIndexHeatmap();
 p = await fetchIndexHeatmap('tw50', { fetchImpl: stub, now: NOW });
+check(p.tiles.every(t => t.lineValue === false || t.lineValue === true), 'every tile says whether its size is a listed-line value');
 check(p.index?.close && p.index.level === 43347.41 && p.index.changePct === -0.02 && p.membersAsOf === '2026-10-16' && p.integrity.constituents === 2, "Taiwan 50: TWSE's official close as the level, the fund's dated holdings as the members");
 
 // Batching: no request carries more than fifty symbols
@@ -333,6 +335,7 @@ check(!p.tiles.some(t => /<img|onerror/.test(t.name)), 'markup in a Wikipedia ce
 const hostile = { ...p.tiles[0], name: '<img src=x onerror=alert(1)>', code: '"><b>', industry: '<script>', rect: { x: 0, y: 0, w: 300, h: 120 } };
 const html = tileHtml(hostile, 9, t => tileSummary(t, 'EUR'));
 check(!/<img|<script|<b>/.test(html) && /&lt;img/.test(html), 'a hostile name is escaped in the tile and its label');
+check(/listed-line value €/.test(tileSummary({ ...p.tiles[0], lineValue: true }, 'EUR')) && !/market cap/.test(tileSummary({ ...p.tiles[0], lineValue: true }, 'EUR')), "a share class's own value is never called a market cap");
 check(/market cap €/.test(tileSummary(p.tiles[0], 'EUR')) && fmtCap(5.67e11, 'EUR') === '€567B' && fmtCap(1.54e9, 'EUR') === '€1.5B' && fmtCap(1e9, 'XXX1').startsWith('XXX1'), 'tile summary carries the market cap in the index currency');
 const groups = layout(p, 1000, 600);
 check(groups.reduce((s, g) => s + g.tiles.length, 0) === p.tiles.length, 'every sized tile is laid out');
