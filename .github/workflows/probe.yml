@@ -8,12 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       targets:
-        description: 'Whitespace-separated URLs, or yahoo-crumb:SYM,SYM'
+        description: 'Whitespace-separated URLs, yahoo-crumb:SYM,SYM, or post:URL::BASE64BODY'
         required: true
       head:
         description: 'Characters of each body to print'
         required: false
         default: '3000'
+      timeout:
+        description: 'Per-request timeout, ms'
+        required: false
+        default: '15000'
 permissions:
   contents: read
 jobs:
@@ -29,4 +33,5 @@ jobs:
         env:
           PROBE_TARGETS: ${{ inputs.targets }}
           PROBE_HEAD: ${{ inputs.head }}
+          PROBE_TIMEOUT: ${{ inputs.timeout }}
         run: node scripts/probe.mjs
