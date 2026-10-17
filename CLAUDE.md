@@ -598,6 +598,80 @@ fabrication and has been removed. The rule generalises beyond Dubai:
   CSSOM in Playwright before blaming the data.
   First production pull (16 Oct): 225/225 quoted, weights sum 100.00%,
   the weight-implied move (+1.44%) within 0.05 pt of the index (+1.39%).
+- **The other sixteen withheld markets are drawn by us too** (owner
+  request, 17 Oct: "figure a way and add all these"): FTSE 100, CAC 40,
+  Euro Stoxx 50, STOXX 600, AEX, BEL 20, BIST 100, Hang Seng, Shenzhen
+  Component, Nifty 50, KOSPI, Taiwan 50, Straits Times, SET 50, Tadawul,
+  DFM. `lib/index-heatmap.js` serves one market per request
+  (`/api/invest/index-heatmap?market=<id>`, ids in `MARKETS`);
+  `js/index-heatmap.js` describes it and `js/own-heatmap.js` draws it —
+  the renderer the Nikkei map now shares. **`?diag=members` reads all
+  sixteen constituent lists and index quotes without drawing — run it
+  first when a map misbehaves.** Every source was fetched from Vercel
+  before it was used (`/api/invest/heatmap-sources`, a fixed-list probe
+  inside the function, 17 Oct, iad1):
+  - **Quotes, size and sector: Yahoo's v7 quote behind the cookie+crumb
+    handshake** (A3 cookie from `fc.yahoo.com`, crumb from
+    `/v1/test/getcrumb`; it answers from Vercel, runners get 429). Fifty
+    symbols a request with an explicit `fields=` list. **Tiles are sized
+    by market cap in the index currency** (converted at Yahoo's spot FX),
+    as TradingView sizes its own — never by index weight, which the
+    providers license. `capOf` checks Yahoo's cap against price × shares:
+    London quotes in pence with caps in pounds; a share class carrying the
+    whole company's value (Samsung's preferred line, Hong Kong H-shares,
+    VW's preference shares) is sized by its own price × shares; NSE lines
+    carry no cap, so the BSE line's is used; Allianz, Publicis, KBC, Halma
+    and a few others have no cap or share count in the batch at all (with
+    or without `fields`) nor in quoteSummary, so those few are sized by
+    price × the ordinary share count of their latest reported balance
+    sheet (Yahoo's fundamentals series, dated, ignored if older than
+    eighteen months). Still nothing → listed "not drawn", never a guessed
+    size. A quote with no currency takes its reporting currency only when
+    that is the index's own, and the page names it.
+  - **Who is in the index — the most official list Vercel can reach**:
+    NSE's Nifty CSV (dated by `Last-Modified`); CNI's SZSE Component
+    sample list (500, dated); KAP's BIST lists (the React Server Component
+    chunks of `kap.org.tr/en/Endeksler`, read across chunks); State
+    Street's daily SPDR STI holdings xlsx (`lib/xlsx.js`, no dependency);
+    Invesco's STOXX Europe 600 index file (600 ISINs, dated) with each ISIN
+    matched once through Yahoo search to its home venue by ISIN country
+    and kept in Postgres (`lib/kv-store.js`); MoneyDJ's **all-holdings**
+    page (`Basic0007B` — `Basic0007` is the top ten only) of the Tracker
+    Fund of Hong Kong (2800) and the Yuanta Taiwan 50 ETF (0050); a dated
+    Wikipedia revision for FTSE 100, CAC 40, Euro Stoxx 50, AEX and BEL 20
+    (revisions API, permanent `oldid` link, CC BY-SA); Yahoo's undated
+    SET50 component list. KOSPI, Tadawul and DFM are drawn as **Yahoo's
+    exchange listing** (KOSPI common shares — codes ending in 0; Tadawul
+    main-market company shares — no Nomu 9xxx codes, no REIT funds; every
+    DFM equity) and the page says so: it is the market, not the index
+    provider's file.
+  - **Taiwan 50's level is TWSE's official close** (OpenAPI
+    `indicesReport/TAI50I`, ROC dates — `1151016` is 2026-10-16); Yahoo
+    carries no FTSE TWSE Taiwan 50 symbol. The move is that close against
+    the previous one, labelled as such.
+  - **Dead ends, so nobody retries them**: Yahoo's `components` module is
+    short for most indices (CAC 36/40, AEX 20/25, BEL 4/20, HSI 81,
+    Nifty 49) — only SET 50 uses it; Wikipedia's Hang Seng table was three
+    short of its own infobox and its STOXX 600 table holds 467 of 600; KRX's
+    data portal answers "LOGOUT" (login required); set.or.th is behind
+    Incapsula and saudiexchange.sa behind Akamai (403); Euronext's
+    composition endpoint returns encrypted JSON; iShares' holdings links
+    are built by script; hsi.com.hk's old constituents endpoint is gone;
+    stoxx.com serves an incomplete TLS chain Node rejects; State Street's
+    2800.HK file is from 2022. DFM's API needs the subscription key its
+    page ships to browsers — a credential for its own front end, not used.
+    TradingView's scanner is not used either: it would republish what
+    TradingView withholds.
+  - **No weight from any upstream reaches a payload** (Invesco, CNI, State
+    Street, MoneyDJ and the Wikipedia AEX/BEL tables all carry them);
+    `tests/index-heatmap.test.mjs` fails if one does.
+  - Lessons from building it: a greedy character-class regex over the
+    2.7 MB iShares page hung the whole function — scan multi-megabyte
+    pages with literal `indexOf`, and time the body read, not just the
+    headers. The commit status turns green on the **Preview** deployment
+    before Production switches over: wait on
+    `deployments?sha=<full sha>&environment=Production` and its statuses
+    before probing the live site.
 - **TradingView's loader writes its size inline onto your container.** It
   sets the configured `width`/`height` (`"100%"`) as an inline style on the
   `.tradingview-widget-container` the script sits in (read from

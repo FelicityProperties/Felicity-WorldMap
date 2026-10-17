@@ -85,7 +85,7 @@ function aboutHtml(d) {
   if (i.missing?.length) notes.push(`Not quoted by Yahoo, so not drawn: ${list(i.missing)}.`);
   if (i.unsized?.length) notes.push(`No market cap from Yahoo, so not drawn: ${list(i.unsized)}.`);
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(d.sessionDay || '')}), hatched: ${list(i.staleQuotes.map(q => `${q.code} (last ${q.day || '—'})`))}.`);
-  if (i.capsDerived?.length) notes.push(`Market cap taken as price × shares, from the company's other listing or from Yahoo's key statistics for ${list(i.capsDerived.map(c => c.code))} — Yahoo's own figure was missing or disagreed.`);
+  if (i.capsDerived?.length) notes.push(`Market cap taken as price × shares (Yahoo's own figure missing or out of line with them), from the company's other listing, or from the share count in its latest reported balance sheet, for ${list(i.capsDerived.map(c => c.code))}.`);
   if (i.currencyInferred?.length) notes.push(`Yahoo gave no quote currency for ${list(i.currencyInferred)}; its reporting currency, the index's own, is used.`);
   const fx = Object.entries(i.fx || {});
   if (fx.length) notes.push(`Caps quoted in another currency are converted to ${escapeHtml(m.currency || '')} at Yahoo's spot rate: ${fx.map(([c, r]) => `1 ${escapeHtml(c)} = ${escapeHtml(r.toFixed(4))}`).join(', ')}.`);

@@ -8,7 +8,7 @@
 import {
   MARKETS, MARKET_IDS, fetchIndexHeatmap, _resetIndexHeatmap, membersFromWikitext, membersFromNiftyCsv, membersFromCnindex,
   membersFromKap, membersFromSsga, membersFromMoneyDj, pickSearchSymbol, capOf, parseQuote, localDay, rocDay, twseIndexLevel,
-  lseSymbol, suffixed, euronextSymbol, sehkSymbol, QUOTE_BATCH,
+  lseSymbol, suffixed, euronextSymbol, sehkSymbol, QUOTE_BATCH, latestShareCount,
 } from '../lib/index-heatmap.js';
 import { findTable, parseTable, cleanWiki, infoboxCount, splitTop } from '../lib/wikitable.js';
 import { readXlsx } from '../lib/xlsx.js';
@@ -152,6 +152,7 @@ const whole = capOf({ price: 100, currency: 'KRW', shares: 1e8, cap: 1e14 });
 check(whole.cap === 1e10 && /disagreed/.test(whole.basis), "a share class carrying the whole company's value is sized by its own price × shares");
 check(capOf({ price: 5, currency: 'EUR', shares: 2e6, cap: null }).cap === 1e7 && capOf({ price: 5, currency: 'EUR' }).cap === null, 'cap from price × shares when Yahoo gives none; none when neither');
 check(localDay('2026-10-16T23:30:00.000Z', 'Asia/Tokyo') === '2026-10-17' && localDay('2026-10-16T23:30:00.000Z', 'Europe/London') === '2026-10-17' && localDay('2026-10-16T22:30:00.000Z', 'Europe/London') === '2026-10-16', 'session days in the exchange time zone, DST included');
+check(latestShareCount({ timeseries: { result: [{ meta: { type: ['quarterlyOrdinarySharesNumber'] }, quarterlyOrdinarySharesNumber: [{ asOfDate: '2024-01-31', reportedValue: { raw: 9 } }] }] } }, Date.parse('2026-10-17')) === null, 'a share count reported more than eighteen months ago is not used');
 check(rocDay('1151016') === '2026-10-16' && rocDay('2026') === null, 'ROC calendar dates');
 const tw = twseIndexLevel([{ Date: '1151016', Taiwan50Index: '43347.41' }, { Date: '1151015', Taiwan50Index: '43355.92' }], 'Taiwan50Index');
 check(tw.level === 43347.41 && tw.changePct === -0.02 && tw.day === '2026-10-16', 'Taiwan 50 close and its close-to-close move');
@@ -202,7 +203,10 @@ const stub = async (url, opts = {}) => {
     return new Response(JSON.stringify({ quotes: map[isin] ? [{ symbol: map[isin], quoteType: 'EQUITY' }] : [] }));
   }
   if (u.includes('niftyindices.com')) return new Response('Company Name,Industry,Symbol,Series,ISIN Code\nReliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,EQ,INE002A01018\n', { headers: { 'last-modified': 'Fri, 16 Oct 2026 12:00:00 GMT' } });
-  if (u.includes('/v10/finance/quoteSummary/C04.PA') && mode === 'summary') return new Response(JSON.stringify({ quoteSummary: { result: [{ price: { marketCap: { raw: 5e9 }, currency: 'EUR' }, defaultKeyStatistics: {} }] } }));
+  if (u.includes('fundamentals-timeseries/v1/finance/timeseries/C04.PA') && mode === 'summary') return new Response(JSON.stringify({ timeseries: { result: [
+    { meta: { type: ['annualOrdinarySharesNumber'] }, annualOrdinarySharesNumber: [{ asOfDate: '2025-12-31', reportedValue: { raw: 4.9e8 } }] },
+    { meta: { type: ['quarterlyOrdinarySharesNumber'] }, quarterlyOrdinarySharesNumber: [{ asOfDate: '2026-03-31', reportedValue: { raw: 4.95e8 } }, null, { asOfDate: '2026-06-30', reportedValue: { raw: 5e8 } }] },
+  ] } }));
   if (u.includes('/v1/finance/screener')) {
     const body = JSON.parse(opts.body);
     const ex = body.query.operands[0].operands[1];
@@ -240,7 +244,7 @@ check(c05?.stale && p.integrity.staleQuotes.some(s => s.code === 'C05' && s.day 
 
 mode = 'summary'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
-check(p.tiles.find(t => t.code === 'C04')?.size === 5e9 && p.integrity.capsDerived.some(x => x.code === 'C04' && /key statistics/.test(x.basis)), "a member the batch quote left without a cap is sized from Yahoo's key statistics, and says so");
+check(p.tiles.find(t => t.code === 'C04')?.size === 5e9 && p.integrity.capsDerived.some(x => x.code === 'C04' && /ordinary shares reported 2026-06-30/.test(x.basis)), "a member the batch quote left without a cap is sized by price × its latest reported share count, dated");
 
 mode = 'one-missing'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
