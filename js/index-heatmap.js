@@ -106,7 +106,7 @@ function aboutHtml(d) {
   if (d.servedFromMemo) notes.push(`Pulled ${escapeHtml(String(d.memoAgeSec))}s ago.`);
   return `<p>${notes.join(' ')}</p>
     <p>${d.membersAsOfKind === 'listing' ? `Tiles are the market as Yahoo lists it, by the rule in the source line below — not the index provider's own file, which our servers cannot reach` : `Tiles are the members the list below gives`}, grouped by Yahoo Finance sector and sized by market capitalisation in ${escapeHtml(m.currency || '')} — not by index weight, which the index providers license. Colour is the session's move from delayed Yahoo Finance quotes; ±3% saturates.</p>
-    <p>Constituents: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || '—')}</a>${d.membersAsOf ? `, ${escapeHtml(d.membersAsOf)}` : ''}. Quotes, market caps and sectors: <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve this market to embedded heatmaps.</p>`;
+    <p>Constituents: <a href="${safeUrl(s.constituents?.url)}" target="_blank" rel="noopener">${escapeHtml(s.constituents?.name || '—')}</a>${d.membersAsOf && d.membersAsOfKind !== 'revision' ? `, ${escapeHtml(d.membersAsOf)}` : ''}. Quotes, market caps and sectors: <a href="${safeUrl(s.quotes?.url)}" target="_blank" rel="noopener">${escapeHtml(s.quotes?.name || 'Yahoo Finance')}</a>. Drawn by Felicity — TradingView does not serve this market to embedded heatmaps.</p>`;
 }
 
 export function mountIndexHeatmap(host, market, label) {
