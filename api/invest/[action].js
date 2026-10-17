@@ -24,6 +24,7 @@ import { readLayer } from '../../lib/live-store.js';
 import { yahooPrevClose } from '../../lib/market-evidence.js';
 import { yahooCandidates } from '../../lib/futures.js';
 import { fetchNikkeiHeatmap, NIKKEI_SOURCE, QUOTES_SOURCE } from '../../lib/nikkei.js';
+import { probeSources } from '../../lib/source-probe.js';
 
 // Any symbol outside the curated universe is treated as a US equity and
 // routed to Finnhub. That keeps the cockpit open-ended — a user can analyse
@@ -875,6 +876,15 @@ export default async function handler(req, res) {
   if (action === 'hormuz')      return handleHormuz(req, res, url);   // no symbol — dispatched before resolution
   if (action === 'hormuz-wire') return handleHormuzWire(req, res);
   if (action === 'nikkei-heatmap') return handleNikkeiHeatmap(req, res);
+  if (action === 'heatmap-sources') {
+    // Diagnostic: which candidate constituent and quote sources this
+    // function can reach (lib/source-probe.js). Fixed target list.
+    if (!checkRateLimit(limitKey(req, 'heatmap-sources'), 6)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
+    res.setHeader('Cache-Control', 'no-store');
+    try {
+      return res.status(200).json(await probeSources({ only: url.searchParams.get('only'), head: url.searchParams.get('head') }));
+    } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
+  }
   if (action === 'tv-datasets') {
     // Diagnostic: the heatmap's real dataSource codes, read from TradingView's
     // own bundle by this function (the dev sandbox cannot reach TradingView).
