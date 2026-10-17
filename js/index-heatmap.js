@@ -27,9 +27,12 @@ export function fmtCap(v, cur) {
   }
 }
 
+// The index's own quote time where Yahoo quotes it live: the newest member
+// quote can be a foreign line trading hours later (Ferrovial on Nasdaq)
 const when = d => {
   const m = d.market || {};
-  return fmtTime(d.integrity?.quotesTo || d.index?.time, m.tz || 'UTC', m.city || 'UTC');
+  const t = (!d.index?.close && d.index?.time) || d.integrity?.quotesTo || d.index?.time;
+  return `${fmtTime(t, m.tz || 'UTC', m.city || 'UTC')}${d.index?.close && !d.integrity?.quotesTo ? ' close' : ''}`;
 };
 
 /** One line a reader can act on — the button's label and the screen-reader echo. */

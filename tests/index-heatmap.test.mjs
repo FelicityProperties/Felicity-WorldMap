@@ -196,10 +196,10 @@ const stub = async (url, opts = {}) => {
     const drop = mode === 'one-missing' ? ['C07.PA'] : [];
     return new Response(JSON.stringify({ quoteResponse: { result: syms.filter(s => !drop.includes(s)).map((s, i) => quoteFor(s, i)) } }));
   }
-  if (u.includes('dng-api.invesco.com')) return new Response(JSON.stringify({ effectiveDate: '2026-10-07', holdings: [{ name: 'ASML HOLDING ORD', isin: 'NL0010273215', weight: 4.7744 }, { name: 'HSBC HOLDINGS ORD', isin: 'GB0005405286', weight: 2.1808 }, { name: 'NOVARTIS N ORD', isin: 'CH0012005267', weight: 1.865 }, { name: 'GHOST ORD', isin: 'XS0000000009', weight: 0.01 }] }));
+  if (u.includes('dng-api.invesco.com')) return new Response(JSON.stringify({ effectiveDate: '2026-10-07', holdings: [{ name: 'ASML HOLDING ORD', isin: 'NL0010273215', weight: 4.7744 }, { name: 'HSBC HOLDINGS ORD', isin: 'GB0005405286', weight: 2.1808 }, { name: 'NOVARTIS N ORD', isin: 'CH0012005267', weight: 1.865 }, { name: 'FRESENIUS ORD', isin: 'DE0005785604', weight: 0.2 }, { name: 'GHOST ORD', isin: 'XS0000000009', weight: 0.01 }] }));
   if (u.includes('/v1/finance/search')) {
     const isin = /q=([A-Z0-9]+)/.exec(u)[1];
-    const map = { NL0010273215: 'ASML.AS', GB0005405286: 'HSBA.L', CH0012005267: 'NOVN.SW' };
+    const map = { NL0010273215: 'ASML.AS', GB0005405286: 'HSBA.L', CH0012005267: 'NOVN.SW', DE0005785604: 'FRE.F' };
     return new Response(JSON.stringify({ quotes: map[isin] ? [{ symbol: map[isin], quoteType: 'EQUITY' }] : [] }));
   }
   if (u.includes('niftyindices.com')) return new Response('Company Name,Industry,Symbol,Series,ISIN Code\nReliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,EQ,INE002A01018\n', { headers: { 'last-modified': 'Fri, 16 Oct 2026 12:00:00 GMT' } });
@@ -278,7 +278,8 @@ check(/Wikipedia HTTP 503/.test(listErr), 'with no list at all the map fails —
 
 mode = 'ok'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('stoxx600', { fetchImpl: stub, now: NOW });
-check(p.integrity.unresolved.join() === 'GHOST' && p.integrity.drawn === 3 && p.membersAsOf === '2026-10-07', 'ISINs resolve to listings through Yahoo search; one with no listing is named, not guessed');
+check(p.integrity.unresolved.join() === 'GHOST' && p.integrity.drawn === 4 && p.membersAsOf === '2026-10-07', 'ISINs resolve to listings through Yahoo search; one with no listing is named, not guessed');
+check(p.tiles.some(t => t.symbol === 'FRE.DE') && !p.tiles.some(t => t.symbol === 'FRE.F') && !p.integrity.secondaryListings.length, 'a member matched to the Frankfurt floor is drawn from its XETRA line once Yahoo quotes it');
 check(p.integrity.fx.GBP === 1.15 && p.integrity.fx.CHF === 1.05 && !p.complete, 'pounds and francs converted to euros; 3 of 600 is not complete');
 check(!JSON.stringify(p).includes('4.7744'), "Invesco's index weights are not carried");
 const searches = asked.filter(u => u.includes('/v1/finance/search')).length;
