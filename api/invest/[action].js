@@ -874,7 +874,7 @@ async function handleIndexHeatmap(req, res, url) {
     try { return res.status(200).json(await membersDiag()); } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
   }
   const id = String(url.searchParams.get('market') || '').toLowerCase();
-  if (!INDEX_MARKETS[id]) return res.status(400).json({ ok: false, error: `Unknown market: ${id.slice(0, 20)}` });
+  if (!INDEX_MARKETS[id]) return res.status(400).json({ ok: false, error: `Unknown market; use one of ${Object.keys(INDEX_MARKETS).join(', ')}` });
   if (!checkRateLimit(limitKey(req, 'index-heatmap'), 60)) return res.status(429).json({ ok: false, error: 'Rate limit exceeded' });
   try {
     const data = await fetchIndexHeatmap(id, { timeoutMs: 8000 });

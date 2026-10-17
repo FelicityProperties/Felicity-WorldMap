@@ -21,7 +21,7 @@ const fmtPrice = t => (t.price == null ? '—' : `${fmtNum(t.price)} ${t.currenc
 export function fmtCap(v, cur) {
   if (v == null || !Number.isFinite(v)) return '—';
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, notation: 'compact', maximumFractionDigits: 1 }).format(v);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v);
   } catch {
     return `${cur} ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(v)}`;
   }
@@ -81,10 +81,12 @@ function aboutHtml(d) {
   if (i.expected != null && i.constituents !== i.expected) notes.push(`<strong>The constituent list holds ${escapeHtml(String(i.constituents))} members; the ${escapeHtml(m.label || 'index')} has ${escapeHtml(String(i.expected))}.</strong>`);
   if (i.membersRefreshError) notes.push(`<strong>The constituent list could not be refreshed (${escapeHtml(i.membersRefreshError)}); showing the copy read ${escapeHtml((i.membersFetchedAt || '').slice(0, 10) || '—')}.</strong>`);
   if (i.unresolved?.length) notes.push(`Not yet matched to a Yahoo listing, so not drawn (each is matched once and remembered): ${list(i.unresolved)}.`);
+  if (i.secondaryListings?.length) notes.push(`Yahoo lists ${list(i.secondaryListings)} only on a secondary venue; drawn from that line.`);
   if (i.missing?.length) notes.push(`Not quoted by Yahoo, so not drawn: ${list(i.missing)}.`);
   if (i.unsized?.length) notes.push(`No market cap from Yahoo, so not drawn: ${list(i.unsized)}.`);
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(d.sessionDay || '')}), hatched: ${list(i.staleQuotes.map(q => `${q.code} (last ${q.day || '—'})`))}.`);
-  if (i.capsDerived?.length) notes.push(`Market cap taken as price × shares, or from the company's other listing, for ${list(i.capsDerived.map(c => c.code))} — Yahoo's own figure was missing or disagreed.`);
+  if (i.capsDerived?.length) notes.push(`Market cap taken as price × shares, from the company's other listing or from Yahoo's key statistics for ${list(i.capsDerived.map(c => c.code))} — Yahoo's own figure was missing or disagreed.`);
+  if (i.currencyInferred?.length) notes.push(`Yahoo gave no quote currency for ${list(i.currencyInferred)}; its reporting currency, the index's own, is used.`);
   const fx = Object.entries(i.fx || {});
   if (fx.length) notes.push(`Caps quoted in another currency are converted to ${escapeHtml(m.currency || '')} at Yahoo's spot rate: ${fx.map(([c, r]) => `1 ${escapeHtml(c)} = ${escapeHtml(r.toFixed(4))}`).join(', ')}.`);
   if (i.listed != null) notes.push(`Yahoo lists ${escapeHtml(String(i.listed))} equities on the exchange${i.leftOut ? `; ${escapeHtml(String(i.leftOut))} are left out by the rule in the source line below` : ''}.`);
