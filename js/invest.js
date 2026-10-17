@@ -141,7 +141,7 @@ function renderShell() {
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
-      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, Nasdaq 100, FTSE 100, DAX, CAC 40, Euro Stoxx 50, STOXX 600, Nikkei 225, Hang Seng, Shenzhen, Nifty 50, KOSPI, Taiwan 50, Tadawul, DFM and 100+ more datasets">Heatmaps <span class="invest-view-btn__sub">${HEATMAP_KEYS.length} markets</span></button>
+      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, Nasdaq 100, FTSE 100, DAX, CAC 40, Euro Stoxx 50, STOXX 600, Nikkei 225, Hang Seng, Shenzhen, Nifty 50, KOSPI, Taiwan 50, Tadawul, DFM and 100+ more datasets">Heatmaps <span class="invest-view-btn__sub">${HEATMAP_KEYS.length} maps</span></button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
     </div>

@@ -14,6 +14,7 @@
 import { escapeHtml } from './safe.js';
 import { mountNikkeiHeatmap } from './nikkei-heatmap.js';
 import { mountIndexHeatmap } from './index-heatmap.js';
+import { unmountOwnHeatmap } from './own-heatmap.js';
 
 const TV_BASE = 'https://s3.tradingview.com/external-embedding/embed-widget-';
 
@@ -191,7 +192,7 @@ export const HEATMAP_MARKETS = [
     own('cac40', 'CAC 40', 'CAC 40', 'wiki', 'Wikipedia', 'the CAC 40 table of a dated Wikipedia revision'),
     { key: 'DAX',             label: 'DAX',                  evidence: EV },
     own('sx5e', 'Euro Stoxx 50', 'Euro Stoxx 50', 'wiki', 'Wikipedia', 'the EURO STOXX 50 table of a dated Wikipedia revision'),
-    own('stoxx600', 'STOXX 600', 'Stoxx 600', 'file', 'Invesco', "Invesco's dated STOXX Europe 600 index file"),
+    own('stoxx600', 'STOXX 600', 'Stoxx 600', 'issuer', 'Invesco', "the dated STOXX Europe 600 index file Invesco publishes for its ETF"),
     { key: 'MDAX',            label: 'MDAX',                 evidence: EV },
     { key: 'TECDAX',          label: 'TecDAX',               evidence: EV },
     own('aex', 'AEX', 'AEX', 'wiki', 'Wikipedia', 'the AEX table of a dated Wikipedia revision'),
@@ -251,6 +252,7 @@ function withheldHint() {
   const of = kind => chips.filter(m => m.kind === kind).map(m => m.label).join(', ');
   const families = [
     [of('file'), 'from an exchange or index-provider file'],
+    [of('issuer'), "from the dated index file an ETF issuer publishes"],
     [of('fund'), "from an index fund's dated holdings"],
     [of('wiki'), 'from a dated Wikipedia revision'],
     [of('yahoo'), "from Yahoo's undated member list"],
@@ -321,6 +323,7 @@ export function mountHeatmapPicker(hostId, initial = lastHeatmapKey || 'SPX500')
       if (w) { w.classList.remove('tradingview-widget-container'); mountIndexHeatmap(w, m.market, m.label); }
       return;
     }
+    unmountOwnHeatmap();
     note.textContent = `Showing ${m ? m.label : key} (TradingView dataset ${key}). The widget's header names the market it is drawing.`;
     if (w) { w.classList.add('tradingview-widget-container'); w.innerHTML = '<div class="tradingview-widget-container__widget"></div>'; }
     mountHeatmap(`${hostId}-widget`, key);

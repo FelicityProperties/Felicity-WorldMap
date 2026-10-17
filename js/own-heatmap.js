@@ -80,25 +80,41 @@ export function layout(data, width, height) {
   }).filter(Boolean);
 }
 
-/** One tile as a button; `summary` is the reader-facing line for its label. */
-export function tileHtml(t, minFont = 9, summary = x => x.name) {
+// A tile's key: its Yahoo symbol, unique where tickers are not (SAN is
+// both Banco Santander SAN.MC and Sanofi SAN.PA in the Euro Stoxx 50)
+export const tileKey = t => t.symbol || t.code;
+
+/**
+ * One tile as a button; `summary` is the reader-facing line for its label.
+ * `focusable` makes it the map's single tab stop (arrow keys move between
+ * tiles), so a keyboard reader is not walked through 800 KOSPI tiles.
+ */
+export function tileHtml(t, minFont = 9, summary = x => x.name, focusable = true) {
   const r = t.rect;
   if (!r) return '';
   const fs = Math.max(minFont, Math.min(16, Math.sqrt(r.w * r.h) / 6));
   // A label only where it fits; every tile is still reachable by hover, tap or focus
   const fits = r.w > fs * 3.4 && r.h > fs * 2.5;
   const blank = t.changePct == null || t.stale;
-  const label = t.changePct == null ? 'no quote' : t.stale ? 'no trade' : fmtPct(t.changePct);
+  const label = t.changePct == null ? (t.price != null ? 'no move' : 'no quote') : t.stale ? 'no trade' : fmtPct(t.changePct);
   // TradingView prints the ticker; a company name reads better where it fits
   const name = shortName(t.name);
   const head = name.length * fs * 0.62 < r.w - 8 ? name : t.code;
-  return `<button type="button" class="nkhm__tile${blank ? ' is-missing' : ''}" data-code="${escapeHtml(t.code)}" style="left:${r.x.toFixed(1)}px;top:${r.y.toFixed(1)}px;width:${Math.max(0, r.w - 1).toFixed(1)}px;height:${Math.max(0, r.h - 1).toFixed(1)}px;${blank ? '' : `background:${moveColour(t.changePct)};`}font-size:${fs.toFixed(1)}px" aria-label="${escapeHtml(summary(t))}">${
+  return `<button type="button" class="nkhm__tile${blank ? ' is-missing' : ''}" data-key="${escapeHtml(tileKey(t))}" tabindex="${focusable ? 0 : -1}" style="left:${r.x.toFixed(1)}px;top:${r.y.toFixed(1)}px;width:${Math.max(0, r.w - 1).toFixed(1)}px;height:${Math.max(0, r.h - 1).toFixed(1)}px;${blank ? '' : `background:${moveColour(t.changePct)};`}font-size:${fs.toFixed(1)}px" aria-label="${escapeHtml(summary(t))}">${
     fits ? `<span class="nkhm__code">${escapeHtml(head)}</span><span class="nkhm__chg">${escapeHtml(label)}</span>` : ''
   }</button>`;
 }
 
 // TradingView's legend: labels over coloured steps
-const legendHtml = () => `<div class="nkhm__legend">${[-3, -2, -1, 0, 1, 2, 3].map(v => `<span><em>${v > 0 ? '+' : ''}${v}%</em><i style="background:${moveColour(v)}"></i></span>`).join('')}<span><em>no trade</em><i class="is-missing"></i></span></div>`;
+const legendHtml = () => `<div class="nkhm__legend">${[-3, -2, -1, 0, 1, 2, 3].map(v => `<span><em>${v > 0 ? '+' : ''}${v}%</em><i style="background:${moveColour(v)}"></i></span>`).join('')}<span><em>no move today</em><i class="is-missing"></i></span></div>`;
+
+let current = null;   // the mounted map's teardown, for unmountOwnHeatmap()
+/** Release the mounted map (its observer and payload) when a TradingView chip replaces it. */
+export function unmountOwnHeatmap() {
+  observer?.disconnect();
+  observer = null;
+  current = null;
+}
 
 /**
  * Mount one map. `cfg` describes it:
@@ -159,11 +175,12 @@ export function mountOwnHeatmap(host, cfg) {
     const w = map.clientWidth, h = map.clientHeight;
     if (!w || !h) return;
     const minFont = isPhone() ? 11 : 9;
+    let first = true;
     map.innerHTML = layout(data, w, h).map(g => `
       <div class="nkhm__sector" style="left:${g.box.x.toFixed(1)}px;top:${g.box.y.toFixed(1)}px;width:${g.box.w.toFixed(1)}px;height:${g.box.h.toFixed(1)}px">
         ${g.strip ? `<span class="nkhm__sector-label">${escapeHtml(g.name)}</span>` : ''}
       </div>
-      ${g.tiles.map(t => tileHtml(t, minFont, x => cfg.summary(x, data))).join('')}`).join('');
+      ${g.tiles.map(t => { const f = first && !!t.rect; if (f) first = false; return tileHtml(t, minFont, x => cfg.summary(x, data), f); }).join('')}`).join('');
   };
 
   const paint = d => {
@@ -205,8 +222,8 @@ export function mountOwnHeatmap(host, cfg) {
   };
 
   // Card placement: beside the pointer (or the tile's centre), kept inside the stage
-  const showTip = (code, x, y) => {
-    const t = data?.tiles.find(v => v.code === code);
+  const showTip = (key, x, y) => {
+    const t = data?.tiles.find(v => tileKey(v) === key);
     if (!t) return;
     tip.innerHTML = cfg.tip(t, data);
     tip.hidden = false;
@@ -225,7 +242,7 @@ export function mountOwnHeatmap(host, cfg) {
   stage.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse' || pinned) return;
     const tile = e.target.closest('.nkhm__tile');
-    if (tile) showTip(tile.dataset.code, ...local(e)); else tip.hidden = true;
+    if (tile) showTip(tile.dataset.key, ...local(e)); else tip.hidden = true;
   });
   stage.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !pinned) tip.hidden = true; });
   root.addEventListener('click', e => {
@@ -233,23 +250,59 @@ export function mountOwnHeatmap(host, cfg) {
     const tile = e.target.closest('.nkhm__tile');
     if (!tile) return;
     // Tap (touch) or click pins the card; tapping the same tile again closes it
-    if (pinned === tile.dataset.code) return hideTip();
-    pinned = tile.dataset.code;
-    showTip(tile.dataset.code, ...(e.detail === 0 ? centre(tile) : local(e)));
+    if (pinned === tile.dataset.key) return hideTip();
+    pinned = tile.dataset.key;
+    showTip(tile.dataset.key, ...(e.detail === 0 ? centre(tile) : local(e)));
   });
   root.addEventListener('focusin', e => {
     const tile = e.target.closest('.nkhm__tile');
-    if (tile) showTip(tile.dataset.code, ...centre(tile));
+    if (tile) showTip(tile.dataset.key, ...centre(tile));
   });
-  root.addEventListener('keydown', e => { if (e.key === 'Escape') hideTip(); });
+  // Arrow keys walk the map: the nearest tile whose centre lies that way
+  // becomes the tab stop; Home and End jump to the largest and smallest
+  root.addEventListener('keydown', e => {
+    if (e.key === 'Escape') return hideTip();
+    const from = e.target.closest?.('.nkhm__tile');
+    if (!from) return;
+    const tiles = [...root.querySelectorAll('.nkhm__tile')];
+    let to = null;
+    if (e.key === 'Home') to = tiles[0];
+    else if (e.key === 'End') to = tiles[tiles.length - 1];
+    else {
+      const dir = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] }[e.key];
+      if (!dir) return;
+      const c = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+      const [fx, fy] = c(from);
+      let best = Infinity;
+      for (const el of tiles) {
+        if (el === from) continue;
+        const [x, y] = c(el);
+        const along = (x - fx) * dir[0] + (y - fy) * dir[1];
+        if (along <= 0.5) continue;
+        const across = Math.abs((x - fx) * dir[1] + (y - fy) * dir[0]);
+        const score = along + across * 2;
+        if (score < best) { best = score; to = el; }
+      }
+    }
+    if (!to) return;
+    e.preventDefault();
+    from.tabIndex = -1;
+    to.tabIndex = 0;
+    to.focus();
+  });
 
   // The observer fires once on observe(), so a re-mount with a last good
   // payload draws at the real size straight away
   if (lastGood.has(cfg.id)) paint(lastGood.get(cfg.id));
   observer?.disconnect();
   observer = null;
+  current = root;
   if (typeof ResizeObserver !== 'undefined') {
-    observer = new ResizeObserver(() => { if (data && root.isConnected) { hideTip(); render(); } });
+    observer = new ResizeObserver(() => {
+      // A map taken off the page lets go of its observer and payload
+      if (!root.isConnected) { if (current === root) unmountOwnHeatmap(); return; }
+      if (data) { hideTip(); render(); }
+    });
     observer.observe(root.querySelector('.nkhm__map'));
   }
   load();

@@ -13,7 +13,7 @@ import {
 import { findTable, parseTable, cleanWiki, infoboxCount, splitTop } from '../lib/wikitable.js';
 import { readXlsx } from '../lib/xlsx.js';
 import { tileSummary, fmtCap } from '../js/index-heatmap.js';
-import { tileHtml, layout } from '../js/own-heatmap.js';
+import { tileHtml, layout, tileKey } from '../js/own-heatmap.js';
 
 const fails = [];
 const check = (cond, msg) => { if (!cond) fails.push(msg); };
@@ -172,6 +172,7 @@ const quoteFor = (s, i) => {
   if (s.endsWith('=X')) return { symbol: s, regularMarketPrice: s.startsWith('USD') ? 0.9 : s.startsWith('GBP') ? 1.15 : 1.05, regularMarketTime: T };
   if (mode === 'nulls' && s === 'C03.PA') return { symbol: s, regularMarketPrice: null, regularMarketChangePercent: null };
   if ((mode === 'nulls' || mode === 'summary') && s === 'C04.PA') return { symbol: s, regularMarketPrice: 10, regularMarketChangePercent: 1, regularMarketTime: T, currency: 'EUR' };
+  if (mode === 'nulls' && s === 'C09.PA') return { symbol: s, regularMarketPrice: 10, regularMarketChangePercent: null, regularMarketTime: T, marketCap: 3e9, currency: 'EUR', sector: 'Energy' };
   if (mode === 'nulls' && s === 'C06.PA') return { symbol: s, regularMarketPrice: 10, regularMarketChangePercent: 1, regularMarketTime: T, marketCap: 2e9, financialCurrency: 'EUR', sector: 'Energy' };
   if (mode === 'nulls' && s === 'C08.PA') return { symbol: s, regularMarketPrice: 10, regularMarketChangePercent: 1, regularMarketTime: T, marketCap: 2e9, financialCurrency: 'USD', sector: 'Energy' };
   if (mode === 'nulls' && s === 'C05.PA') return { symbol: s, regularMarketPrice: 10, regularMarketChangePercent: 1, regularMarketTime: T - 86400, marketCap: 1e9, currency: 'EUR', sector: 'Energy' };
@@ -239,6 +240,7 @@ mode = 'nulls'; _resetIndexHeatmap();
 p = await fetchIndexHeatmap('cac40', { fetchImpl: stub, now: NOW });
 check(p.integrity.missing.includes('C03') && p.integrity.unsized.includes('C04') && !p.tiles.some(t => t.code === 'C03' || t.code === 'C04'), 'a member with no price is missing, one with no cap is unsized — neither drawn at an invented size');
 check(p.tiles.some(t => t.code === 'C06' && t.currency === 'EUR') && p.integrity.currencyInferred.join() === 'C06' && p.integrity.unsized.includes('C08'), "a quote with no currency takes its reporting currency only when it is the index's own; otherwise unsized");
+check(p.integrity.noMove.join() === 'C09' && p.tiles.find(t => t.code === 'C09')?.changePct === null, 'a member quoted with a price but no move is drawn hatched and listed');
 const c05 = p.tiles.find(t => t.code === 'C05');
 check(c05?.stale && p.integrity.staleQuotes.some(s => s.code === 'C05' && s.day === '2026-10-15') && !p.complete, 'a last trade from an earlier session is flagged stale, the pull partial');
 
@@ -337,6 +339,21 @@ const html = tileHtml(hostile, 9, t => tileSummary(t, 'EUR'));
 check(!/<img|<script|<b>/.test(html) && /&lt;img/.test(html), 'a hostile name is escaped in the tile and its label');
 check(/listed-line value €/.test(tileSummary({ ...p.tiles[0], lineValue: true }, 'EUR')) && !/market cap/.test(tileSummary({ ...p.tiles[0], lineValue: true }, 'EUR')), "a share class's own value is never called a market cap");
 check(/market cap €/.test(tileSummary(p.tiles[0], 'EUR')) && fmtCap(5.67e11, 'EUR') === '€567B' && fmtCap(1.54e9, 'EUR') === '€1.5B' && fmtCap(1e9, 'XXX1').startsWith('XXX1'), 'tile summary carries the market cap in the index currency');
+// Two members sharing a ticker (SAN.MC Santander, SAN.PA Sanofi) are two tiles with two keys
+const twin = [{ ...p.tiles[0], code: 'SAN', symbol: 'SAN.MC', name: 'Banco Santander', rect: { x: 0, y: 0, w: 200, h: 100 } }, { ...p.tiles[0], code: 'SAN', symbol: 'SAN.PA', name: 'Sanofi', rect: { x: 200, y: 0, w: 200, h: 100 } }];
+const twinHtml = twin.map((t, i) => tileHtml(t, 9, x => x.name, i === 0)).join('');
+check(tileKey(twin[0]) !== tileKey(twin[1]) && /data-key="SAN\.MC"/.test(twinHtml) && /data-key="SAN\.PA"/.test(twinHtml), 'tiles that share a ticker carry distinct keys');
+check(/tabindex="0"/.test(twinHtml) && (twinHtml.match(/tabindex="-1"/g) || []).length === 1, 'one tab stop per map; arrow keys reach the rest');
+check(/no move/.test(tileHtml({ ...twin[0], changePct: null, price: 10 })) && /no quote/.test(tileHtml({ ...twin[0], changePct: null, price: null })), 'a price without a move says "no move", not "no quote"');
+{
+  _resetIndexHeatmap();
+  const dupWiki = wikiPage(Array.from({ length: 40 }, (_, i) => [`Co ${i}`, i === 0 ? 'SAN.MC' : i === 1 ? 'SAN.PA' : `D${String(i).padStart(2, '0')}.PA`]));
+  const dupStub = async (url, o) => (String(url).includes('wikipedia') ? new Response(JSON.stringify({ query: { pages: [{ revisions: [{ revid: 1, timestamp: '2026-10-08T00:00:00Z', slots: { main: { content: dupWiki } } }] }] } })) : stub(url, o));
+  mode = 'one-missing';
+  const pd = await fetchIndexHeatmap('cac40', { fetchImpl: dupStub, now: NOW });
+  check(pd.tiles.filter(t => t.code === 'SAN').length === 2 && new Set(pd.tiles.map(tileKey)).size === pd.tiles.length, 'every tile key in a payload is unique');
+  mode = 'ok';
+}
 const groups = layout(p, 1000, 600);
 check(groups.reduce((s, g) => s + g.tiles.length, 0) === p.tiles.length, 'every sized tile is laid out');
 

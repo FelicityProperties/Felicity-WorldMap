@@ -37,7 +37,7 @@ const when = d => {
 
 /** One line a reader can act on — the button's label and the screen-reader echo. */
 export function tileSummary(t, cur) {
-  const move = t.changePct == null ? 'no quote from Yahoo'
+  const move = t.changePct == null ? (t.price != null ? 'no move from Yahoo' : 'no quote from Yahoo')
     : t.stale ? `no trade this session — last move ${fmtPct(t.changePct)}`
     : fmtPct(t.changePct);
   return `${t.name} (${t.code}) · ${t.sector}${t.industry ? ` / ${t.industry}` : ''} · ${fmtPrice(t)} · ${sizeWord(t)} ${fmtCap(t.size, cur)} · ${move}`;
@@ -45,7 +45,7 @@ export function tileSummary(t, cur) {
 
 function tipHtml(t, d) {
   const cur = d.market?.currency;
-  const move = t.changePct == null ? 'No quote from Yahoo'
+  const move = t.changePct == null ? (t.price != null ? 'No move from Yahoo' : 'No quote from Yahoo')
     : t.stale ? `No trade this session · last ${fmtPct(t.changePct)}` : fmtPct(t.changePct);
   const cls = t.changePct == null || t.stale ? '' : t.changePct >= 0 ? ' is-up' : ' is-down';
   return `<div class="nkhm__tip-name">${escapeHtml(shortName(t.name))} <span>${escapeHtml(t.code)}</span></div>
@@ -74,7 +74,7 @@ function listDate(d) {
 
 function statusHtml(d) {
   const i = d.integrity || {};
-  const hatched = (d.tiles || []).filter(t => t.stale).length;
+  const hatched = (d.tiles || []).filter(t => t.changePct == null || t.stale).length;
   const gaps = (i.missing?.length || 0) + (i.unsized?.length || 0) + (i.unresolved?.length || 0);
   return `${escapeHtml(String(i.drawn))}/${escapeHtml(String(i.constituents))} drawn${hatched ? ` · ${hatched} hatched` : ''}${gaps ? ` · ${gaps} not drawn` : ''} · ${escapeHtml(listDate(d))}`;
 }
@@ -92,8 +92,9 @@ function aboutHtml(d) {
   if (i.secondaryListings?.length) notes.push(`Yahoo lists ${list(i.secondaryListings)} only on a secondary venue; drawn from that line.`);
   if (i.missing?.length) notes.push(`Not quoted by Yahoo, so not drawn: ${list(i.missing)}.`);
   if (i.unsized?.length) notes.push(`No market cap from Yahoo, so not drawn: ${list(i.unsized)}.`);
+  if (i.noMove?.length) notes.push(`Quoted by Yahoo but with no move for the session, hatched: ${list(i.noMove)}.`);
   if (i.staleQuotes?.length) notes.push(`No trade yet this session (${escapeHtml(d.sessionDay || '')}), hatched: ${list(i.staleQuotes.map(q => `${q.code} (last ${q.day || '—'})`))}.`);
-  const line = (d.tiles || []).filter(t => t.lineValue).map(t => t.code);
+  const line = (d.tiles || []).filter(t => t.lineValue).map(t => t.symbol || t.code);
   if (line.length) notes.push(`Sized by the listed line's own value — its price × its shares, because Yahoo's market cap was missing or covered the whole company: ${list(line)}. For a company with more than one share class (Hong Kong H-shares, preference lines) that is less than its market cap, and the card says "listed-line value".`);
   const other = (i.capsDerived || []).filter(c => !/^price × shares/.test(c.basis)).map(c => `${c.code} (${c.basis})`);
   if (other.length) notes.push(`Market cap taken from ${list(other, 12)}.`);
