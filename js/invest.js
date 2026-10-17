@@ -12,7 +12,7 @@ import {
   getWatchlist, isWatched, toggleWatch, clearWatchlist,
   getProfile, hasProfile, profileSummary, openProfileModal,
 } from './invest-profile.js';
-import { mountTickerTape, mountHeatmapPicker, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk } from './tv-widgets.js';
+import { mountTickerTape, mountHeatmapPicker, mountCryptoHeatmap, mountEconomicCalendar, mountBondDesk, HEATMAP_KEYS } from './tv-widgets.js';
 import { hasFundamentals, loadFundamentals, exportBrief } from './equity-fundamentals.js';
 import { renderPortfolio } from './portfolio.js';
 import { escapeHtml, safeUrl } from './safe.js';
@@ -141,7 +141,7 @@ function renderShell() {
       <button class="invest-view-btn" data-view="screener">Screener</button>
       <button class="invest-view-btn" data-view="backtest">Backtest</button>
       <button class="invest-view-btn" data-view="bonds">Bond Desk</button>
-      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, Nasdaq 100, Dow, DAX, IBEX 35, FTSE MIB, Swiss SMI, Nikkei 225, ASX 200, Hang Seng Tech, Sensex, Abu Dhabi ADX 15 and 100+ more datasets across 36 markets">Heatmaps <span class="invest-view-btn__sub">36 markets</span></button>
+      <button class="invest-view-btn" data-view="heatmap" title="S&amp;P 500, Nasdaq 100, FTSE 100, DAX, CAC 40, Euro Stoxx 50, STOXX 600, Nikkei 225, Hang Seng, Shenzhen, Nifty 50, KOSPI, Taiwan 50, Tadawul, DFM and 100+ more datasets">Heatmaps <span class="invest-view-btn__sub">${HEATMAP_KEYS.length} markets</span></button>
       <button class="invest-view-btn" data-view="crypto">Crypto Heatmap</button>
       <button class="invest-view-btn" data-view="calendar">Economic Calendar</button>
     </div>

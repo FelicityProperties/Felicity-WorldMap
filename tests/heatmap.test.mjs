@@ -4,7 +4,8 @@
 // the S&P 500 with no error, which is what three deploys of guessed codes
 // did. Korean datasets and UK100 are remapped to SPX500 by the embed entry
 // point and must never be offered.
-import { HEATMAP_MARKETS, HEATMAP_KEYS, TV_HEATMAP_KEYS, TV_EMBED_DATASETS, TV_EMBED_WITHHELD } from '../js/tv-widgets.js';
+import { HEATMAP_MARKETS, HEATMAP_KEYS, TV_HEATMAP_KEYS, TV_EMBED_DATASETS, TV_EMBED_WITHHELD, OWN_DRAWN } from '../js/tv-widgets.js';
+import { MARKETS } from '../lib/index-heatmap.js';
 import { extractTables, chunkUrls } from '../lib/tv-datasets.js';
 
 const fails = [];
@@ -15,14 +16,19 @@ for (const k of TV_HEATMAP_KEYS) check(embed.has(k), `chip ${k} is in TradingVie
 // A chip TradingView cannot draw must be drawn by us — and must never be
 // handed to the TradingView widget, which would draw the S&P 500 instead
 const own = HEATMAP_MARKETS.flatMap(g => g.items).filter(m => m.own);
-check(own.length >= 1 && own.every(m => m.own === 'nikkei' && !embed.has(m.key)), 'own-drawn chips carry a renderer and no TradingView code');
+check(own.length >= 1 && own.every(m => ['nikkei', 'index'].includes(m.own) && !embed.has(m.key)), 'own-drawn chips carry a renderer and no TradingView code');
 check(own.some(m => m.label === 'Nikkei 225'), 'the Nikkei 225 is offered, drawn by us');
+// Every market TradingView withholds has a chip we draw, and every such chip
+// names a market the server knows
+for (const w of TV_EMBED_WITHHELD) check(OWN_DRAWN.has(w), `withheld market ${w} has a chip drawn by us`);
+for (const m of own.filter(x => x.own === 'index')) check(!!MARKETS[m.market], `chip ${m.key} names a server market (${m.market})`);
+check(new Set(own.filter(x => x.own === 'index').map(m => m.market)).size === Object.keys(MARKETS).length, 'one chip per server market, none missing');
 check(new Set(HEATMAP_KEYS).size === HEATMAP_KEYS.length, 'no duplicate chips');
 check(TV_HEATMAP_KEYS.length >= 25, `enough chips to be useful (${TV_HEATMAP_KEYS.length})`);
 for (const bad of ['UK100', 'AllUK', 'KOSPI', 'KOSPI200', 'KOSDAQ', 'KOSDAQ150', 'AllKR', 'CAC40', 'NI225', 'HSI', 'NIFTY50', 'TADAWULTASI', 'DFMDFMGI', 'SX5E', 'AEX', 'TVCSTI']) {
   check(!embed.has(bad) && !HEATMAP_KEYS.includes(bad), `${bad} is withheld from embeds and offered nowhere`);
 }
-for (const g of HEATMAP_MARKETS) for (const m of g.items) check(typeof m.label === 'string' && (m.own ? /Nikkei Inc\./.test(m.evidence) : /embed menu/.test(m.evidence)), `${m.key} carries its evidence`);
+for (const g of HEATMAP_MARKETS) for (const m of g.items) check(typeof m.label === 'string' && (m.own === 'nikkei' ? /Nikkei Inc\./.test(m.evidence) : m.own === 'index' ? /^Drawn by Felicity: members from .+ Yahoo Finance$/.test(m.evidence) : /embed menu/.test(m.evidence)), `${m.key} carries its evidence`);
 check(TV_EMBED_WITHHELD.includes('FTSE 100') && TV_EMBED_WITHHELD.includes('Nikkei 225') && TV_EMBED_WITHHELD.includes('Tadawul TASI'), 'withheld list names the markets people will look for');
 
 // The discovery helpers that produced the table
@@ -42,7 +48,7 @@ check(chunkUrls(rt).join() === 'https://www.tradingview-widget.com/static/bundle
     check(!css.includes(':has('), `css/${f} has no :has() selector (unsupported in older Firefox/Safari)`);
   }
   const inv = readFileSync(new URL('../css/invest.css', import.meta.url), 'utf8');
-  check(/\.nkhm__map\s*\{[^}]*height:\s*clamp\(/.test(inv), 'the Nikkei map has an explicit height of its own');
+  check(/\.nkhm__map\s*\{[^}]*height:\s*clamp\(/.test(inv), 'the own-drawn maps have an explicit height of their own');
 }
 
 if (fails.length) { console.log('FAILED:\n - ' + fails.join('\n - ')); process.exit(1); }
