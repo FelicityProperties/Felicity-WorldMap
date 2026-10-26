@@ -67,7 +67,9 @@ When the user says "refresh the price index data" (or the old "refresh the PIX d
    for median `sale_psf`, `sale_price`, `size_sqft` over the last 12 complete months.
 3. Same on `rentals` for median `annual_rent`, `annual_rent_psf`.
 4. Compute yield = rent PSF ÷ sale PSF, **cohort-matched**.
-5. `propertyindex_query` on `signals` ordered by `score` for the live signal feed.
+5. `propertyindex_query` on `signals` ordered by `score` for the live signal feed,
+   then **check the registrations behind every price signal** (the market-
+   evidence rules in the 26 Oct lessons below) before a row goes in.
 6. Rewrite `js/pix-data.js` and `js/pix-signals.js`, bump the AS_OF constants.
 7. Verify, commit, push to `main` (Vercel auto-deploys).
 
@@ -134,13 +136,13 @@ Things the Oct 2026 refresh (September data) learned:
   dropped The Spirit's 1 Oct trade as "14% above baseline — not a
   discount" when its evidence put it 45.8% below its median, and The
   Grand printed a "median" of 1,611 against an evidence median of 2,583.
-  Take baseline and discount from the evidence (`project_median_psf`,
-  `below_median_pct`) — and label it truthfully: that median is for the
-  SAME unit type (bedrooms, property type, resale basis) over the
-  project's whole registered history, not a project-wide or 12-month
-  figure, which is why The Spirit's Studio and 1-Bed show different
-  baselines. Each row is a separate trade (own `thread_id`), so two
-  trades in one project both count.
+  The evidence's `project_median_psf` is not a resale median either — it
+  covers every ready-property registration of the unit type, first sales
+  and non-market rows included (The Spirit's studio "median" was 2,324;
+  its studio resales median 1,192). **Superseded on 26 Oct: the baseline
+  is re-derived from like-for-like resales** — see the 26 Oct lessons.
+  Two trades in one project both count; one trade in two threads counts
+  once (Dune Residency, 16 Oct).
 - **Below-trend gaps include launch pricing.** The trailing 12-month
   average holds developer first sales, so a project moving from launch
   price to resale (Binghatti Royale: 93 of 141 sales were first sales)
@@ -151,6 +153,7 @@ Things the Oct 2026 refresh (September data) learned:
   also flagged. Filtering to sub-communities dropped standalone tower
   projects (Azizi Milan 30, Regalia) that have no flagged parent.
   Siblings (Mudon Al Ranim 5 and 6) are not parent and child.
+
 - **"The feed holds no X" is a claim about the whole feed; the file holds
   the top N.** Desk calls say "on our list" when they can only see the
   file. MAG Eye (MBR City) was a real discount trade just below the cut
@@ -176,6 +179,94 @@ Things the Oct 2026 refresh (September data) learned:
   headline is its villa cohort; against an area with a villa cohort it
   compares villa with villa (sales included), otherwise each cell is
   labelled with its cohort and no delta is drawn.
+
+Things the 26 Oct refresh learned (September data, restated; signals 12–24 Oct).
+It took three workflow rounds — an audit, a rebuild, a finalisation, each
+re-querying the register and each checked by two skeptics — and the second
+and third were needed because the first found that the signal engine's
+largest numbers were mostly not market evidence:
+
+- **The signal engine counts every registration, market or not.** The
+  sales entity's `prior_sale_relation` says what a registration is:
+  `prior_buyer_sold` a genuine resale; `prior_buyer_retained` a completion
+  or title registration of the same purchase, or a co-owner buyout
+  (`buyer_count` 2 → 1 at about half `prev_price`) — never a resale;
+  `no_party_link` a related-party or nominee transfer; empty, the
+  property's first served sale. Central Park Tower (JVC) produced a PSF
+  move, a below-trend run and a discount trade from one batch of three
+  title registrations; Mayfair Residency and The Hamilton printed "below
+  trend" on co-owner buyouts; W Residences' AED 53.7M "top sale" was a
+  related-party transfer at its own previous price. **Before a price
+  signal goes in, find the registrations behind it** (sales by
+  `location_id` + date + price) **and read their relation.**
+- **A market print** is `prior_buyer_sold` or a first served sale, inside
+  0.5×–2× of the project's market median PSF for the same property type
+  and bedrooms over the 12 complete months (fewer than 3 reference prints:
+  unverified). Off-plan first sales are the developer's price and exempt
+  from the band. The band catches market-labelled nonsense: a studio
+  resale at 9,617 AED/sqft (Chic Tower, +149.8%), a hotel-apartment 1-Bed
+  at 11,713 (Aykon City Tower B), a 3-Bed villa "resale" at AED 450,000
+  (Springs 9's baseline), a villa at 19.53 AED/sqft (Al Twar 4).
+- **Per family:** top_sale — market registration only, and no engine
+  baseline (its "prior top" is its own earlier detection in the window,
+  often a different villa; the two rows it marked as falling were not
+  price falls and are left out). record_psf — a record for ONE unit type
+  in one building; the row carries `beds` and the copy says so, and the
+  record print needs at least 3 same-type reference prints (Rokane G22,
+  Al Khushkar, Massakin Al Furjan Block E and Norton Court 4 set records
+  for unit types with 0–2). **psf_move is not published:** the engine's
+  project PSF is a running blend of whatever registered last across unit
+  types and sizes. Even with both ends required to be market prints (a
+  rise from a buyout-depressed print is not a rise: Madinat Badr), every
+  surviving candidate moved on unit mix — Onda by Kasco a studio after
+  1-Bed prints, Farm Grove "+33.8%" on a 4-Bed villa that resold at its own
+  previous price. Re-admit it only with a like-for-like test (same unit
+  type, size within ±15%) and a test that pins it. below_trend — the
+  prints that pulled it down must be market prints, and each row carries a
+  `cause`: `launch` (the trailing average holds developer first sales) or
+  `resale` (like-for-like resales cleared lower, with `trades` saying how
+  many — four of five rested on one, and the copy says "a single trade");
+  a gap that is only unit mix is not listed, and a node and its ancestor
+  are never both listed (District 18 holds Binghatti Royale). **Every
+  price family is residential only**: The Binary Tower (offices) printed
+  32.9% below trend and is not a home.
+  discount_trade — a `prior_buyer_sold` trade inside the band, against the
+  median of the project's EARLIER resales of the same unit type and a size
+  within ±15% (at least 10 of them, count stored as `resaleCount`), and at
+  least 15% below it; most of the engine's 24 rows failed (The Spirit sat
+  above its resale median; Binghatti Aurora's 28% was two layouts mixed).
+  yield_leader — the engine divides AVERAGE rent by AVERAGE price, so unit
+  mix inflates it and office/shop buildings rank; each leader is
+  recomputed like an area yield, median rent PSF (valid size) ÷ median
+  market sale PSF, same property type, residential only, with
+  `salesCount`/`rentalCount`, at least 5 market sales and 10 sized
+  tenancies. Seven passed; a list shorter than eight is the rules talking,
+  not a gap to fill.
+- **`tests/desk-view.test.mjs` pins what the file can show of these rules**
+  (no psf_move; top sales rising with no engine baseline; records name
+  their unit; below-trend rows carry a cause and, for resales, a trade
+  count; discounts rest on ≥10 like-for-like resales and are ≥15% deep;
+  yields rest on ≥5 sales and ≥10 tenancies). The registry checks behind
+  them can only be re-run against the register — run the three-round
+  workflow again on the next refresh rather than trusting the engine.
+- **Pin the snapshot to one detection run.** The engine re-detected on
+  26 Oct while the refresh ran (streaks +1, values unchanged); the file is
+  the 24 Oct run and says so. Never mix two runs' dates and streaks.
+- **The index's `txCount` is the reading's sample, not the month.** It is
+  `sales_count`, "registered sales supporting the observation": 1,177
+  villa sales behind September's reading while the register holds 1,317.
+  The prompt once called it "transactions per month emirate-wide"; it is
+  labelled as the sample now, in the prompt and on the strip.
+- **No typed number in the narrative, integers included.** "+12% YoY run
+  through 2025" sat in the template for three refreshes because the test
+  matched only `\d+\.\d%`. `pixSeries` now carries each month's YoY and
+  the apartment and villa levels, the whole narrative is arithmetic over
+  it, and the test matches integer percentages.
+- **A row named for a sub-node must use the sub-node.** "Emaar Beachfront"
+  carried all of Dubai Harbour's sales (817, including 403 off-plan
+  launches in towers with no tenancies) against Emaar Beachfront's rents:
+  4.2% instead of the node's 4.8% (location 1760). The other rows are
+  master communities and say so by their names.
 
 ### The AI is only allowed numbers it was handed
 

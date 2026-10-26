@@ -44,6 +44,16 @@ const jvc = A('JVC'), mbr = A('Mohammed Bin Rashid City'), palm = A('Palm Jumeir
 const inArea = (area, ...types) => pixSignals.filter(s => s.area === area && types.includes(s.type));
 const jvcBelow = inArea('JVC', 'below_trend');
 const jvcRecord = inArea('JVC', 'record_psf');
+// Each below-trend row says why it prints low (pix-signals.js): a launch
+// gap and a like-for-like resale fall read differently, and the call must
+// not explain every row as launch pricing (26 Oct audit)
+const names = list => list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}` : list[0];
+const jvcLaunch = jvcBelow.filter(s => s.cause === 'launch').map(s => s.entity);
+const jvcResale = jvcBelow.filter(s => s.cause === 'resale').map(s => s.entity);
+const jvcWhy = [
+  jvcLaunch.length && `${names(jvcLaunch)} ${jvcLaunch.length > 1 ? 'are' : 'is'} measured against a trailing average that still holds launch-price first sales, so read ${jvcLaunch.length > 1 ? 'them' : 'it'} as where resale is clearing, not as a fall of that size in what owners paid.`,
+  jvcResale.length && `At ${names(jvcResale)} like-for-like resales have cleared lower.`,
+].filter(Boolean).join(' ');
 const mbrDislocation = inArea('MBR City', 'below_trend', 'discount_trade');
 const aptYieldRank = name => {
   const ranked = Object.entries(pixAreas).filter(([, p]) => p.cohort === 'Apartment' && p.yieldPct != null).sort((a, b) => b[1].yieldPct - a[1].yieldPct);
@@ -71,8 +81,10 @@ export const DESK_CALLS = [
   {
     area: 'JVC — secondary apartments', call: 'AVOID', conviction: 4, horizon: '12 months', segment: 'Mid-market',
     thesis: `The registry median of ${psf(jvc.psf)} at ${pct(jvc.yieldPct)} gross yield looks healthy; the project tape does not. ${
-      join(jvcBelow.map(s => below(s.entity))) || 'None of the below-trend signals on our list is inside the district, so this is the desk\'s structural view rather than a live signal'
-    }. The gap is measured against a trailing average that still holds launch-price first sales, so read it as where resale is clearing, not as a fall of that size in what owners paid: pick the building, not the postcode.`,
+      jvcBelow.length
+        ? `${join(jvcBelow.map(s => below(s.entity)))}. ${jvcWhy}`
+        : 'None of the below-trend signals on our list is inside the district, so this is the desk\'s structural view rather than a live signal.'
+    } Pick the building, not the postcode.`,
     risk: jvcRecord.length
       ? 'The below-trend printers stop and the record-PSF printers in the same district set the tone.'
       : 'The below-trend printing stops and the district median holds its level through the correction.',
@@ -81,7 +93,7 @@ export const DESK_CALLS = [
     area: 'MBR City — apartments', call: 'ACCUMULATE', conviction: 4, horizon: '18 months', segment: 'Mid-market',
     thesis: `${ordinal(mbrRank)} the apartment yield ranking (ready and off-plan together) at ${pct(mbr.yieldPct)} on a ${price(mbr.price)} median. ${
       mbrDislocation.length
-        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own 12-month average' : 'the median for its unit type'}${reg}`).join('; ')} — but not as a district-wide pattern.`
+        ? `The correction has touched it — ${mbrDislocation.map(s => `${s.entity} registered ${Math.abs(s.magnitudePct).toFixed(1)}% below ${s.type === 'below_trend' ? 'its own 12-month average' : `the project's earlier ${s.beds} resales of a similar size`}${reg}`).join('; ')} — but not as a district-wide pattern.`
         : 'None of the below-trend or discount signals on our list is in the district.'
     } A high registry yield without persistent below-trend printing is the cleanest entry in a correcting market. Completed stock only.`,
     risk: `The correction broadens into persistent below-trend printing${jvcBelow.length ? ', as it has in JVC' : ''}.`,

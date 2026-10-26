@@ -170,12 +170,18 @@ export const pixAreas = {
     note: 'Villa cohort shown — apartment sales (414, median AED 6,825/sqft) are new ultra-prime stock not comparable with the older apartment rental base; villa yield rests on 33 registered villa sales',
     url: 'https://www.propertyindex.ae/dubai/jumeirah',
   },
-  // Emaar Beachfront sits inside the Dubai Harbour master community
+  // Emaar Beachfront is a subcommunity of the Dubai Harbour master
+  // community, and these figures are the Emaar Beachfront node's own. The
+  // rest of Dubai Harbour (W Residences, the Dubai Beach Edition, Dubai
+  // Harbour Residences, Sobha Seahaven, Damac Bay 1 and 2) sold only
+  // off-plan in the window and holds no tenancies, so the community-wide
+  // sale median (4,071) set Emaar Beachfront's rents against other
+  // projects' launch prices — a 4.2% yield that was not cohort-matched.
   'Emaar Beachfront': {
-    sales: 817, valueAed: 6.01e9, rentals: 1557,
-    cohort: 'Apartment', psf: 4071, price: 5500000, rent: 170000, yieldPct: 4.2,
+    sales: 414, valueAed: 2.18e9, rentals: 1557,
+    cohort: 'Apartment', psf: 3562, price: 4000000, rent: 170000, yieldPct: 4.8,
     scope: 'Dubai Harbour',
-    url: 'https://www.propertyindex.ae/dubai/dubai-harbour',
+    url: 'https://www.propertyindex.ae/dubai/dubai-harbour-emaar-beachfront',
   },
   // Dubai Islands is registered under its own name (formerly Palm Deira)
   'Dubai Islands': {

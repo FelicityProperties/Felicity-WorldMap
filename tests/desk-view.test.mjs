@@ -78,9 +78,26 @@ check(renderMacroEvidence(ev).includes('0 of 9 benchmarks live'), 'rendered as 0
 {
   const { pixSignals } = await import('../js/pix-signals.js');
   const { pixSeries } = await import('../js/pix-data.js');
-  // A PSF move is a running measurement: one row per project, the newest
-  const moveNames = pixSignals.filter(s => s.type === 'psf_move').map(s => s.entity);
-  check(new Set(moveNames).size === moveNames.length, 'psf_move holds one detection per project');
+  // PSF moves are not published: the engine's project PSF is a running
+  // blend across unit types, and on 26 Oct every candidate's move was mix
+  check(!pixSignals.some(s => s.type === 'psf_move'), 'psf_move is not published until a like-for-like test exists');
+  // ── The 26 Oct market-evidence rules, as far as the file can show them ──
+  const { signalCopy } = await import('../js/pix-signals.js');
+  for (const s of pixSignals) {
+    if (s.type === 'top_sale') check(s.direction === 1 && s.baseline == null, `top_sale ${s.entity}: rising rows only, and no engine "prior top" baseline`);
+    if (s.type === 'record_psf') check(!!s.beds && signalCopy(s).headline.includes(s.beds), `record_psf ${s.entity}: names the unit type its record is for`);
+    if (s.type === 'below_trend') {
+      check(['launch', 'resale'].includes(s.cause), `below_trend ${s.entity}: cause is launch or resale (unit mix is not listed)`);
+      check(s.cause !== 'resale' || s.trades >= 1, `below_trend ${s.entity}: a resale cause says how many trades`);
+      check(/first sales|resale since August|resales of the same unit type/.test(signalCopy(s).detail), `below_trend ${s.entity}: the copy states the cause`);
+    }
+    if (s.type === 'discount_trade') check(s.resaleCount >= 10 && s.magnitudePct <= -15, `discount_trade ${s.entity}: at least 10 like-for-like resales and 15% below them`);
+    if (s.type === 'yield_leader') check(s.salesCount >= 5 && s.rentalCount >= 10 && s.value > 0 && s.value < 0.3, `yield_leader ${s.entity}: recomputed PSF yield on at least 5 sales and 10 tenancies`);
+  }
+  // A node and its ancestor are never both listed in one family — the
+  // names in the file are the only path the test can see, so check the
+  // known 26 Oct pair
+  check(!(pixSignals.some(s => s.entity === 'District 18' && s.type === 'below_trend') && pixSignals.some(s => s.entity === 'Binghatti Royale' && s.type === 'below_trend')), 'below_trend never lists a node beside its ancestor');
   // Every stored magnitude is the arithmetic of its own value and baseline
   for (const s of pixSignals) {
     if (s.baseline && s.magnitudePct != null && s.type !== 'momentum') {
