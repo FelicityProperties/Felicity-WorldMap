@@ -70,7 +70,8 @@ When the user says "refresh the price index data" (or the old "refresh the PIX d
 5. `propertyindex_query` on `signals` ordered by `score` for the live signal feed,
    then **check the registrations behind every price signal** (the market-
    evidence rules in the 26 Oct lessons below) before a row goes in.
-6. Rewrite `js/pix-data.js` and `js/pix-signals.js`, bump the AS_OF constants.
+6. Rewrite `js/pix-data.js` and `js/pix-signals.js`, bump the AS_OF constants
+   (and `PIX_BELOW_TREND_SINCE`, the window the below-trend trade counts use).
 7. Verify, commit, push to `main` (Vercel auto-deploys).
 
 Things the Sep 2026 refresh learned, so the next one does not relearn them:
@@ -233,8 +234,9 @@ largest numbers were mostly not market evidence:
   discount_trade — a `prior_buyer_sold` trade inside the band, against the
   median of the project's EARLIER resales of the same unit type and a size
   within ±15% (at least 10 of them, count stored as `resaleCount`), and at
-  least 15% below it; most of the engine's 24 rows failed (The Spirit sat
-  above its resale median; Binghatti Aurora's 28% was two layouts mixed).
+  least 15% below it; most of the engine's 24 rows failed (The Spirit's
+  "45.8%" sat 3.6% below its like-for-like resales; Binghatti Aurora's
+  "32%" was two layouts mixed and shrank to 9.3%).
   yield_leader — the engine divides AVERAGE rent by AVERAGE price, so unit
   mix inflates it and office/shop buildings rank; each leader is
   recomputed like an area yield, median rent PSF (valid size) ÷ median

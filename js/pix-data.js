@@ -9,10 +9,11 @@
 // History is restated as registrations land and are corrected — this
 // mid-month pull moved six residential months by up to 0.03 points
 // (September 2025 214.30 → 214.28, May 219.95 → 219.92) and the villa
-// index from 267.53 to 267.47, and the register now holds 82 fewer
-// September villa sales (1,259 → 1,177; median PSF 1,578 → 1,532), so
-// every figure below was re-pulled, not carried over, even though the
-// index month has not changed. Every figure below is registered-transaction evidence — median
+// index from 267.53 to 267.47, and the sample behind the September villa
+// reading fell by 82 sales (1,259 → 1,177; its median PSF 1,578 → 1,532;
+// the register itself holds 1,317 September villa sales), so every figure
+// below was re-pulled, not carried over, even though the index month has
+// not changed. Every figure below is registered-transaction evidence — median
 // registered sale PSF, median registered price, median registered annual
 // rent — not an estimate or a listing.
 //
@@ -68,7 +69,8 @@ export const pixSeries = [
 //   villa{}                 — separate villa cohort where the community
 //                             has meaningful registered volume
 //   scope                   — set when the DLD master community differs
-//                             from the marketing name
+//                             from the marketing name, or when the row is
+//                             a sub-node of one (Emaar Beachfront)
 //
 // DIFC is deliberately absent: it runs its own property register and
 // the DLD file holds no registered sales or rentals for it in this
@@ -180,14 +182,14 @@ export const pixAreas = {
   'Emaar Beachfront': {
     sales: 414, valueAed: 2.18e9, rentals: 1557,
     cohort: 'Apartment', psf: 3562, price: 4000000, rent: 170000, yieldPct: 4.8,
-    scope: 'Dubai Harbour',
+    scope: 'subcommunity of Dubai Harbour',
     url: 'https://www.propertyindex.ae/dubai/dubai-harbour-emaar-beachfront',
   },
   // Dubai Islands is registered under its own name (formerly Palm Deira)
   'Dubai Islands': {
     sales: 4671, valueAed: 15.85e9, rentals: 10,
     cohort: 'Apartment', psf: 2730, price: 2850000, rent: null, yieldPct: null,
-    note: 'Only 10 registered rentals in window, 4 of them with a valid registered size — too few to set against 4,671 sales, so no yield is shown',
+    note: 'Only 10 registered rentals in window, 4 of them with a valid registered size — too few to set against 4,671 sales, so there is no registry yield; a yield on this card is the desk estimate',
     url: 'https://www.propertyindex.ae/dubai/dubai-islands',
   },
 };
@@ -283,8 +285,12 @@ export function buildDeskContext() {
   const top = p1 - p0 >= 2
     ? `PLATEAUED between ${Math.min(...plateau).toFixed(2)} and ${Math.max(...plateau).toFixed(2)} from ${pts[p0].month} to ${pts[p1].month} (peak ${peak.level.toFixed(2)} in ${peak.month})`
     : `peaked at ${peak.level.toFixed(2)} in ${peak.month}`;
-  const runUp = pts.slice(0, peakAt + 1).map(p => p.yoyPct);
-  const before = `after YoY readings of ${fmtPct(Math.min(...runUp))} to ${fmtPct(Math.max(...runUp))} from ${pts[0].month} to ${peak.month}`;
+  // The run-up is the months before the plateau (or the peak), so the
+  // sentence never says the plateau came "after" its own months
+  const runUp = pts.slice(0, p0).map(p => p.yoyPct);
+  const before = runUp.length
+    ? ` after YoY readings of ${fmtPct(Math.min(...runUp))} to ${fmtPct(Math.max(...runUp))} from ${pts[0].month} to ${pts[p0 - 1].month}`
+    : '';
   const declineRun = runAtEnd(moves, true);
   const lastMoves = moves.slice(-4).map(m => `${m.month} ${fmtPct(m.chg)}`).join(', ');
   const after = declineRun
@@ -305,8 +311,10 @@ export function buildDeskContext() {
     let k = vMoves.length - 2, falls = 0;
     while (k >= 0 && vMoves[k].chg < 0) { falls++; k--; }
     villaWords = `the villa index rose ${fmtPct(vLast.chg)} in ${vLast.month}${falls ? `, its first monthly gain${k >= 0 ? ` since ${vMoves[k].month}` : ' in the series'}, after ${plural(falls, 'consecutive decline')}` : ''}. One month is not a turn; say so if you mention it.`;
+  } else if (vLast.chg < 0) {
+    villaWords = `the villa index fell ${Math.abs(vLast.chg).toFixed(1)}% in ${vLast.month}, ${plural(runAtEnd(vMoves, true), 'consecutive monthly decline')}.`;
   } else {
-    villaWords = `the villa index fell ${fmtPct(vLast.chg)} in ${vLast.month}, ${plural(runAtEnd(vMoves, true), 'consecutive monthly decline')}.`;
+    villaWords = `the villa index was flat in ${vLast.month}.`;
   }
   const gap = i.villa.yoyPct - i.apartment.yoyPct;
 
@@ -315,7 +323,7 @@ NAMING: the index is "the Felicity Price Index" (or "our price index") and its s
 Index as of ${PIX_AS_OF}; area medians from registered transactions ${PIX_WINDOW}. Anchor every call to these numbers and cite them.
 
 MARKET STATE (base Jan 2012 = 100):
-- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market ${top} ${before}, ${after}${yoyWords}${lowest}.
+- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market ${top}${before}, ${after}${yoyWords}${lowest}.
 - Apartments ${i.apartment.level} (${fmtPct(i.apartment.yoyPct)} YoY), median ${fmtCount(i.apartment.medianPsf)} AED/sqft — ${aptWords}.
 - Villas ${i.villa.level} (${fmtPct(i.villa.yoyPct)} YoY), median ${fmtCount(i.villa.medianPsf)} AED/sqft. ${gap > 0 ? `Villas are holding up better than apartments by about ${gap.toFixed(1)} points YoY, and ` : gap < 0 ? `Villas are weaker than apartments by about ${Math.abs(gap).toFixed(1)} points YoY, and ` : ''}${villaWords}
 - ${fmtCount(i.residential.txCount)} registered residential sales stand behind the ${PIX_AS_OF} index reading (apartments ${fmtCount(i.apartment.txCount)}, villas ${fmtCount(i.villa.txCount)}). That is the index's sample for one month — not a monthly average, and not every registration in the month.

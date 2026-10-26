@@ -49,10 +49,10 @@ const jvcRecord = inArea('JVC', 'record_psf');
 // not explain every row as launch pricing (26 Oct audit)
 const names = list => list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}` : list[0];
 const jvcLaunch = jvcBelow.filter(s => s.cause === 'launch').map(s => s.entity);
-const jvcResale = jvcBelow.filter(s => s.cause === 'resale').map(s => s.entity);
+const jvcResale = jvcBelow.filter(s => s.cause === 'resale');
 const jvcWhy = [
   jvcLaunch.length && `${names(jvcLaunch)} ${jvcLaunch.length > 1 ? 'are' : 'is'} measured against a trailing average that still holds launch-price first sales, so read ${jvcLaunch.length > 1 ? 'them' : 'it'} as where resale is clearing, not as a fall of that size in what owners paid.`,
-  jvcResale.length && `At ${names(jvcResale)} like-for-like resales have cleared lower.`,
+  jvcResale.length && `At ${names(jvcResale.map(s => `${s.entity} (${s.trades === 1 ? 'a single resale' : `${s.trades} resales`})`))} like-for-like resales have cleared lower.`,
 ].filter(Boolean).join(' ');
 const mbrDislocation = inArea('MBR City', 'below_trend', 'discount_trade');
 const aptYieldRank = name => {

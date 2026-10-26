@@ -330,13 +330,11 @@ function renderShips() {
 // A dated snapshot refreshed weekly, not a streaming feed: no pulsing
 // live dot and no Refresh button, the same rule as flights and ships.
 function renderSignals() {
-  const up = pixSignals.filter(s => s.direction === 1).length;
-  const dn = pixSignals.filter(s => s.direction === -1).length;
 
   const header = `
     <div class="news-header">
       <div class="news-header__status">
-        <span class="news-header__ref">DLD</span> ${up} rising \u00b7 ${dn} falling \u00b7 detected through ${PIX_SIGNALS_AS_OF}
+        <span class="news-header__ref">DLD</span> ${pixSignals.length} signals \u00b7 detected through ${PIX_SIGNALS_AS_OF}
       </div>
     </div>
   `;

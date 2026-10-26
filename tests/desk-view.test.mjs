@@ -82,16 +82,17 @@ check(renderMacroEvidence(ev).includes('0 of 9 benchmarks live'), 'rendered as 0
   // blend across unit types, and on 26 Oct every candidate's move was mix
   check(!pixSignals.some(s => s.type === 'psf_move'), 'psf_move is not published until a like-for-like test exists');
   // ── The 26 Oct market-evidence rules, as far as the file can show them ──
-  const { signalCopy } = await import('../js/pix-signals.js');
+  const { signalCopy, PIX_BELOW_TREND_SINCE } = await import('../js/pix-signals.js');
   for (const s of pixSignals) {
     if (s.type === 'top_sale') check(s.direction === 1 && s.baseline == null, `top_sale ${s.entity}: rising rows only, and no engine "prior top" baseline`);
     if (s.type === 'record_psf') check(!!s.beds && signalCopy(s).headline.includes(s.beds), `record_psf ${s.entity}: names the unit type its record is for`);
     if (s.type === 'below_trend') {
       check(['launch', 'resale'].includes(s.cause), `below_trend ${s.entity}: cause is launch or resale (unit mix is not listed)`);
       check(s.cause !== 'resale' || s.trades >= 1, `below_trend ${s.entity}: a resale cause says how many trades`);
-      check(/first sales|resale since August|resales of the same unit type/.test(signalCopy(s).detail), `below_trend ${s.entity}: the copy states the cause`);
+      check(/first sales|like-for-like resale/.test(signalCopy(s).detail), `below_trend ${s.entity}: the copy states the cause`);
+      if (s.cause === 'resale') check(signalCopy(s).detail.includes(new Date(PIX_BELOW_TREND_SINCE + 'T00:00:00Z').toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })), `below_trend ${s.entity}: the resale window comes from PIX_BELOW_TREND_SINCE, not typed copy`);
     }
-    if (s.type === 'discount_trade') check(s.resaleCount >= 10 && s.magnitudePct <= -15, `discount_trade ${s.entity}: at least 10 like-for-like resales and 15% below them`);
+    if (s.type === 'discount_trade') check(!!s.beds && s.resaleCount >= 10 && s.magnitudePct <= -15, `discount_trade ${s.entity}: names its unit type, rests on at least 10 like-for-like resales and sits 15% below them`);
     if (s.type === 'yield_leader') check(s.salesCount >= 5 && s.rentalCount >= 10 && s.value > 0 && s.value < 0.3, `yield_leader ${s.entity}: recomputed PSF yield on at least 5 sales and 10 tenancies`);
   }
   // A node and its ancestor are never both listed in one family — the
@@ -106,7 +107,7 @@ check(renderMacroEvidence(ev).includes('0 of 9 benchmarks live'), 'rendered as 0
     }
     if (s.type === 'momentum') check(Math.abs(((s.value - s.baseline) / s.baseline) * 100 - s.magnitudePct) < 0.06, `momentum ${s.entity}: magnitude is not the velocity increase`);
     if (s.type === 'below_trend') check(s.magnitudePct < 0 && s.streak >= 3, `below_trend ${s.entity}: must be negative and persistent (streak ≥ 3)`);
-    if (s.type === 'discount_trade') check(s.magnitudePct < 0 && s.value < s.baseline, `discount_trade ${s.entity}: must sit below its project median`);
+    if (s.type === 'discount_trade') check(s.magnitudePct < 0 && s.value < s.baseline, `discount_trade ${s.entity}: must sit below its like-for-like resale baseline`);
   }
   // Every percentage handed to the AI is computable from the data files —
   // a hard-coded "MBR City (6.5%)" sat beside a computed 6.4% for two refreshes

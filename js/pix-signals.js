@@ -24,7 +24,7 @@
 //                  engine's is its own earlier detection, not the
 //                  project's highest sale.
 //   record_psf     value = new record registered PSF for ONE unit type
-//                  (beds) in one building; baseline = the previous record
+//                  (beds) in one project; baseline = the previous record
 //                  for that unit type. magnitudePct = the increase.
 //   momentum       value = registered sales in the last 3 months;
 //                  baseline = the prior 3 months. magnitudePct = the
@@ -42,7 +42,8 @@
 //                  project's own 12-month average PSF. magnitudePct =
 //                  the discount. Persistent (streak ≥ 3). cause = 'launch'
 //                  (the average holds developer first sales) or 'resale'
-//                  (like-for-like resales cleared lower; trades = how many).
+//                  (like-for-like resales cleared lower; trades = how many
+//                  since PIX_BELOW_TREND_SINCE).
 //   discount_trade value = registered PSF of a single resale; baseline =
 //                  the median of the project's EARLIER resales of the same
 //                  unit type (beds) and a size within ±15% — resaleCount
@@ -53,6 +54,10 @@
 // ═══════════════════════════════════════════════════════════
 
 export const PIX_SIGNALS_AS_OF = '2026-10-24';
+// Below-trend 'resale' rows count like-for-like resales registered from
+// this date; bump it with the snapshot, never type the month into copy
+export const PIX_BELOW_TREND_SINCE = '2026-08-01';
+const sinceMonth = new Date(PIX_BELOW_TREND_SINCE + 'T00:00:00Z').toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
 export const PIX_SIGNALS_SOURCE = 'Felicity Price Index signal feed over DLD registered transactions';
 
 export const SIGNAL_TYPES = {
@@ -66,7 +71,8 @@ export const SIGNAL_TYPES = {
 
 export const pixSignals = [
   // ── Top registered sales (by value) ──
-  // Every top_sale signal in the feed that rests on a market registration.
+  // Every top_sale signal in the feed that rests on a market registration
+  // and that the engine marks as a new high (direction 1).
   // W Residences' AED 53.7M (16 Oct) is out: a related-party transfer
   // whose previous price equals its sale price. So are the two rows the
   // engine marks as falling (Eden Hills 15 Oct, Elysian Mansions 20 Oct):
@@ -88,7 +94,7 @@ export const pixSignals = [
   { type: 'top_sale', entity: 'Victory Heights', area: 'Dubai Sports City', community: 'dubai-sports-city',
     detectedOn: '2026-10-21', direction: 1, value: 25000000, baseline: null, psf: 1486.24, beds: 'Villa' },
 
-  // ── New record price per square foot, for one unit type in one building ──
+  // ── New record price per square foot, for one unit type in one project ──
   // The record print must be a market print inside 0.5×–2× of the unit
   // type's 12-month market median, with at least 3 prints to judge it by.
   // 26 Oct: Al Majara 3's record was a related-party transfer, and Rokane
@@ -221,7 +227,7 @@ export const pixSignals = [
   // 699,714 1-Bed sits in two threads) shrink to three: five were title
   // registrations or related-party transfers (Central Park Tower, Jebel Ali
   // Village, Hor Al Anz, The Crescent Tower C, Burj Royale), two were first
-  // sales, one had no reference prints (Florence 2), and twelve resales sat
+  // sales, one had only two reference prints (Florence 2), and twelve resales sat
   // less than 15% below like-for-like resales — The Spirit's "45.8%"
   // studio sat 3.6% below; Binghatti Aurora's "32%" was two layouts mixed.
   // Sobha Creek Vistas Reserve's and The Grand's trades were each one of
@@ -256,8 +262,8 @@ function times(magnitudePct) {
 const BELOW_CAUSE = {
   launch: () => 'The trailing average still holds developer first sales, so this is where resale is clearing against launch pricing, not a like-for-like fall of that size.',
   resale: s => s.trades === 1
-    ? 'One like-for-like resale since August cleared this low — a single trade, not yet a trend.'
-    : `${s.trades} like-for-like resales of the same unit type have cleared lower since August.`,
+    ? `One like-for-like resale since ${sinceMonth} cleared this low — a single trade, not yet a trend.`
+    : `${s.trades} like-for-like resales of the same unit type have cleared lower since ${sinceMonth}.`,
 };
 
 // Headline + supporting line, derived purely from the registered values
@@ -268,15 +274,15 @@ export function signalCopy(s) {
         headline: `${aed(s.value)} registered sale`,
         detail: s.baseline
           ? `Prior top sale ${aed(s.baseline)} — this trade came in ${Math.abs(s.magnitudePct).toFixed(1)}% ${s.magnitudePct < 0 ? 'below' : 'above'} it.`
-          : `Highest registered sale detected for this project in the current window${s.psf ? ` — ${s.beds ? s.beds + ', ' : ''}${psf(s.psf)}` : ''}.`,
+          : `Flagged by the signal feed as a top sale for this project${s.psf ? ` — ${s.beds ? s.beds + ', ' : ''}${psf(s.psf)}` : ''}.`,
       };
     case 'record_psf':
-      // A record for one unit type in one building, not the building's
-      // highest print: four of the 26 Oct records sat below a dearer resale
-      // of another unit type in the same tower
+      // A record for one unit type in one project, not necessarily the
+      // project's highest print (in the 26 Oct rebuild, four records sat
+      // below a dearer resale of another unit type in the same tower)
       return {
         headline: `New ${s.beds ? `${s.beds} ` : ''}record ${psf(s.value)}`,
-        detail: `Previous ${s.beds ? `${s.beds} ` : ''}record ${psf(s.baseline)} — up ${s.magnitudePct.toFixed(1)}%. A record for this unit type in this building.`,
+        detail: `Previous ${s.beds ? `${s.beds} ` : ''}record ${psf(s.baseline)} — up ${s.magnitudePct.toFixed(1)}%. A record for this unit type in this project.`,
       };
     case 'momentum':
       return {
@@ -330,13 +336,13 @@ export function buildSignalContext() {
     }).join('\n');
 
   return `LIVE MARKET SIGNALS — signals from the Felicity Price Index signal feed, detected over DLD registered transactions through ${PIX_SIGNALS_AS_OF}. Refer to them as "our signal list" or "the Felicity Price Index signals"; use no other name for them or their provider. These are real registered events. Cite them by name and date; never invent a comparable anecdote.
-Every row rests on market registrations only: completion or title registrations, co-owner buyouts, related-party or nominee transfers, and single prints far outside their unit type's range are left out, so a project the raw feed flags can be missing here on purpose.
+Every price row rests on market registrations only: completion or title registrations, co-owner buyouts, related-party or nominee transfers, and single prints far outside their unit type's range are left out, so a project the raw feed flags can be missing here on purpose. The sales-velocity counts are the feed's own and include a handful of non-market registrations.
 Except for the top sales, each section is an EXTRACT holding only the top of its type (the feed holds hundreds of below-trend runs). A project or district missing from these lists is not evidence that the feed has nothing there — never write "the feed shows no …"; say "none of the signals on our list".
 
-TOP REGISTERED SALES (every top-sale signal in the feed that rests on a market registration):
+TOP REGISTERED SALES (every top-sale signal in the feed that rests on a market registration and sets a new high for its project in the feed's window):
 ${group('top_sale')}
 
-NEW RECORD PRICE PER SQFT (each a record for one unit type in one building, not the building's highest print):
+NEW RECORD PRICE PER SQFT (each a record for one unit type in one project — not necessarily the project's highest print):
 ${group('record_psf')}
 
 SALES VELOCITY (registered sales, last 3 months vs the prior 3 — often launches registering in bulk; velocity, not price strength):
