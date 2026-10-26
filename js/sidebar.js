@@ -4,7 +4,7 @@
 
 import { news, markets, flights, ships } from './data.js';
 import { layerMeta } from './live-layers.js';
-import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
+import { pixSignals, PIX_SIGNALS_AS_OF, signalCopy, signalAge, signalTone, signalLabel } from './pix-signals.js';
 import { escapeHtml as safeEscape, isSafeUrl } from './safe.js';
 import { formatPrice } from './utils.js';
 import { fetchLiveNews } from './news-live.js';
@@ -342,17 +342,17 @@ function renderSignals() {
   `;
 
   const cards = pixSignals.map(s => {
-    const meta = SIGNAL_TYPES[s.type];
+    const tone = signalTone(s);
     const copy = signalCopy(s);
     const arrow = s.direction === 1 ? '\u25b2' : s.direction === -1 ? '\u25bc' : '\u25cf';
     return `
-    <div class="signal-card signal-card--${meta.tone}">
+    <div class="signal-card signal-card--${escapeHtml(tone)}">
       <div class="signal-card__trigger">${escapeHtml(s.entity)}</div>
       <div class="signal-card__chain">${escapeHtml(copy.headline)}</div>
       <div class="signal-card__areas"><span class="signal-area-tag">${escapeHtml(s.area || 'Dubai')}</span></div>
       <div class="signal-card__footer">
-        <span class="signal-card__sector">${meta.label}</span>
-        <span class="signal-card__sentiment ${meta.tone}">${signalAge(s.detectedOn)} ${arrow}</span>
+        <span class="signal-card__sector">${escapeHtml(signalLabel(s))}</span>
+        <span class="signal-card__sentiment ${escapeHtml(tone)}">${signalAge(s.detectedOn)} ${arrow}</span>
       </div>
       <div class="signal-card__magnitude"><span class="signal-detail-label">Evidence</span> ${escapeHtml(copy.detail)}</div>
     </div>

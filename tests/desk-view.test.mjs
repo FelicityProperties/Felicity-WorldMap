@@ -100,10 +100,15 @@ check(renderMacroEvidence(ev).includes('0 of 9 benchmarks live'), 'rendered as 0
     if (p.villa?.yieldPct != null) allowed.add(pct(p.villa.yieldPct));
   }
   for (const seg of Object.values(pixIndex)) { allowed.add(pct(seg.yoyPct)); allowed.add(pct(seg.momPct)); }
-  pixSeries.slice(1).forEach((p, k) => allowed.add(pct((p.level / pixSeries[k].level - 1) * 100)));
+  for (const key of ['level', 'apartment', 'villa']) {
+    pixSeries.slice(1).forEach((p, k) => allowed.add(pct((p[key] / pixSeries[k][key] - 1) * 100)));
+  }
+  pixSeries.forEach(p => allowed.add(pct(p.yoyPct)));
   allowed.add(pct(pixIndex.villa.yoyPct - pixIndex.apartment.yoyPct));
   const desk = buildDeskContext();
-  const stray = (desk.match(/\d+\.\d%/g) || []).filter(x => !allowed.has(x));
+  // Integers too: a typed "+12% YoY run" sat in the template for three
+  // refreshes because this pattern only matched one decimal place
+  const stray = (desk.match(/\d+(?:\.\d+)?%/g) || []).filter(x => !allowed.has(x));
   check(!stray.length, `buildDeskContext carries percentages not computed from the data: ${[...new Set(stray)].join(', ')}`);
 }
 

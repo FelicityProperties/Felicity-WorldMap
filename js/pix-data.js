@@ -41,23 +41,25 @@ export const pixIndex = {
   villa:       { level: 267.47, momPct: 0.78, yoyPct: -1.08, medianPsf: 1532, txCount: 1177 },
 };
 
-// Trailing 13 months, residential segment (index level).
-// History is restated as late registrations land, so this series is
-// re-pulled in full on every refresh — never appended to.
+// Trailing 13 months: the residential level and its YoY reading, with
+// the apartment and villa levels beside it. History is restated as
+// registrations land, so this series is re-pulled in full on every
+// refresh — never appended to. The market narrative in buildDeskContext()
+// is computed from it; nothing in that prose is typed by hand.
 export const pixSeries = [
-  { month: 'Sep 25', level: 214.28 },
-  { month: 'Oct 25', level: 215.83 },
-  { month: 'Nov 25', level: 217.51 },
-  { month: 'Dec 25', level: 218.71 },
-  { month: 'Jan 26', level: 219.98 },
-  { month: 'Feb 26', level: 218.83 },
-  { month: 'Mar 26', level: 218.34 },
-  { month: 'Apr 26', level: 219.56 },
-  { month: 'May 26', level: 219.92 },
-  { month: 'Jun 26', level: 213.60 },
-  { month: 'Jul 26', level: 207.63 },
-  { month: 'Aug 26', level: 206.76 },
-  { month: 'Sep 26', level: 205.79 },
+  { month: 'Sep 25', level: 214.28, yoyPct: 11.31, apartment: 207.70, villa: 270.38 },
+  { month: 'Oct 25', level: 215.83, yoyPct: 10.64, apartment: 208.95, villa: 274.27 },
+  { month: 'Nov 25', level: 217.51, yoyPct: 12.43, apartment: 210.43, villa: 277.45 },
+  { month: 'Dec 25', level: 218.71, yoyPct: 12.64, apartment: 211.24, villa: 281.51 },
+  { month: 'Jan 26', level: 219.98, yoyPct: 12.14, apartment: 212.27, villa: 284.57 },
+  { month: 'Feb 26', level: 218.83, yoyPct: 10.17, apartment: 211.36, villa: 281.65 },
+  { month: 'Mar 26', level: 218.34, yoyPct: 8.70, apartment: 210.63, villa: 282.90 },
+  { month: 'Apr 26', level: 219.56, yoyPct: 7.79, apartment: 211.36, villa: 287.80 },
+  { month: 'May 26', level: 219.92, yoyPct: 6.92, apartment: 211.96, villa: 286.38 },
+  { month: 'Jun 26', level: 213.60, yoyPct: 2.99, apartment: 205.47, villa: 281.10 },
+  { month: 'Jul 26', level: 207.63, yoyPct: -0.32, apartment: 200.34, villa: 268.74 },
+  { month: 'Aug 26', level: 206.76, yoyPct: -2.44, apartment: 199.80, villa: 265.40 },
+  { month: 'Sep 26', level: 205.79, yoyPct: -3.96, apartment: 198.41, villa: 267.47 },
 ];
 
 // ── Per-area registry evidence (L12M through Sep 2026) ──
@@ -249,24 +251,68 @@ export function buildDeskContext() {
   const aptRank = rank(p => p.cohort === 'Apartment' ? p.yieldPct : null);
   const villaRank = rank(p => p.villa ? p.villa.yieldPct : (p.cohort === 'Villa' ? p.yieldPct : null));
 
-  // The narrative's numbers come from the series: every refresh restates
+  // The narrative is computed from the series: every refresh restates
   // history (13 Oct moved the whole line ~0.2 points), and prose written
-  // by hand went stale twice ("peak 220.17", "after three declines").
-  const peak = pixSeries.reduce((a, b) => (b.level > a.level ? b : a));
-  const moves = pixSeries.slice(1).map((p, k) => ({ month: p.month, chg: (p.level / pixSeries[k].level - 1) * 100 }));
+  // by hand went stale three times ("peak 220.17", "after three declines",
+  // a typed "+12% YoY run" no data file could reproduce).
+  const pts = pixSeries;
+  const last = pts[pts.length - 1];
+  const movesOf = key => pts.slice(1).map((p, k) => ({ month: p.month, chg: (p[key] / pts[k][key] - 1) * 100 }));
+  // Length of the run of falls (or rises) that ends at the latest month
+  const runAtEnd = (ms, falling) => {
+    let n = 0;
+    for (let k = ms.length - 1; k >= 0 && (falling ? ms[k].chg < 0 : ms[k].chg > 0); k--) n++;
+    return n;
+  };
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+  const moves = movesOf('level');
+  const peakAt = pts.reduce((best, p, k) => (p.level > pts[best].level ? k : best), 0);
+  const peak = pts[peakAt];
+  // The plateau is the run of months around the peak within 1% of it
+  let p0 = peakAt, p1 = peakAt;
+  while (p0 > 0 && pts[p0 - 1].level >= peak.level * 0.99) p0--;
+  while (p1 < pts.length - 1 && pts[p1 + 1].level >= peak.level * 0.99) p1++;
+  const plateau = pts.slice(p0, p1 + 1).map(p => p.level);
+  const top = p1 - p0 >= 2
+    ? `PLATEAUED between ${Math.min(...plateau).toFixed(2)} and ${Math.max(...plateau).toFixed(2)} from ${pts[p0].month} to ${pts[p1].month} (peak ${peak.level.toFixed(2)} in ${peak.month})`
+    : `peaked at ${peak.level.toFixed(2)} in ${peak.month}`;
+  const runUp = pts.slice(0, peakAt + 1).map(p => p.yoyPct);
+  const before = `after YoY readings of ${fmtPct(Math.min(...runUp))} to ${fmtPct(Math.max(...runUp))} from ${pts[0].month} to ${peak.month}`;
+  const declineRun = runAtEnd(moves, true);
   const lastMoves = moves.slice(-4).map(m => `${m.month} ${fmtPct(m.chg)}`).join(', ');
-  let declineRun = 0;
-  for (let k = moves.length - 1; k >= 0 && moves[k].chg < 0; k--) declineRun++;
+  const after = declineRun
+    ? `then fell month on month — ${lastMoves} — ${plural(declineRun, 'consecutive monthly decline')}`
+    : `then moved ${lastMoves}`;
+  let negYoy = 0;
+  for (let k = pts.length - 1; k >= 0 && pts[k].yoyPct < 0; k--) negYoy++;
+  const yoyWords = negYoy ? `, YoY negative since ${pts[pts.length - negYoy].month}` : '';
+  const lowest = pts.every(p => p.level >= last.level) ? ', and the latest level is the lowest in the 13-month series' : '';
+
+  const aptRun = runAtEnd(movesOf('apartment'), true);
+  const aptWords = `${i.apartment.yoyPct < i.villa.yoyPct ? 'the weaker segment' : 'the stronger segment'}${aptRun ? `, down ${plural(aptRun, 'month')} running since ${pts[pts.length - 1 - aptRun].month}` : ''}`;
+
+  const vMoves = movesOf('villa');
+  const vLast = vMoves[vMoves.length - 1];
+  let villaWords;
+  if (vLast.chg > 0) {
+    let k = vMoves.length - 2, falls = 0;
+    while (k >= 0 && vMoves[k].chg < 0) { falls++; k--; }
+    villaWords = `the villa index rose ${fmtPct(vLast.chg)} in ${vLast.month}${falls ? `, its first monthly gain${k >= 0 ? ` since ${vMoves[k].month}` : ' in the series'}, after ${plural(falls, 'consecutive decline')}` : ''}. One month is not a turn; say so if you mention it.`;
+  } else {
+    villaWords = `the villa index fell ${fmtPct(vLast.chg)} in ${vLast.month}, ${plural(runAtEnd(vMoves, true), 'consecutive monthly decline')}.`;
+  }
+  const gap = i.villa.yoyPct - i.apartment.yoyPct;
 
   return `LIVE MARKET EVIDENCE — the Felicity Price Index and the Dubai Land Department registry.
 NAMING: the index is "the Felicity Price Index" (or "our price index") and its source is the Dubai Land Department register. Use no other name for the index or its provider.
 Index as of ${PIX_AS_OF}; area medians from registered transactions ${PIX_WINDOW}. Anchor every call to these numbers and cite them.
 
 MARKET STATE (base Jan 2012 = 100):
-- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market PLATEAUED around 220 from Jan to May 2026 (peak ${peak.level.toFixed(2)} in ${peak.month}) after a +12% YoY run through 2025, then fell month on month — ${lastMoves} — ${declineRun} consecutive monthly declines, YoY negative since July and now at its weakest of the cycle.
-- Apartments ${i.apartment.level} (${fmtPct(i.apartment.yoyPct)} YoY), median ${fmtCount(i.apartment.medianPsf)} AED/sqft — the weaker segment, down every month since May.
-- Villas ${i.villa.level} (${fmtPct(i.villa.yoyPct)} YoY), median ${fmtCount(i.villa.medianPsf)} AED/sqft. Villas are holding up better than apartments by about ${(i.villa.yoyPct - i.apartment.yoyPct).toFixed(1)} points YoY, and the villa index ${i.villa.momPct >= 0 ? 'rose' : 'fell'} ${fmtPct(i.villa.momPct)} in ${PIX_AS_OF}, its first monthly gain since April, after four consecutive declines. One month is not a turn; say so if you mention it.
-- Roughly ${fmtCount(i.residential.txCount)} registered residential transactions per month emirate-wide.
+- Residential index ${i.residential.level} — ${fmtPct(i.residential.yoyPct)} YoY, ${fmtPct(i.residential.momPct)} MoM. The market ${top} ${before}, ${after}${yoyWords}${lowest}.
+- Apartments ${i.apartment.level} (${fmtPct(i.apartment.yoyPct)} YoY), median ${fmtCount(i.apartment.medianPsf)} AED/sqft — ${aptWords}.
+- Villas ${i.villa.level} (${fmtPct(i.villa.yoyPct)} YoY), median ${fmtCount(i.villa.medianPsf)} AED/sqft. ${gap > 0 ? `Villas are holding up better than apartments by about ${gap.toFixed(1)} points YoY, and ` : gap < 0 ? `Villas are weaker than apartments by about ${Math.abs(gap).toFixed(1)} points YoY, and ` : ''}${villaWords}
+- ${fmtCount(i.residential.txCount)} registered residential sales stand behind the ${PIX_AS_OF} index reading (apartments ${fmtCount(i.apartment.txCount)}, villas ${fmtCount(i.villa.txCount)}). That is the index's sample for one month — not a monthly average, and not every registration in the month.
 
 AREA REGISTRY MEDIANS (apartment cohort unless noted; gross yield = registered rent PSF / registered sale PSF, excludes service charges and voids):
 ${rows}

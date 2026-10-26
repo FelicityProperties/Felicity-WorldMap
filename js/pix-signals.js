@@ -292,9 +292,18 @@ export function signalAge(detectedOn, now = new Date()) {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-// Compact one-line summary used by the map sidebar
+// Card tone and label. A top_sale below its project's prior top sale is
+// still the largest trade on the list, but it is not a bullish print —
+// Eden Hills' 15 Oct trade came in 24% under its 9 Oct top and was shown
+// as a green 'Top Sale' card.
+const belowPriorTop = s => s.type === 'top_sale' && s.direction === -1;
 export function signalTone(s) {
+  if (belowPriorTop(s)) return 'watch';
   return SIGNAL_TYPES[s.type]?.tone || 'neutral';
+}
+export function signalLabel(s) {
+  if (belowPriorTop(s)) return 'Sale Below Prior Top';
+  return SIGNAL_TYPES[s.type]?.label || s.type;
 }
 
 // ── Shared AI context ──

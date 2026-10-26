@@ -8,7 +8,7 @@ import { buildTicker } from './ticker.js';
 import { showCountryPanel, initPanels } from './panels.js';
 import { updateClock } from './utils.js';
 import { loadFromAPI } from './data.js';
-import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge } from './pix-signals.js';
+import { pixSignals, SIGNAL_TYPES, PIX_SIGNALS_AS_OF, signalCopy, signalAge, signalTone, signalLabel } from './pix-signals.js';
 import { initHero, refreshAlertBanner, markNewsUnavailable } from './hero.js';
 import { initMacro, updateMacroData } from './macro.js';
 import { initBroadcasts } from './broadcasts.js';
@@ -351,11 +351,11 @@ function renderSignalCards(grid) {
   }
 
   grid.innerHTML = list.map((s, i) => {
-    const meta = SIGNAL_TYPES[s.type];
+    const tone = signalTone(s);
     const copy = signalCopy(s);
     const arrow = s.direction === 1 ? '\u25B2' : s.direction === -1 ? '\u25BC' : '\u25CF';
     return `
-      <div class="signal-list-card signal-list-card--${escapeHtml(meta.tone)}" style="animation-delay:${i * 40}ms">
+      <div class="signal-list-card signal-list-card--${escapeHtml(tone)}" style="animation-delay:${i * 40}ms">
         <div class="signal-list-card__header">
           <div class="signal-list-card__trigger">${escapeHtml(s.entity)}</div>
           <span class="signal-list-card__time">${signalAge(s.detectedOn)}</span>
@@ -365,8 +365,8 @@ function renderSignalCards(grid) {
           <span class="signal-area-tag">${escapeHtml(s.area || 'Dubai')}</span>
         </div>
         <div class="signal-list-card__footer">
-          <span class="signal-list-card__sector">${meta.label}</span>
-          <span class="signal-list-card__sentiment signal-list-card__sentiment--${meta.tone}">${arrow} registered</span>
+          <span class="signal-list-card__sector">${escapeHtml(signalLabel(s))}</span>
+          <span class="signal-list-card__sentiment signal-list-card__sentiment--${escapeHtml(tone)}">${arrow} registered</span>
         </div>
         <div class="signal-list-card__magnitude">${escapeHtml(copy.detail)}</div>
         <div class="signal-evidence">

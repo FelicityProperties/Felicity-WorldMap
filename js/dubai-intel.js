@@ -41,7 +41,7 @@ function renderPixStrip() {
           <span class="pix-chg pix-chg--${yoyClass}">${fmtPct(d.yoyPct)} YoY</span>
           <span class="pix-chg pix-chg--${momClass}">${fmtPct(d.momPct)} MoM</span>
         </div>
-        <div class="pix-strip__seg-meta">AED ${fmtCount(d.medianPsf)}/sqft · ${fmtCount(d.txCount)} tx/mo</div>
+        <div class="pix-strip__seg-meta" title="Median PSF and registered sales behind the ${PIX_AS_OF} index reading — the index's sample, not every registration in the month">AED ${fmtCount(d.medianPsf)}/sqft · ${fmtCount(d.txCount)} sales in index</div>
       </div>`;
   };
 
